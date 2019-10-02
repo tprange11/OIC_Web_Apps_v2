@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}<title>Print Upcoming Stick and Puck Sessions</title>{% endblock title %}
+{% block content %}
+    <h4>Upcoming Stick and Puck Sessions</h4>
+    <p>Choose a date below to print the Release of Liability for that session of stick and puck.</p>
+    <ul>
+        {% for session in object_list %}
+        <li style="line-height: 3;"><a href="{% url 'stickandpuck:print' date=session.session_date time=session.session_start_time %}" 
+            class="btn btn-warning btn-sm">{{ session.session_date }} @ {{ session.session_start_time }}</a> <b>Session Notes: {{session.session_notes}}</b></li>
+        {% empty %}
+        <li>There are no stick and puck sessions available to print.</li>
+        {% endfor %}
+    </ul>
+{% endblock content %}

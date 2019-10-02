@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}<title>Open Hockey Member Detail</title>{% endblock title %}
+{% block content %}
+    <h4>Open Hockey Member Details</h4>
+{% if user.is_authenticated %}
+{% for member in member %}
+<p>Member Name: {{ user.first_name }} {{ user.last_name }}</p>
+<p>Status: {% if member.active %} Active {% else %} Not Active {% endif %}</p>
+<p>End Date: {{ member.end_date }}</p>
+{% empty %}
+<p>You are not currently a member.</p>
+{% endfor %}
+{% endif %}
+{% endblock content %}

@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block title %}<title>Open Hockey Session Signup</title>{% endblock title %}
+{% block content %}
+    <form method="POST" action="{% url 'open_hockey:open-hockey-signup' %}">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <p><input type="submit" value="Sign Up" class="btn btn-success btn-sm"></p>
+    </form>
+{% endblock content %}

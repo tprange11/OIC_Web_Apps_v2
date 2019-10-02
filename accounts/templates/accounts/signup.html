@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}<title>OIC Web Apps Sign Up</title>{% endblock title %}
+{% block content %}
+    <h4>Register for an OIC Web Apps Account</h4>
+    <form method="post">
+        <table>
+            {% csrf_token %}
+            {{ form.as_table }}
+            <tr>
+                <th></th>
+                <td><input type="submit" value="Sign Up" class="btn btn-success btn-sm">
+                    <p id="caps-lock">Caps Lock is ON!</p></td>
+            </tr>
+        </table>
+    </form>
+    <script>
+        var input1 = document.getElementById("id_password1");
+        var input2 = document.getElementById("id_password2");
+        var text = document.getElementById("caps-lock");
+        input1.addEventListener("keyup", function(event) {
+            if (event.getModifierState("CapsLock")) {
+                text.style.display = "block";
+            } else {
+                text.style.display = "none"
+            }
+        });
+        input2.addEventListener("keyup", function(event) {
+            if (event.getModifierState("CapsLock")) {
+                text.style.display = "block";
+            } else {
+                text.style.display = "none"
+            }
+        });
+    </script>
+{% endblock content %}

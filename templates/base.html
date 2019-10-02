@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    {% block title %}{% endblock title %}
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/css?family=Russo+One&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+</head>
+<body>
+    <!-- navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light fixed-top techfont" style="background-color: #299c39;">
+        <div class="container">
+        {% if user.is_authenticated %}
+        <a class="navbar-brand" href="{% url 'web_apps' %}"><img src="{% static 'images/OIC_Logo_Small.jpg' %}" alt="OIC Logo" width="200" height="71"></a>
+        {% else %}
+        <a class="navbar-brand" href="{% url 'home' %}"><img src="{% static 'images/OIC_Logo_Small.jpg' %}" alt="OIC Logo" width="200" height="71"></a>
+        {% endif %}
+        <button class="navbar-toggler" data-target="#my-nav" data-toggle="collapse" aria-controls="my-nav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div id="my-nav" class="collapse navbar-collapse">
+            <ul class="navbar-nav mr-auto">
+                {% if not user.is_authenticated %}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Programs</a>
+                    <div class="dropdown-menu" aria-labelledby="navbarDropdown" style="background-color:chartreuse">
+                        <a class="dropdown-item" href="{% url 'info-open-hockey' %}">Open Hockey</a>
+                        <a class="dropdown-item" href="{% url 'info-stick-and-puck' %}">Stick and Puck</a>
+                    </div>
+                </li>
+                {% else %}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Web Apps</a>
+                    <div class="dropdown-menu" aria-labelledby="navbarDropdown" style="background-color:chartreuse">
+                        <a class="dropdown-item" href="{% url 'open_hockey:open-hockey' %}">Open Hockey</a>
+                        <a class="dropdown-item" href="{% url 'stickandpuck:stick-and-puck' %}">Stick and Puck</a>
+                    </div>
+                </li>
+                {% endif %}
+            </ul>
+            <div class="d-flex justify-content-end">
+            <ul class="navbar-nav mr-auto">
+                {% if user.is_authenticated %}
+                {% if appname != 'open_hockey' and appname != 'stickandpuck' %}
+                <li class="nav-item">
+                    <a class="nav-link disabled" href="#" style="color: chartreuse">{{ user.username }}</a>
+                </li>
+                {% else %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userNavbarDropdown" 
+                            role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="color: chartreuse;">
+                        {{ user.username }}</a>
+                    <div class="dropdown-menu" aria-labelledby="userNavbarDropdown" style="background-color:chartreuse">
+                        {% if appname == 'open_hockey' %}
+                        <a class="dropdown-item" href="{% url 'open_hockey:skater-sessions' %}">My Sessions</a>
+                        <a class="dropdown-item" href="{% url 'open_hockey:member-detail' member=user.username %}">Membership</a>
+                        {% endif %}
+                        {% if appname == 'stickandpuck' %}
+                        <a class="dropdown-item" href="{% url 'stickandpuck:mysessions' %}">My Sessions</a>
+                        <a class="dropdown-item" href="{% url 'stickandpuck:skater-list' %}">My Skaters</a>
+                        {% endif %}
+                    </div>
+                    </li>
+                {% endif %}{# appname != 'open_hockey' #}
+                    {% if user.is_superuser %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin">Admin</a>
+                    </li>
+                {% endif %}{# user.is_authenticated #}
+                    {% if user.is_staff %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="staffNavbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Staff</a>
+                        <div class="dropdown-menu" aria-labelledby="staffNavbarDropdown" style="background-color:chartreuse">
+                            <a class="dropdown-item" href="{% url 'open_hockey:open-hockey-print' %}">Print Open Hockey</a>
+                            <a class="dropdown-item" href="{% url 'open_hockey:member-list' %}">Open Hockey Members</a>
+                            <a class="dropdown-item" href="{% url 'stickandpuck:print-list' %}">Print Stick and Puck</a>
+                        </div>
+                    </li>
+                    {% endif %}
+                    <li class="nav-item">
+                        <a class="nav-link"href="{% url 'accounts:logout' %}">Logout</a>
+                    </li>
+                {% else %}
+                <li class="nav-item">
+                        <a class="nav-link" href="{% url 'accounts:signup' %}">Sign Up</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'accounts:login' %}">Log In</a>
+                    </li>
+                {% endif %}
+            </ul>
+            </div>
+        </div>
+        </div>
+    </nav>
+    <div class="container" style="padding-top: 110px;">
+        <div class="row">
+            <div class="col-md-10">
+                <div class="container rounded content">
+                    {% block content %}{% endblock content %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% block footer %}
+    <div class="container footer">
+        <p></p>
+        <p>Created by Brian Christensen for the Ozaukee Ice Center</p>
+    </div>
+    {% endblock footer %}
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+</body>
+</html>

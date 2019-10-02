@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+{% block title %}<title>Open Hockey Sessions Success</title>{% endblock title %}
+{% block content %}
+    <h4>Open Hockey Sessions Success</h4>
+    <p>You successfully signed up for that session of open hockey!</p>
+    <p><a href="{% url 'open_hockey:open-hockey' %}">Sign up for another session</a></p>
+{% endblock content %}

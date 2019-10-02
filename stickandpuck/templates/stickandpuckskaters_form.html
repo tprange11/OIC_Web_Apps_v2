@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block title %}<title>Stick and Puck --> Add Skater</title>{% endblock title %}
+{% block content %}
+    <form method="POST" action="{% url 'stickandpuck:skater-add' %}">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <p><input type="submit" value="Save Skater" class="btn btn-success btn-sm"></p>
+    </form>
+{% endblock content %}

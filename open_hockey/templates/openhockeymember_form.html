@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block title %}<title>Add or Update Open Hockey Member</title>{% endblock title %}
+{% block content %}
+    <h4>Add/Update Open Hockey Member</h4>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="submit" value="Save" class="btn btn-success btn-sm"> &nbsp;&nbsp; <a href="{% url 'open_hockey:member-list' %}" class="btn btn-danger btn-sm">Cancel</a>
+    </form>
+{% endblock content %}

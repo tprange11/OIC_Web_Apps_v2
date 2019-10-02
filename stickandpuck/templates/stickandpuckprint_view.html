@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}<title>Stick and Puck Liability Waiver</title>{% endblock title %}
+{% block content %}
+<table class="open-hockey-list">
+    <tr>
+        <td><img src="{% static 'images/OIC_Logo_Small.jpg' %}" alt="OIC Logo" width="200" height="71"></td>
+        <td colspan="2" style="padding-left: 350px;">Date: {{ date }}<br>Time: {{ time }}<br>User: Stick and Puck<br>Employee: {{ user.first_name }} {{ user.last_name }}</td>
+    </tr>
+    <tr>
+        <td colspan="3">&nbsp;</td>
+    </tr>
+    <tr>
+        <td colspan="3"><b>Release of Liability</b><br>
+                I understand that there are certain dangers inherent in playing hockey and/or ice-skating, which include but are not limited to injuries from
+                contact with other players/skaters, sideboards, goal standards, the ice, the puck, and equipment. In consideration of being allowed to participate
+                and use the facilities of the Ozaukee Ice Center, I, individually and for all others who may make a claim based on injury to me, accept
+                and assume the risk of all personal injury and property damage and fully release, discharge, hold harmless and agree to indemnify the Ozaukee
+                Youth Hockey Assn, Inc., and all of their employees and agents from any liability, claims, loss or damage to me for any personal injury
+                and damage to property which may occur while I am at the Ozaukee Ice Center. I understand that the purpose and intent of this RELEASE is
+                to prevent me, and others who may claim through me, from recovering money from the Ozaukee Ice Association, Inc. and their employees for 
+                any personal injury and property damage I suffer while playing hockey, skating or participating in activities at the
+                Ozaukee Ice Center.</td>
+    </tr>
+    <tr>
+        <td colspan="3">&nbsp;</td>
+    </tr>
+    <tr>
+        <th>Name</th>
+        <th>Signature</th>
+        <th>Paid?</th>
+    </tr>
+{% for skater in object_list %}
+    <tr class="signature-row">
+        <td>{{ forloop.counter }}. {{ skater.skater }}</td>
+        <td>_______________________________________________&nbsp;&nbsp;&nbsp;</td>
+        <td>
+            
+            {% if skater.paid %}
+                Yes
+            {% else %}
+            _____
+            {% endif %}
+                 </td>
+    </tr>
+{% endfor %}
+</table>
+{% block footer %}{% endblock footer %}
+{% endblock content %}

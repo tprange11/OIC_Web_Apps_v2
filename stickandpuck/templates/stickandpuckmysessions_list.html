@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}<title>My Stick and Puck Sessions List</title>{% endblock title %}
+{% block content %}
+<h4>My Stick and Puck Sessions List</h4>
+{% for message in messages %}
+<p class="error">{{ message }}</p>
+{% empty %}
+{% endfor %}
+{% if object_list %}
+    <p>You currenly have the following skaters signed up for the corresponding session(s).</p>
+{% endif %}
+<ul>
+{% for session in object_list %}
+    <li style="line-height: 3;">{{ session.session_date }} @ {{ session.session_time }}, Skater: {{ session.skater}}
+        <a href="{% url 'stickandpuck:delete-session' pk=session.pk %}" class="btn btn-warning btn-sm">Remove Skater from Session</a></li>
+{% empty %}
+    <li style="font-weight: bold;">You do not have any skaters signed up for stick and puck sessions.</li>
+{% endfor %}
+</ul>
+{% endblock content %}

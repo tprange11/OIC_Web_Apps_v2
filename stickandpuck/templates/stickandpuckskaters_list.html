@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}<title>Stick and Puck Skater List</title>{% endblock title %}
+{% block content %}
+    <h4>My Stick and Puck Skater List</h4>
+    {% for message in messages %}
+    <p class="error">{{ message }}</p>
+    {% empty %}
+    {% endfor %}
+{% for skater in object_list %}
+<p>Skater Name: {{ skater.first_name }} {{ skater.last_name }} <a href="{% url 'stickandpuck:skater-delete' pk=skater.pk %}" class="btn btn-warning btn-sm">Remove Skater</a></p>
+{% empty %}
+<p style="font-weight: bold;">You do not have any skaters signed up.</p>
+{% endfor %}
+<p><a href="{% url 'stickandpuck:skater-add' %}" class="btn btn-success btn-sm">Add a Skater</a></p>
+{% endblock content %}

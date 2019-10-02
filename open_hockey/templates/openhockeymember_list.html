@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}<title>Open Hockey Member List</title>{% endblock title %}
+{% block content %}
+    <h4>Open Hockey Member List</h4>
+{% if user.is_authenticated and user.is_staff %}
+<p><a href="{% url 'open_hockey:member-add' %}" class="btn btn-success btn-sm">Add Member</a></p>
+{% for member in object_list %}
+{% with member as user %}
+<p>Member Name: {{ member.member.first_name }} {{ member.member.last_name }} <a href="{% url 'open_hockey:member-update' pk=member.pk %}" class="btn btn-warning btn-sm">Update</a></p>
+<ul>
+    <li>Status: {% if member.active %} <b>Active</b> {% else %} <b style="color:red;">Not Active</b> {% endif %}</li>
+    <li>End Date: <b>{{ member.end_date }}</b></li>
+</ul>
+{% endwith %}
+{% empty %}
+<p>There are no open hockey members.</p>
+{% endfor %}
+{% else %}
+<p>You are not authorized to view this information!</p>
+{% endif %}
+{% endblock content %}

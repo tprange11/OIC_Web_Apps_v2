@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block title %}<title>Confirm Remove Open Hockey Session</title>{% endblock title %}
+{% block content %}
+    <h5>To remove yourself from this open hockey session, press the Remove button below.</h5>
+    <p></p>
+    <form method="POST">{% csrf_token %}
+        <input type="submit" value="Remove" class="btn btn-sm btn-danger"> &nbsp;&nbsp; <a href="{% url 'open_hockey:skater-sessions' %}" class="btn btn-success btn-sm">Cancel</a>
+    </form>
+{% endblock content %}

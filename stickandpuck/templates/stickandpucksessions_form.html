@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block title %}<title>Stick and Puck Session Signup</title>{% endblock title %}
+{% block content %}
+<h4>Stick and Puck Session Signup</h4>
+<p>Please select the skater(s) you would like to sign up for this session.</p>
+    <form method="POST" action="{% url 'stickandpuck:signup' %}">
+        {% csrf_token %}
+        <select name="skater" id="skater">
+        {% for skater in skaters %}
+        <option value="{{ skater.first_name }} {{ skater.last_name }}">{{ skater.first_name }} {{ skater.last_name }}</option>
+        {% empty %}
+        <p class="error">You must add skaters first!</p>
+        {% endfor %}
+        </select><p></p>
+        <p>{{ form.session_date }}</p>
+        <p>{{ form.session_time }}</p>
+        <input type="submit" value="Sign Up" class="btn btn-success btn-sm">
+    </form>
+{% endblock content %}

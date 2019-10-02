@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}<title>Open Hockey Sessions for {{ user.username }}</title>{% endblock title %}
+{% block content %}
+    <h4>Open Hockey Sessions for {{ user.username }}</h4>
+    {% if messages %}
+        {% for message in messages %}
+        <p class="error">{{ message }}</p>
+        {% endfor %}
+    {% else %}
+    <p>You are signed up for the following sessions of open hockey.</p>
+    {% endif %}
+    <ul>
+        {% for session in sessions %}
+        <li style="line-height: 3;">{{ session.date }} <a href="{% url 'open_hockey:delete-skater-session' pk=session.pk %}" 
+            class="btn btn-warning btn-sm">Remove me from this session</a></li>
+        {% empty %}
+        <li>No sessions found!</li>
+        {% endfor %}
+    </ul>
+{% endblock content %}

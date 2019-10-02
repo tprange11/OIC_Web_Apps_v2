@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block title %}<title>Upcoming Open Hockey Sessions</title>{% endblock title %}
+{% block content %}
+    <h4>Upcoming Open Hockey Sessions</h4>
+    <p>Choose a date below to sign up for that session of open hockey.</p>
+    <p><b>The current weeks sessions will be posted every Monday.</b></p>
+    <ul>
+        {% for date, g_spots, s_spots in data %}
+        {% if g_spots == 0 and s_spots == 0 %}
+        <li>{{ date }} - <b>SORRY, THIS SESSION IS FULL!</b></li>
+        {% else %}
+        <li style="line-height: 3;"><a href="{% url 'open_hockey:open-hockey-signup' date=date %}" class="btn btn-warning btn-sm">{{ date }}</a>
+             - Skater Spots Available: <b>{{ s_spots }}</b>, Goalie Spots Available: <b>{{ g_spots }}</b></li>
+        {% endif %}
+        {% empty %}
+        <li>No Open Hockey Sessions found!</li>
+        {% endfor %}
+    </ul>
+{% endblock content %}

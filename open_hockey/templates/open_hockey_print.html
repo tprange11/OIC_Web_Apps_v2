@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}<title>Print Open Hockey Sessions</title>{% endblock title %}
+{% block content %}
+    <h4>Upcoming Open Hockey Sessions</h4>
+    <p>Choose a date below to print the Release of Liability for that session of open hockey.</p>
+    <ul>
+        {% for date in dates %}
+        <li style="line-height: 3;"><a href="{% url 'open_hockey:open-hockey-list' date=date %}" class="btn btn-warning btn-sm">{{ date }}</a></li>
+        {% empty %}
+        <li>There are no open hockey sessions available to print.</li>
+        {% endfor %}
+    </ul>
+{% endblock content %}

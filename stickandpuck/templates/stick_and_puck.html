@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block content %}
+{% block title %}<title>Stick and Puck</title>{% endblock title %}
+<h4>Stick and Puck</h4>
+<ul>
+    <li style="line-height: 50px;"><a href="{% url 'stickandpuck:skater-add' %}" class="btn btn-warning btn-sm">Add a Skater</a></li>
+    <li style="line-height: 50px;"><a href="{% url 'stickandpuck:sessions' %}" class="btn btn-warning btn-sm">Sign up for Stick and Puck Sessions</a></li>
+    <li style="line-height: 50px;"><a href="{% url 'stickandpuck:skater-list' %}" class="btn btn-warning btn-sm">My Skaters</a></li>
+    <li style="line-height: 50px;"><a href="{% url 'stickandpuck:mysessions' %}" class="btn btn-warning btn-sm">My Sessions</a></li>
+</ul>
+{% endblock content %}

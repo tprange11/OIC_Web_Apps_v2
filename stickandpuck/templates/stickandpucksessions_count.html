@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+{% block title %}<title>Stick and Puck Skater Spots</title>{% endblock title %}
+{% block content %}
+<h4>Stick and Puck Available Skater Spots</h4>
+<p>There are currently <b>{{ skater_spots }} skater spots available</b> in this session.</p>
+<p><a href="{% url 'stickandpuck:sessions' %}" class="btn btn-warning btn-sm">Go Back and Signup</a></p>
+{% endblock content %}
