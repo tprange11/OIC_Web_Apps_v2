@@ -60,7 +60,7 @@ class StickAndPuckSessionsListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         queryset = super().get_queryset()
         # Filter queryset by sessions greater than yesteday and order by session_date and primary key('pk')
-        return queryset.filter(session_date__gte=date.today() - timedelta(days=1)).order_by('session_date', 'pk')
+        return queryset.filter(session_date__gte=date.today()).order_by('session_date', 'pk')
 
 
 class StickAndPuckSessionsCount(LoginRequiredMixin, TemplateView):

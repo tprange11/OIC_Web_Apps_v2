@@ -44,7 +44,7 @@ def scrape_oic_schedule(date):
     browser["ctl00$ContentPlaceHolder1$txtThroughDate$dateInput"] = xx_xx_xxxx
     browser["ctl00_ContentPlaceHolder1_txtThroughDate_calendar_AD"] = '[[1980,1,1],[2099,12,30],['+xxxx_xx_xx+']]'
     browser["ctl00_ContentPlaceHolder1_txtThroughDate_calendar_SD"] = '[['+xxxx_xx_xx+']]'
-    browser["ctl00_ContentPlaceHolder1_cboFacility_ClientState"] = '{"logEntries":[],"value":"","text":"All items checked","enabled":true,"checkedIndices":[0,1],"checkedItemsTextOverflows":false}'
+    browser["ctl00_ContentPlaceHolder1_cboFacility_ClientState"] = '{"logEntries":[],"value":"","text":"All items checked","enabled":true,"checkedIndices":[0,1,2,3,4,5,6,7],"checkedItemsTextOverflows":false}'
     browser["ctl00$ContentPlaceHolder1$cboFacility"] = 'All items checked'
 
     response = browser.submit_selected()
@@ -76,7 +76,10 @@ def scrape_oic_schedule(date):
     # Add Stick and Puck age range to Stick and Puck dates list if there is one
     if len(stick_and_puck_notes) != 0:
         for x in range(len(stick_and_puck)):
-            stick_and_puck[x].append(stick_and_puck_notes[x].strip("Schedule Notes: "))
+            if "14 and Under" in stick_and_puck[x] and "14 and Over" in stick_and_puck[x]:
+                stick_and_puck[x].append(stick_and_puck_notes[x].strip("Schedule Notes: "))
+            else:
+                stick_and_puck[x].append("")
     else:
         for x in range(len(stick_and_puck)):
             stick_and_puck[x].append("All Ages")
