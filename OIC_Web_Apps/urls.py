@@ -28,4 +28,5 @@ urlpatterns = [
     path('web_apps/', views.WebAppsPage.as_view(), name='web_apps'),
     path('web_apps/open_hockey/', include('open_hockey.urls')),
     path('web_apps/stick_and_puck/', include('stickandpuck.urls')),
+    path('web_apps/schedule/', include('schedule.urls')),
 ]

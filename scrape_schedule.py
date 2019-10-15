@@ -1,0 +1,130 @@
+from bs4 import BeautifulSoup
+import mechanicalsoup
+from datetime import date, timedelta, datetime
+import os
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'OIC_Web_Apps.settings')
+
+import django
+django.setup()
+
+from django.db import IntegrityError
+from schedule.models import RinkSchedule
+
+oic_schedule = []  # list that will hold the day's events
+schedule_notes = [] # list that will hold notes if any
+
+def scrape_oic_schedule(date):
+    '''Scrapes Ozaukee Ice Center schedule website the days events.'''
+    xx_xx_xxxx = f"{date[5:7]}/{date[8:]}/{date[0:4]}"
+    xxxx_xx_xx = f"{date[0:4]},{date[5:7]},{date[8:]}"
+    today_with_time = date + "-00-00-00"
+
+    # Used for testing purposes
+    # print(xx_xx_xxxx)
+    # print(xxxx_xx_xx)
+    # print(today_with_time)
+
+    browser = mechanicalsoup.StatefulBrowser()
+
+    browser.open("https://ozaukeeicecenter.maxgalaxy.net/ScheduleList.aspx?ID=2")
+
+    browser.get_current_page()
+    # print(page)
+    browser.select_form('form[action="./ScheduleList.aspx?ID=2"]')
+    # browser.get_current_form().print_summary()
+
+    browser["ctl00_ContentPlaceHolder1_txtFromDate_dateInput_ClientState"] = '{"enabled":true,"emptyMessage":"","validationText":"'+today_with_time+'","valueAsString":"'+today_with_time+'","minDateStr":"1980-01-01-00-00-00","maxDateStr":"2099-12-31-00-00-00","lastSetTextBoxValue":"'+xx_xx_xxxx+'"}'
+    browser["ctl00_ContentPlaceHolder1_txtThroughDate_dateInput_ClientState"] = '{"enabled":true,"emptyMessage":"","validationText":"'+today_with_time+'","valueAsString":"'+today_with_time+'","minDateStr":"1980-01-01-00-00-00","maxDateStr":"2099-12-31-00-00-00","lastSetTextBoxValue":"'+xx_xx_xxxx+'"}'
+    browser["ctl00_ContentPlaceHolder1_cboSortBy_ClientState"] = '{"logEntries":[],"value":"2","text":"Start Time","enabled":true,"checkedIndices":[],"checkedItemsTextOverflows":false}'
+    browser["ctl00$ContentPlaceHolder1$txtFromDate"] = date
+    browser["ctl00$ContentPlaceHolder1$txtFromDate$dateInput"] = xx_xx_xxxx
+    browser["ctl00_ContentPlaceHolder1_txtFromDate_calendar_AD"] = '[[1980,1,1],[2099,12,30],['+xxxx_xx_xx+']]'
+    browser["ctl00_ContentPlaceHolder1_txtFromDate_calendar_SD"] = '[['+xxxx_xx_xx+']]'
+    browser["ctl00$ContentPlaceHolder1$txtThroughDate"] = date
+    browser["ctl00$ContentPlaceHolder1$txtThroughDate$dateInput"] = xx_xx_xxxx
+    browser["ctl00_ContentPlaceHolder1_txtThroughDate_calendar_AD"] = '[[1980,1,1],[2099,12,30],['+xxxx_xx_xx+']]'
+    browser["ctl00_ContentPlaceHolder1_txtThroughDate_calendar_SD"] = '[['+xxxx_xx_xx+']]'
+    browser["ctl00_ContentPlaceHolder1_cboFacility_ClientState"] = '{"logEntries":[],"value":"","text":"All items checked","enabled":true,"checkedIndices":[0,1,2,3,4,5,6,7],"checkedItemsTextOverflows":false}'
+    browser["ctl00$ContentPlaceHolder1$cboFacility"] = 'All items checked'
+
+    response = browser.submit_selected()
+    # print(response.text)
+    browser.close()
+
+    soup = BeautifulSoup(response.text, 'html.parser')
+    try:
+        rows = soup.find(class_="clear listTable").find_all('tr')
+    except AttributeError:
+        return
+    
+    # print(rows)
+
+    # Get the days events
+    for row in rows:
+        cols = row.find_all('td')
+        if (cols[0].get_text().strip() == "Start Time"):
+            continue
+        else:
+            if len(cols) > 2:
+                oic_schedule.append([date, cols[0].get_text().strip(), cols[1].get_text().strip(), cols[3].get_text().strip(), cols[4].get_text().strip()])
+                schedule_notes.append("")
+            # elif len(cols) == 2:
+                # schedule_notes[x-1] = cols[1].get_text().strip()
+        # print(schedule_notes)
+                
+        # print(cols)
+
+    # Replace some long strings in oic_schedule[]
+    for item in oic_schedule:
+        if "Ozaukee Youth Hockey Association" in item[4]:
+            item[4] = "OYHA"
+        elif "Ozaukee County Hockey League" in item[4]:
+            if "Novice" in item[4]:
+                item[4] = "OCHL Novice"
+            elif "Intermediate" in item[4]:
+                item[4] = "OCHL Intermediate"
+            elif "Competitive" in item[4]:
+                item[4] = "OCHL Competitive"
+        elif "Wisconsin Elite Hockey League" in item[4]:
+            item[4] = "WEHL"
+
+
+    # print(len(oic_schedule))
+    # print(len(schedule_notes))
+
+    # Add Notes to oic_schedule
+    if len(schedule_notes) != 0:
+        for x in range(len(oic_schedule)):
+            if len(oic_schedule[x]) > 0:
+                oic_schedule[x].append(schedule_notes[x].strip("Schedule Notes: "))
+            else:
+                oic_schedule[x].append(schedule_notes[x])
+
+    # for item in oic_schedule:
+    #     print(item)
+
+def add_schedule_to_model(schedule):
+    '''Adds OIC daily schedule to RinkSchedule model.'''
+    model = RinkSchedule
+
+    # First, clear yesterday's schedule from the model
+    RinkSchedule.objects.all().delete()
+
+    for item in schedule:
+        try:
+            data = model(schedule_date=item[0], start_time=datetime.strptime(item[1], '%I:%M %p'), end_time=datetime.strptime(item[2], '%I:%M %p'), rink=item[3], event=item[4], notes=item[5])
+            data.save()
+        except IntegrityError:
+            continue
+    return
+
+
+if __name__ == "__main__":
+    
+    the_date = date.today()
+    # the_date = "2019-10-26"
+
+    scrape_date = date.isoformat(the_date)
+    scrape_oic_schedule(scrape_date)
+    # scrape_oic_schedule(the_date)
+    add_schedule_to_model(oic_schedule)

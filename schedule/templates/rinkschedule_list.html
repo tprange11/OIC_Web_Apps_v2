@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}<title>Rink Schedule</title>{% endblock title %}
+{% block content %}
+    
+    {% if rink == 'north' %}
+    <h4>North Rink</h4>
+    {% elif rink == 'south' %}
+        <h4>South Rink</h4>
+    {% else %}
+    <h4>North and South</h4>
+    {% endif %}
+    <p class="resurface-timer">Next Resurface in: <span id="resurface-timer"></span></p>
+    <table class="schedule">
+        <tr class="schedule-row">
+            {% if rink == 'both' %}<th>Rink</th>{% endif %}<th>Start</th><th><b>End</b></th><th>Event</th>
+        </tr>
+        {% for object in object_list %}
+        <tr class="schedule-row">
+            {% if rink == 'both' %}<td class="schedule-cell rink">{{ object.rink }}</td>{% endif %}<td class="schedule-cell">{{ object.start_time }}</td><td class="schedule-cell"><b>{{ object.end_time }}</b></td>
+            <td class="schedule-cell">{{ object.event }}{% if object.notes %}<br /><div class="schedule-notes">{{ object.notes }}</div>{% endif %}</td>
+        </tr>
+        {% empty %}
+        {% if rink == 'both' %}<td></td>{% endif %}<td><p>Nothing on Schedule!</p></td>
+        {% endfor %}
+    </table><br />
+    <div class="container">
+    {% if rink == 'north' %}
+    <a href="{% url 'schedule:rink-schedule-list' rink='south' %}" class="btn btn-warning btn-sm">Go To South Rink</a>&nbsp;&nbsp;
+    <a href=" {% url 'schedule:rink-schedule-list' rink='both' %}" class="btn btn-warning btn-sm">North and South</a>
+    {% elif rink == 'south' %}
+    <a href="{% url 'schedule:rink-schedule-list' rink='north' %}" class="btn btn-warning btn-sm">Go To North Rink</a>&nbsp;&nbsp;
+    <a href=" {% url 'schedule:rink-schedule-list' rink='both' %}" class="btn btn-warning btn-sm">North and South</a>
+    {% else %}
+    <a href="{% url 'schedule:rink-schedule-list' rink='north' %}" class="btn btn-warning btn-sm">North Only</a>&nbsp;&nbsp;
+    <a href="{% url 'schedule:rink-schedule-list' rink='south' %}" class="btn btn-warning btn-sm">South Only</a>
+    {% endif %}
+    </div>
+    {% for time in resurface_times %}<span id="resurface-time{{ forloop.counter }}" style="visibility: hidden;">{{ time }}</span>
+    {% endfor %}
+    <script src="{% static 'js/schedule.js' %}"></script>
+{% endblock content %}

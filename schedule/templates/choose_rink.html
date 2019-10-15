@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block content %}
+{% block title %}<title>Choose Rink Schedule</title>{% endblock title %}
+<h4>Choose Rink to View Schedule</h4>
+<ul>
+    <li style="line-height: 3;"><a href=" {% url 'schedule:rink-schedule-list' rink='north' %}" class="btn btn-warning btn-sm">North Only</a></li>
+    <li style="line-height: 3;"><a href=" {% url 'schedule:rink-schedule-list' rink='south' %}" class="btn btn-warning btn-sm">South Only</a></li>
+    <li style="line-height: 3;"><a href=" {% url 'schedule:rink-schedule-list' rink='both' %}" class="btn btn-warning btn-sm">North and South</a></li>
+</ul>
+{% endblock content %}
