@@ -58,17 +58,13 @@ def scrape_oic_schedule(date):
         return
 
     for row in rows:
-        # cols = row.find_all(attrs={"class": "tableColumn borderRight"})
         cols = row.find_all('td')
-        # if cols[5].get_text().strip() == "Stick and Puck":
+
         if len(cols) > 2:
             if cols[4].get_text().strip() == "Stick and Puck":
                 stick_and_puck.append([date, cols[0].get_text().strip(), cols[1].get_text().strip()])
         if len(cols) == 2:
             stick_and_puck_notes.append(cols[1].get_text().strip())
-        # elif len(cols) > 2:
-        #     stick_and_puck_notes.append("Schedule Notes: All Ages")
-        # print(cols)
 
     # print(stick_and_puck)
     # print(stick_and_puck_notes)
@@ -79,12 +75,12 @@ def scrape_oic_schedule(date):
             if "14 and Under" in stick_and_puck[x] and "14 and Over" in stick_and_puck[x]:
                 stick_and_puck[x].append(stick_and_puck_notes[x].strip("Schedule Notes: "))
             else:
-                stick_and_puck[x].append("")
+                stick_and_puck[x].append("All Ages")
     else:
         for x in range(len(stick_and_puck)):
             stick_and_puck[x].append("All Ages")
 
-    print(stick_and_puck)
+    # print(stick_and_puck)
 
 def add_stick_and_puck_dates(sessions):
     '''Adds stick and puck dates, times and session notes to StickAndPuckDates model.'''
