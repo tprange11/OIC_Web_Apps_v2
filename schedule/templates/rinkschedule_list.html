@@ -2,7 +2,6 @@
 {% load static %}
 {% block title %}<title>Rink Schedule</title>{% endblock title %}
 {% block content %}
-    
     {% if rink == 'north' %}
     <h4>North Rink</h4>
     {% elif rink == 'south' %}
@@ -21,7 +20,7 @@
             <td class="schedule-cell">{{ object.event }}{% if object.notes %}<br /><div class="schedule-notes">{{ object.notes }}</div>{% endif %}</td>
         </tr>
         {% empty %}
-        {% if rink == 'both' %}<td></td>{% endif %}<td><p>Nothing on Schedule!</p></td>
+        <tr>{% if rink == 'both' %}<td></td>{% endif %}<td colspan="3"><p>Nothing on Schedule!</p></td></tr>
         {% endfor %}
     </table><br />
     <div class="container">
