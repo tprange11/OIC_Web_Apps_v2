@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup
 import mechanicalsoup
-from datetime import date, timedelta, datetime
-import os
+from datetime import date, datetime
+import os, requests
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'OIC_Web_Apps.settings')
 
 import django
@@ -10,8 +10,12 @@ django.setup()
 from django.db import IntegrityError
 from schedule.models import RinkSchedule
 
+months = {"1": "January", "2": "February", "3": "March", "4": "April", "5": "May", 
+            "6": "June", "7": "July", "8": "August", "9": "September", "10": "October", "11": "November", "12": "December"}
+
 oic_schedule = []  # list that will hold the day's events
 schedule_notes = [] # list that will hold notes if any
+team_events = [] # list that will hold OYHA, OCHL and OWHL teams to merge with oic_schedule[]
 
 def scrape_oic_schedule(date):
     '''Scrapes Ozaukee Ice Center schedule website the days events.'''
@@ -87,10 +91,9 @@ def scrape_oic_schedule(date):
                 item[4] = "OCHL Competitive"
         elif "Wisconsin Elite Hockey League" in item[4]:
             item[4] = "WEHL"
+        elif "Ozaukee Women's Hockey League" in item[4]:
+            item[4] = "OWHL"
 
-
-    # print(len(oic_schedule))
-    # print(len(schedule_notes))
 
     # Add Notes to oic_schedule
     if len(schedule_notes) != 0:
@@ -100,8 +103,6 @@ def scrape_oic_schedule(date):
             else:
                 oic_schedule[x].append(schedule_notes[x])
 
-    # for item in oic_schedule:
-    #     print(item)
 
 def add_schedule_to_model(schedule):
     '''Adds OIC daily schedule to RinkSchedule model.'''
@@ -119,6 +120,90 @@ def add_schedule_to_model(schedule):
     return
 
 
+def scrape_owhl_teams(the_date):
+    '''Scrapes OIC Rink League Schedule website for OWHL teams.'''
+
+    today_split = the_date.split("-")
+    today_string = f"{months[today_split[1]]} {today_split[2]}, {today_split[0]}"
+
+    url = "https://ozaukeeicecenter.maxgalaxy.net/LeagueScheduleList.aspx?ID=4"
+    response = requests.get(url)
+
+    # Request the web page
+    soup = BeautifulSoup(response.text, "html.parser")
+    # Get all div's with class = "activityGroupName"
+    dates = soup.find_all(class_="activityGroupName")
+
+    # Loop through and find today's date then find the next table with the days events
+    for date in dates:
+        if today_string in date.get_text():
+            table = date.find_next("table")
+
+    # Get all rows from the table
+    rows = table.find_all("tr")
+
+    # Collect pertinent data from the rows
+    for row in rows:
+        cols = row.find_all("td")
+        # If it's the header row, skip the row
+        if cols[0].get_text().strip() == "Start Time":
+            continue
+        else:
+            team_events.append([cols[0].get_text().strip(), cols[6].get_text().strip(), cols[4].get_text().strip(), cols[3].get_text().strip()])
+
+def scrape_ochl_teams():
+    '''Scrapes OCHL Schedule website for teams.'''
+
+    url = "https://www.ozaukeeicecenter.org/schedule/day/league_instance/102447?subseason=633604"
+    response = requests.get(url)
+
+    soup = BeautifulSoup(response.text, "html.parser")
+    # Get game schedule table
+    table = soup.find(class_="statTable")
+    # Get table body which contains game or practice rows
+    tbody = table.find_next("tbody")
+
+    # Get the rows
+    rows = tbody.find_all("tr")
+
+    # Get the data from the pertinent table cells: home, visitor, rink, start time
+    for row in rows:
+        cols = row.find_all("td")
+        team_events.append([cols[5].find("span").get_text().strip(" CDT"), cols[2].find("a").get_text(), cols[0].find("a").get_text(), cols[4].find("div").get_text().strip()])
+
+
+def scrape_oyha_teams(the_date):
+    '''Scrapes OIC Rink League Schedule website for OYHA and Opponent teams.'''
+
+    today_split = the_date.split("-")
+    today_string = f"{months[today_split[1]]} {today_split[2]}, {today_split[0]}"
+
+    url = "https://ozaukeeicecenter.maxgalaxy.net/LeagueScheduleList.aspx?ID=13"
+    response = requests.get(url)
+
+    # Request the web page
+    soup = BeautifulSoup(response.text, "html.parser")
+    # Get all div's with class = "activityGroupName"
+    dates = soup.find_all(class_="activityGroupName")
+
+    # Loop through and find today's date then find the next table with the days events
+    for date in dates:
+        if today_string in date.get_text():
+            table = date.find_next("table")
+
+    # Get all rows from the table
+    rows = table.find_all("tr")
+
+    # Collect pertinent data from the rows
+    for row in rows:
+        cols = row.find_all("td")
+        # If it's the header row skip it
+        if cols[0].get_text().strip() == "Start Time":
+            continue
+        else:
+            team_events.append([cols[0].get_text().strip(), cols[6].get_text().strip(), cols[4].get_text().strip(), cols[3].get_text().strip()])
+
+
 if __name__ == "__main__":
     
     the_date = date.today()
@@ -126,5 +211,20 @@ if __name__ == "__main__":
 
     scrape_date = date.isoformat(the_date)
     scrape_oic_schedule(scrape_date)
-    # scrape_oic_schedule(the_date)
+    # Scrape OYHA teams daily
+    scrape_oyha_teams(scrape_date)
+    # If it is Friday, scrape OWHL teams
+    if date.weekday(date.today()) == 4:
+        scrape_owhl_teams(scrape_date)
+    # If it is Sunday, scrape OCHL teams
+    if date.weekday(date.today()) == 6:
+        scrape_ochl_teams(scrape_date)
+
+    if len(team_events) != 0:
+        for item in team_events:
+            for oic in oic_schedule:
+                if item[0] == oic[1] and item[3] == oic[3]:
+                    oic[4] = f"{item[1]} vs {item[2]}"
+
+    # Insert data into Django model
     add_schedule_to_model(oic_schedule)

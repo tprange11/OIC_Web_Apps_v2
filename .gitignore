@@ -4,6 +4,7 @@
 .vscode/
 sent_emails/
 OIC_Web_Apps/settings.py
+scrape_schedule_bkup.py
 ##############################
 
 # Django stuff:
