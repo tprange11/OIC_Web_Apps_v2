@@ -3,7 +3,7 @@ var rinks = document.querySelectorAll(".rink");
 rinks.forEach(element => {
     if (element.innerText == "South Rink") {
         element.style.color = "blue";
-    } else if (element.innerText == "North Rink") {
+    } else if (element.innerHTML.indexOf("North") !== -1) {
         element.style.color = "red";
     }
 });
