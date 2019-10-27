@@ -218,8 +218,7 @@ if __name__ == "__main__":
         scrape_owhl_teams(scrape_date)
     # If it is Sunday, scrape OCHL teams
     if date.weekday(date.today()) == 6:
-        scrape_ochl_teams(scrape_date)
-
+        scrape_ochl_teams()
     if len(team_events) != 0:
         for item in team_events:
             for oic in oic_schedule:
