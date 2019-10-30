@@ -48,8 +48,8 @@ def scrape_oic_schedule(date):
     browser["ctl00$ContentPlaceHolder1$txtThroughDate$dateInput"] = xx_xx_xxxx
     browser["ctl00_ContentPlaceHolder1_txtThroughDate_calendar_AD"] = '[[1980,1,1],[2099,12,30],['+xxxx_xx_xx+']]'
     browser["ctl00_ContentPlaceHolder1_txtThroughDate_calendar_SD"] = '[['+xxxx_xx_xx+']]'
-    browser["ctl00_ContentPlaceHolder1_cboFacility_ClientState"] = '{"logEntries":[],"value":"","text":"All items checked","enabled":true,"checkedIndices":[0,1,2,3,4,5,6,7],"checkedItemsTextOverflows":false}'
-    browser["ctl00$ContentPlaceHolder1$cboFacility"] = 'All items checked'
+    browser["ctl00_ContentPlaceHolder1_cboFacility_ClientState"] = '{"logEntries":[],"value":"","text":"7 items checked","enabled":true,"checkedIndices":[1,2,3,4,5,6,7],"checkedItemsTextOverflows":true}'
+    browser["ctl00$ContentPlaceHolder1$cboFacility"] = '7 items checked'
 
     response = browser.submit_selected()
     # print(response.text)
