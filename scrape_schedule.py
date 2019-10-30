@@ -223,7 +223,10 @@ if __name__ == "__main__":
         for item in team_events:
             for oic in oic_schedule:
                 if item[0] == oic[1] and item[3] == oic[3]:
-                    oic[4] = f"{item[1]} vs {item[2]}"
+                    if item[2] == "":
+                        oic[4] = f"{item[1]}"
+                    else:
+                        oic[4] = f"{item[1]} vs {item[2]}"
 
     # Insert data into Django model
     add_schedule_to_model(oic_schedule)
