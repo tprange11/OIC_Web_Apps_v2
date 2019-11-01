@@ -124,7 +124,7 @@ def scrape_owhl_teams(the_date):
     '''Scrapes OIC Rink League Schedule website for OWHL teams.'''
 
     today_split = the_date.split("-")
-    today_string = f"{months[today_split[1]]} {today_split[2]}, {today_split[0]}"
+    today_string = f"{months[today_split[1]]} {today_split[2].lstrip('0')}, {today_split[0]}"
 
     url = "https://ozaukeeicecenter.maxgalaxy.net/LeagueScheduleList.aspx?ID=4"
     response = requests.get(url)
@@ -135,9 +135,9 @@ def scrape_owhl_teams(the_date):
     dates = soup.find_all(class_="activityGroupName")
 
     # Loop through and find today's date then find the next table with the days events
-    for date in dates:
-        if today_string in date.get_text():
-            table = date.find_next("table")
+    for each in dates:
+        if today_string in each.get_text():
+            table = each.find_next("table")
 
     # Get all rows from the table
     rows = table.find_all("tr")
@@ -169,14 +169,14 @@ def scrape_ochl_teams():
     # Get the data from the pertinent table cells: home, visitor, rink, start time
     for row in rows:
         cols = row.find_all("td")
-        team_events.append([cols[5].find("span").get_text().strip(" CDT"), cols[2].find("a").get_text(), cols[0].find("a").get_text(), cols[4].find("div").get_text().strip()])
+        team_events.append([cols[5].find("span").get_text().strip(" CST"), cols[2].find("a").get_text(), cols[0].find("a").get_text(), cols[4].find("div").get_text().strip()])
 
 
 def scrape_oyha_teams(the_date):
     '''Scrapes OIC Rink League Schedule website for OYHA and Opponent teams.'''
 
     today_split = the_date.split("-")
-    today_string = f"{months[today_split[1]]} {today_split[2]}, {today_split[0]}"
+    today_string = f"{months[today_split[1]]} {today_split[2].lstrip('0')}, {today_split[0]}"
 
     url = "https://ozaukeeicecenter.maxgalaxy.net/LeagueScheduleList.aspx?ID=13"
     response = requests.get(url)
@@ -187,9 +187,9 @@ def scrape_oyha_teams(the_date):
     dates = soup.find_all(class_="activityGroupName")
 
     # Loop through and find today's date then find the next table with the days events
-    for date in dates:
-        if today_string in date.get_text():
-            table = date.find_next("table")
+    for each in dates:
+        if today_string in each.get_text():
+            table = each.find_next("table")
 
     # Get all rows from the table
     rows = table.find_all("tr")
@@ -227,6 +227,11 @@ if __name__ == "__main__":
                         oic[4] = f"{item[1]}"
                     else:
                         oic[4] = f"{item[1]} vs {item[2]}"
+
+    # If anything ends at midnight, change to 11:59 PM
+    for item in oic_schedule:
+        if item[2] == "12:00 AM":
+            item[2] = "11:59 PM"
 
     # Insert data into Django model
     add_schedule_to_model(oic_schedule)
