@@ -9,7 +9,8 @@
     {% else %}
     <h4>North and South</h4>
     {% endif %}
-    <p class="resurface-timer">Next Resurface in: <span id="resurface-timer"></span></p>
+    <p class="resurface-timer">Next Resurface in: <span id="resurface-timer"></span>
+        {% if rink == 'both' %}<br /><span style="font-size: 8pt; color:darkgreen;">Check rink specific schedule for more accurate countdown in case of back to back events.</span>{% endif %}</p>
     <table class="schedule">
         <tr class="schedule-row">
             {% if rink == 'both' %}<th>Rink</th>{% endif %}<th>Start</th><th><b>End</b></th><th>Event</th>
@@ -25,17 +26,22 @@
     </table><br />
     <div class="container">
     {% if rink == 'north' %}
-    <a href="{% url 'schedule:rink-schedule-list' rink='south' %}" class="btn btn-warning btn-sm">Go To South Rink</a>&nbsp;&nbsp;
-    <a href=" {% url 'schedule:rink-schedule-list' rink='both' %}" class="btn btn-warning btn-sm">North and South</a>
+    <a href="{% url 'schedule:rink-schedule-list' rink='south' %}" class="btn btn-warning btn-sm schedule-button">Go To South Rink</a><br />
+    <a href=" {% url 'schedule:rink-schedule-list' rink='both' %}" class="btn btn-warning btn-sm schedule-button">North and South</a>
     {% elif rink == 'south' %}
-    <a href="{% url 'schedule:rink-schedule-list' rink='north' %}" class="btn btn-warning btn-sm">Go To North Rink</a>&nbsp;&nbsp;
-    <a href=" {% url 'schedule:rink-schedule-list' rink='both' %}" class="btn btn-warning btn-sm">North and South</a>
+    <a href="{% url 'schedule:rink-schedule-list' rink='north' %}" class="btn btn-warning btn-sm schedule-button">Go To North Rink</a><br />
+    <a href=" {% url 'schedule:rink-schedule-list' rink='both' %}" class="btn btn-warning btn-sm schedule-button">North and South</a>
     {% else %}
-    <a href="{% url 'schedule:rink-schedule-list' rink='north' %}" class="btn btn-warning btn-sm">North Only</a>&nbsp;&nbsp;
-    <a href="{% url 'schedule:rink-schedule-list' rink='south' %}" class="btn btn-warning btn-sm">South Only</a>
+    <a href="{% url 'schedule:rink-schedule-list' rink='north' %}" class="btn btn-warning btn-sm schedule-button">North Only</a><br />
+    <a href="{% url 'schedule:rink-schedule-list' rink='south' %}" class="btn btn-warning btn-sm schedule-button">South Only</a>
     {% endif %}
     </div>
-    {% for time in resurface_times %}<span id="resurface-time{{ forloop.counter }}" style="visibility: hidden;">{{ time }}</span>
-    {% endfor %}
-    <script src="{% static 'js/schedule.js' %}"></script>
+    <script type="text/javascript">
+    var resurface_times = [{% for time in resurface_times %}"{{ time }}",
+    {% endfor %}];
+    var start_times = [{% for start in start_times %}"{{ start }}",
+    {% endfor %}];
+    </script>
+    {% if rink == 'both' %}<script src="{% static 'js/schedule_both_rinks.js' %}"></script>{% else %}
+    <script src="{% static 'js/schedule.js' %}"></script>{% endif %}
 {% endblock content %}

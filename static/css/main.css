@@ -76,3 +76,8 @@ td, th{
     color: red;
     font-weight: bolder;
 }
+
+.schedule-button {
+    width: 100%;
+    margin-bottom: 10px;
+}

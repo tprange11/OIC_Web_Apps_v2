@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.views.generic import ListView, TemplateView
+from django.views.decorators.cache import never_cache
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from . import models
@@ -29,6 +30,17 @@ class RinkScheduleListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['rink'] = self.kwargs['rink'] # Send rink back to page for display purposes
+
+        # Return event start times as context
+        start_times = self.model.objects.values('start_time').filter(start_time__gte=datetime.now()).order_by('start_time')
+        if self.kwargs['rink'] == 'north':
+            start_times = start_times.filter(rink__contains='North')
+        elif self.kwargs['rink'] == 'south':
+            start_times = start_times.filter(rink__contains='South')
+        else:
+            start_times = start_times.exclude(rink__contains='Meeting/Party Room')
+
+        # Return event end times as context
         end_times = self.model.objects.values('end_time').filter(end_time__gte=datetime.now()).order_by('end_time')
         if self.kwargs['rink'] == 'north':
             end_times = end_times.filter(rink__contains='North')
@@ -37,9 +49,17 @@ class RinkScheduleListView(LoginRequiredMixin, ListView):
         else:
             end_times = end_times.exclude(rink__contains='Meeting/Party Room')
 
+        # Convert date time format for use in Javascript resurface countdown timer
+        next_start_times = []
+        for item in start_times:
+            next_start_times.append(date.isoformat(datetime.now())+" "+item['start_time'].strftime('%H:%M:%S'))
+        context['start_times'] = next_start_times
+        
+        # Convert date time format for use in Javacript resurface countdown timer
         resurface_times = []
         for item in end_times:
             resurface_times.append(date.isoformat(datetime.now())+" "+item['end_time'].strftime('%H:%M:%S'))
         context['resurface_times'] = resurface_times
+        
         return context
         
