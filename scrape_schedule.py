@@ -187,12 +187,16 @@ def scrape_oyha_teams(the_date):
     dates = soup.find_all(class_="activityGroupName")
 
     # Loop through and find today's date then find the next table with the days events
+    table = []
     for each in dates:
         if today_string in each.get_text():
             table = each.find_next("table")
 
     # Get all rows from the table
-    rows = table.find_all("tr")
+    if len(table) == 0:
+        return
+    else:
+        rows = table.find_all("tr")
 
     # Collect pertinent data from the rows
     for row in rows:
