@@ -5,6 +5,8 @@
 sent_emails/
 OIC_Web_Apps/settings.py
 scrape_schedule_bkup.py
+templates/web_apps_sw.js
+static/js/web_apps.js
 ##############################
 
 # Django stuff:

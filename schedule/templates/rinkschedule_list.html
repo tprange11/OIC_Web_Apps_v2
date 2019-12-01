@@ -27,10 +27,10 @@
     <div class="container">
     {% if rink == 'north' %}
     <a href="{% url 'schedule:rink-schedule-list' rink='south' %}" class="btn btn-warning btn-sm schedule-button">Go To South Rink</a><br />
-    <a href=" {% url 'schedule:rink-schedule-list' rink='both' %}" class="btn btn-warning btn-sm schedule-button">North and South</a>
+    <a href="{% url 'schedule:rink-schedule-list' rink='both' %}" class="btn btn-warning btn-sm schedule-button">North and South</a>
     {% elif rink == 'south' %}
     <a href="{% url 'schedule:rink-schedule-list' rink='north' %}" class="btn btn-warning btn-sm schedule-button">Go To North Rink</a><br />
-    <a href=" {% url 'schedule:rink-schedule-list' rink='both' %}" class="btn btn-warning btn-sm schedule-button">North and South</a>
+    <a href="{% url 'schedule:rink-schedule-list' rink='both' %}" class="btn btn-warning btn-sm schedule-button">North and South</a>
     {% else %}
     <a href="{% url 'schedule:rink-schedule-list' rink='north' %}" class="btn btn-warning btn-sm schedule-button">North Only</a><br />
     <a href="{% url 'schedule:rink-schedule-list' rink='south' %}" class="btn btn-warning btn-sm schedule-button">South Only</a>

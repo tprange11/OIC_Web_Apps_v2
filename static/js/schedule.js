@@ -1,5 +1,49 @@
 // THIS JS IS USED IF EITHER NORTH OR SOUTH RINKS ARE BEING VIEWED //
 
+// resurfaceNotificationPermission() requests user permission to send resurface
+// notifications
+function resurfaceNotificationPermission() {
+    Notification.requestPermission(function(result) {
+        console.log('Resurface Notification Choice: ', result);
+        if (result !== 'granted') {
+            console.log('Notification Permission Denied!');
+        } else {
+            console.log('Notification Permission Granted!');
+        }
+    });
+}
+
+// If the browser supports notifications, send permission request
+if ('Notification' in window) {
+    resurfaceNotificationPermission();
+}
+
+// sendNotification utilizes the service worker to send the resurface notification
+// to the device
+function sendNotification() {
+    if ('serviceWorker' in navigator) {
+    var options = {
+        body: '10 minutes till next resurface!',
+        icon: '/static/images/icons/favicon-96x96.png',
+        dir: 'ltr',
+        lang: 'en-US',
+        vibrate: [100, 50, 200],
+        badge: '/static/images/icons/oicwebapps-badge-96x96.png',
+        tag: 'confirm-notification',
+        renotify: true,
+        actions: [
+            // { action: 'confirm', title: 'Open App', icon: '' },
+            { action: 'cancel', title: 'Got It', icon: '' }
+        ]
+    };
+
+    navigator.serviceWorker.ready
+        .then(function(swreg) {
+            swreg.showNotification('Resurface Notification[SW]', options);
+        })
+    }
+}
+
 // This was taken from w3schools.com and modified by Brian Christensen
 // Set the date we're counting down to
 // var resurface_time = document.getElementById("resurface-time1").innerHTML;
@@ -48,10 +92,14 @@ var x = setInterval(function() {
   var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
   var seconds = Math.floor((distance % (1000 * 60)) / 1000);
     
-  // Output the result in an element with id="demo"
+  // Output the result in an element with id="resurface"
   document.getElementById("resurface-timer").innerHTML = hours + " Hours "
   + minutes + " Mins " + seconds + " Secs";
     
+  // 10 minutes prior to the next resurface, send notification to device
+  if (minutes == 10 && seconds == 0) {
+    sendNotification();
+}
     
   // If the count down is over, write some text 
   if (distance < 0) {

@@ -16,6 +16,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from . import views
+from django.views.generic import TemplateView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -24,9 +25,18 @@ urlpatterns = [
     path('accounts/', include('django.contrib.auth.urls')),
     path('thanks/', views.ThanksPage.as_view(), name='thanks'),
     path('info/open_hockey/', views.OpenHockeyPage.as_view(), name='info-open-hockey'),
-    path('info/stick_and_puck', views.StickAndPuckPage.as_view(), name='info-stick-and-puck'),
+    path('info/stick_and_puck/', views.StickAndPuckPage.as_view(), name='info-stick-and-puck'),
     path('web_apps/', views.WebAppsPage.as_view(), name='web_apps'),
     path('web_apps/open_hockey/', include('open_hockey.urls')),
     path('web_apps/stick_and_puck/', include('stickandpuck.urls')),
     path('web_apps/schedule/', include('schedule.urls')),
+    path('serviceworker.js', (TemplateView.as_view(
+        template_name = 'serviceworker.js',
+        content_type = 'application/javascript'
+    )), name='serviceworker.js'),
+    path('offline/', (TemplateView.as_view(template_name = 'offline.html', content_type = 'text/html')), name = 'offline'),
+    # path('web_apps/web_apps_sw.js', (TemplateView.as_view(
+    #     template_name = 'web_apps_sw.js',
+    #     content_type = 'application/javascript'
+    # )), name='web_apps_sw.js'),
 ]

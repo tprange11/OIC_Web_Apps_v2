@@ -81,3 +81,8 @@ td, th{
     width: 100%;
     margin-bottom: 10px;
 }
+
+#resurface-notifications {
+    display: none;
+}
+
