@@ -87,7 +87,7 @@ var x = setInterval(function() {
   + minutes + " Mins " + seconds + " Secs";
 
   // 10 minutes prior to the next resurface, send notification to device
-  if (minutes == 10 && seconds == 0) {
+  if (hours == 0 && minutes == 10 && seconds == 0) {
     sendNotification();
   }
     
