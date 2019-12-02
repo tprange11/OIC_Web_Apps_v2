@@ -1,5 +1,5 @@
 
-var STATIC_CACHE = 'oicwebapps-v10';
+var STATIC_CACHE = 'oicwebapps-v2';
 // var DYNAMIC_CACHE = 'oicwebapps-dyn-v1';
 
 self.addEventListener('install', function(event) {
@@ -14,7 +14,6 @@ self.addEventListener('install', function(event) {
                     '/static/js/app.js',
                     '/static/js/promise.js',
                     '/static/js/fetch.js',
-                    '/static/js/login.js',
                     '/static/css/main.css',
                     '/static/images/OIC_Logo_Small.jpg',
                     '/static/images/icons/android-chrome-192x192.png',
@@ -22,6 +21,7 @@ self.addEventListener('install', function(event) {
                     '/static/images/icons/favicon.ico',
                     '/static/images/icons/favicon-32x32.png',
                     '/static/images/icons/favicon-16x16.png',
+                    '/static/images/icons/favicon-96x96.png',
                     '/static/manifest.json',
                     '/info/open_hockey/',
                     '/info/stick_and_puck/',
