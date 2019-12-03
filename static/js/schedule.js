@@ -29,7 +29,7 @@ function sendNotification() {
         lang: 'en-US',
         vibrate: [100, 50, 200],
         badge: '/static/images/icons/oicwebapps-badge-96x96.png',
-        tag: 'confirm-notification',
+        tag: 'resurface-notification',
         renotify: true,
         actions: [
             // { action: 'confirm', title: 'Open App', icon: '' },
