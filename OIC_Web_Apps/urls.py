@@ -33,8 +33,9 @@ urlpatterns = [
     path('serviceworker.js', (TemplateView.as_view(
         template_name = 'serviceworker.js',
         content_type = 'application/javascript'
-    )), name='serviceworker.js'),
-    path('offline/', (TemplateView.as_view(template_name = 'offline.html', content_type = 'text/html')), name = 'offline'),
+        )), name='serviceworker.js'),
+    path('offline/', (TemplateView.as_view(template_name = 'offline.html',
+        content_type = 'text/html')), name = 'offline'),
     # path('web_apps/web_apps_sw.js', (TemplateView.as_view(
     #     template_name = 'web_apps_sw.js',
     #     content_type = 'application/javascript'

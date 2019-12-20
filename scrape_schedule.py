@@ -216,13 +216,22 @@ if __name__ == "__main__":
     scrape_date = date.isoformat(the_date)
     scrape_oic_schedule(scrape_date)
     # Scrape OYHA teams daily
-    scrape_oyha_teams(scrape_date)
+    try:
+        scrape_oyha_teams(scrape_date)
+    except Exception as e:
+        print(f"{e}, scrape_oyha_teams()")
     # If it is Friday, scrape OWHL teams
     if date.weekday(date.today()) == 4:
-        scrape_owhl_teams(scrape_date)
+        try:
+            scrape_owhl_teams(scrape_date)
+        except Exception as e:
+            print(f"{e}, scrape_owhl_teams()")
     # If it is Sunday, scrape OCHL teams
     if date.weekday(date.today()) == 6:
-        scrape_ochl_teams()
+        try:
+            scrape_ochl_teams()
+        except Exception as e:
+            print(f"{e}, scrape_ochl_teams()")
     if len(team_events) != 0:
         for item in team_events:
             for oic in oic_schedule:
