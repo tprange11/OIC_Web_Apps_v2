@@ -108,7 +108,7 @@ class CreateStickAndPuckSessions(LoginRequiredMixin, CreateView):
             # If this session of stick and puck is full, set message and redirect to error page
             if self.model.objects.filter(session_date=self.object.session_date, session_time=self.object.session_time).count() >= 26:
                 context = {'user': self.request.user,
-                        'message': "Sorry, this session of open hockey is full!"}
+                        'message': "Sorry, this session of stick and puck is full!"}
                 return render_to_response('stickandpuck_error.html', context)
             # Else save the object to the model
             else:
