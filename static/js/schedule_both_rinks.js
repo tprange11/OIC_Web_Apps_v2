@@ -22,7 +22,7 @@ if ('Notification' in window) {
 var rinks = document.querySelectorAll(".rink");
 
 rinks.forEach(element => {
-    if (element.innerText == "South Rink") {
+    if (element.innerText.indexOf("South") !== -1) {
         element.style.color = "blue";
     } else if (element.innerHTML.indexOf("North") !== -1) {
         element.style.color = "red";
@@ -89,6 +89,10 @@ var x = setInterval(function() {
   // 10 minutes prior to the next resurface, send notification to device
   if (hours == 0 && minutes == 10 && seconds == 0) {
     sendNotification();
+  }
+
+  if (hours == 0 && minutes <= 9 && seconds <= 59) {
+      document.querySelectorAll(".schedule-row")[1].style.backgroundColor = "lightgreen";
   }
     
   // If the count down is over, write some text 

@@ -100,6 +100,10 @@ var x = setInterval(function() {
   if (hours == 0 && minutes == 10 && seconds == 0) {
     sendNotification();
 }
+
+if (hours == 0 && minutes <= 10 && seconds <= 59) {
+    document.querySelectorAll(".schedule-row")[1].style.backgroundColor = "lightgreen";
+}
     
   // If the count down is over, write some text 
   if (distance < 0) {
