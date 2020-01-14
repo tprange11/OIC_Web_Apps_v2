@@ -101,7 +101,7 @@ var x = setInterval(function() {
     sendNotification();
 }
 
-if (hours == 0 && minutes <= 10 && seconds <= 59) {
+if (hours == 0 && minutes <= 9 && seconds <= 59) {
     document.querySelectorAll(".schedule-row")[1].style.backgroundColor = "lightgreen";
 }
     
