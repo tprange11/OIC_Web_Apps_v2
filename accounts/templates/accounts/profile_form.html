@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% load bootstrap4 %}
+{% block title %}<title>OIC Web Apps Profile</title>{% endblock title %}
+{% block content %}
+    <h4 class="mb-4">My Profile</h4>
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+        <strong>{{message}}</strong>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    {% endfor %}
+    {% endif %}
+    <p><a href="{% url 'payment:payments-list' %}" class="btn btn-primary btn-sm">View Payment History</a></p>
+    <h5>Email Preferences:</h5>
+    <form method="POST" class="border rounded p-2">
+        {% csrf_token %}
+        {% bootstrap_form form %}
+        <input type="submit" value="Update" class="btn btn-success btn-sm">
+    </form>
+{% endblock content %}

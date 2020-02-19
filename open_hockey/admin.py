@@ -1,5 +1,5 @@
 from django.contrib import admin
-from open_hockey.models import OpenHockeySessions, OpenHockeyMember
+from open_hockey.models import OpenHockeySessions, OpenHockeyMember, OpenHockeyMemberType
 
 # Register your models here.
 
@@ -12,11 +12,17 @@ class OpenHockeySessionsAdmin(admin.ModelAdmin):
 
 
 class OpenHockeyMemberAdmin(admin.ModelAdmin):
-    list_display = ['member_name', 'end_date', 'active']
+    list_display = ['member_name', 'member_type', 'end_date', 'active']
     search_fields = ['member__first_name', 'member__last_name']
 
     def member_name(self, obj):
         return f"{obj.member.first_name} {obj.member.last_name}"
 
+
+class OpenHockeyMemberTypeAdmin(admin.ModelAdmin):
+    list_display = ['name', 'cost', 'duration']
+
+
 admin.site.register(OpenHockeySessions, OpenHockeySessionsAdmin)
 admin.site.register(OpenHockeyMember, OpenHockeyMemberAdmin)
+admin.site.register(OpenHockeyMemberType, OpenHockeyMemberTypeAdmin)

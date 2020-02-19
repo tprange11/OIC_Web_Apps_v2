@@ -6,10 +6,13 @@
     <p class="error">{{ message }}</p>
     {% empty %}
     {% endfor %}
-{% for skater in object_list %}
-<p>Skater Name: {{ skater.first_name }} {{ skater.last_name }} <a href="{% url 'stickandpuck:skater-delete' pk=skater.pk %}" class="btn btn-warning btn-sm">Remove Skater</a></p>
-{% empty %}
-<p style="font-weight: bold;">You do not have any skaters signed up.</p>
-{% endfor %}
+
+<ul class="list-group" style="display: inline-block; margin-bottom: 10px;">
+    {% for skater in object_list %}
+    <li class="list-group-item" style="padding: 5px 15px;">Skater Name: {{ skater.first_name }} {{ skater.last_name }} <a href="{% url 'stickandpuck:skater-delete' pk=skater.pk %}" class="btn btn-warning btn-sm">Remove Skater</a></li>
+    {% empty %}
+    <li class="list-group-item font-weight-bold" style="padding: 5px 15px;">You do not have any skaters signed up.</li>
+    {% endfor %}
+</ul>
 <p><a href="{% url 'stickandpuck:skater-add' %}" class="btn btn-success btn-sm">Add a Skater</a></p>
 {% endblock content %}

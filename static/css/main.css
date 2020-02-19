@@ -3,6 +3,10 @@ body{
     color: #383863;
 }
 
+label {
+    font-size: medium;
+}
+
 .techfont{
     font-family: 'Russo One', sans-serif;
     font-size: 1.5em;

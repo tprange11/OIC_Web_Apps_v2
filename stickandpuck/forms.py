@@ -9,7 +9,10 @@ class StickAndPuckSkaterForm(forms.ModelForm):
     class Meta:
         model = StickAndPuckSkaters
         fields = ('first_name', 'last_name', 'date_of_birth')
-
+        help_texts = {
+            'date_of_birth': 'mm/dd/yyy',
+        }
+        
 
 class StickAndPuckSignupForm(forms.ModelForm):
     '''Displays page where users can sign up for stick and puck sessions'''
@@ -17,5 +20,4 @@ class StickAndPuckSignupForm(forms.ModelForm):
     class Meta:
         model = StickAndPuckSessions
         fields = ('skater', 'session_date', 'session_time')
-
-
+        # exclude = ['skater']

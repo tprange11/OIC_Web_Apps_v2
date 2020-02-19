@@ -1,17 +1,13 @@
 {% extends 'base.html' %}
+{% load bootstrap4 %}
 {% block title %}<title>OIC Web Apps Sign Up</title>{% endblock title %}
 {% block content %}
     <h4>Register for an OIC Web Apps Account</h4>
     <form method="post">
-        <table>
-            {% csrf_token %}
-            {{ form.as_table }}
-            <tr>
-                <th></th>
-                <td><input type="submit" value="Sign Up" class="btn btn-success btn-sm">
-                    <p id="caps-lock">Caps Lock is ON!</p></td>
-            </tr>
-        </table>
+        {% csrf_token %}
+        {% bootstrap_form form %}
+        <input type="submit" value="Sign Up" class="btn btn-success btn-sm">
+                <p id="caps-lock">Caps Lock is ON!</p></td>
     </form>
     <script>
         var input1 = document.getElementById("id_password1");

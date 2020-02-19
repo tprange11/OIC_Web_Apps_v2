@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}<title>Payments List</title>{% endblock title %}
+{% block content %}
+<h4 class="mb-4">Choose Payment Date to See Payment Details</h4>
+<div class="row row-cols-1 row-cols-sm-2 row-cols-md-3">
+{% for payment in payments %}
+    <div class="col-sm-6 col-lg-4 mb-3">
+    <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#paymentModalCenter{{forloop.counter}}">{{payment.date}}</button>
+    <!-- Modal -->
+    <div class="modal fade" id="paymentModalCenter{{forloop.counter}}" tabindex="-1" role="dialog" aria-labelledby="paymentModalCenterTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header text-light bg-secondary">
+            <h5 class="modal-title" id="paymentModalLongTitle{{forloop.counter}}">{{payment.date}}</h5>
+            <button type="button" class="close text-light" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            </div>
+            <div class="modal-body">
+                <ul class="list-group">
+                    <li class="list-group-item">Payment ID: {{payment.square_id}}</li>
+                    <li class="list-group-item">Receipt: {{payment.square_receipt}}</li>
+                    <li class="list-group-item">Amount: ${{payment.amount|floatformat:"2"}}</li>
+                    <li class="list-group-item">Payment For: {{payment.note}}</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+        </div>
+    </div>
+    </div>
+    {% empty %}
+        <div class="col">
+            <button type="button" class="btn btn-primary btn-sm disabled">No Payments Found....</button>
+        </div>
+{% endfor %}
+</div>
+{% endblock content %}

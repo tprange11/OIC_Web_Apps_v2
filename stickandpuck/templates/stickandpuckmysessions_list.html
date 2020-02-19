@@ -2,19 +2,21 @@
 {% block title %}<title>My Stick and Puck Sessions List</title>{% endblock title %}
 {% block content %}
 <h4>My Stick and Puck Sessions List</h4>
-{% for message in messages %}
-<p class="error">{{ message }}</p>
-{% empty %}
-{% endfor %}
+{% if messages %}{% for message in messages %}
+    <div class="alert alert-danger alert-dismissible alert-link" role="alert">
+    <button class="close" type="button" data-dismiss="alert" aria-label="close">&#215;</button>
+        {{ message }}
+    </div>
+    {% endfor %}{% endif %}
 {% if object_list %}
     <p>You currenly have the following skaters signed up for the corresponding session(s).</p>
 {% endif %}
-<ul>
+<ul class="list-group" style="display: inline-block; margin-bottom: 10px;">
 {% for session in object_list %}
-    <li style="line-height: 3;">{{ session.session_date }} @ {{ session.session_time }}, Skater: {{ session.skater}}
-        <a href="{% url 'stickandpuck:delete-session' pk=session.pk %}" class="btn btn-warning btn-sm">Remove Skater from Session</a></li>
+    <li class="list-group-item" style="padding: 5px 15px;">{{ session.session_date }} @ {{ session.session_time }}, Skater: {{ session.skater}}
+        {% if not session.paid %}<a href="{% url 'stickandpuck:delete-session' pk=session.pk %}" class="btn btn-warning btn-sm">Remove Skater from Session</a></li>{% endif %}
 {% empty %}
-    <li style="font-weight: bold;">You do not have any skaters signed up for stick and puck sessions.</li>
+    <li class="list-group-item" style="padding: 5px 15px;">You do not have any skaters signed up for stick and puck sessions.</li>
 {% endfor %}
 </ul>
 {% endblock content %}

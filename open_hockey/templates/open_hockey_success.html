@@ -2,6 +2,12 @@
 {% block title %}<title>Open Hockey Sessions Success</title>{% endblock title %}
 {% block content %}
     <h4>Open Hockey Sessions Success</h4>
+    {% if messages %}{% for message in messages %}
+    <div class="alert alert-info alert-dismissible alert-link" role="alert">
+    <button class="close" type="button" data-dismiss="alert" aria-label="close">&#215;</button>
+        {{ message }}
+    </div>
+    {% endfor %}{% endif %}
     <p>You successfully signed up for that session of open hockey!</p>
-    <p><a href="{% url 'open_hockey:open-hockey' %}">Sign up for another session</a></p>
+    <p><a class="btn btn-warning btn-sm" href="{% url 'open_hockey:open-hockey' %}">Sign up for another session</a></p>
 {% endblock content %}

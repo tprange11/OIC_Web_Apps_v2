@@ -3,18 +3,21 @@
 {% block content %}
     <h4>Stick and Puck Sessions List</h4>
     <p>Select a stick and puck session date from the list below.</p>
-    {% for message in messages %}
-    <p class="error">{{ message }}</p>
-    {% empty %}
-    {% endfor %}
-<ul>
+    <p>If you would like to be notified when Stick and Puck sessions are added, update email settings in <a href="{% url 'accounts:profile' slug=user.id %}">your profile</a>.</p>
+    {% if messages %}{% for message in messages %}
+    <div class="alert alert-info alert-dismissible alert-link" role="alert">
+    <button class="close" type="button" data-dismiss="alert" aria-label="close">&#215;</button>
+        {{ message }}
+    </div>
+    {% endfor %}{% endif %}
+<ul class="list-group" style="display: inline-block; margin-bottom: 10px;">
 {% for session in object_list %}
-    <li style="line-height: 3;"><a href="{% url 'stickandpuck:signup' session_date=session.session_date session_time=session.session_start_time %}" class="btn btn-warning btn-sm">
+    <li class="list-group-item" style="padding: 5px 15px;"><a href="{% url 'stickandpuck:signup' session_date=session.session_date session_time=session.session_start_time %}" class="btn btn-warning btn-sm text-left mb-3 mb-lg-0">
         {{ session.session_date }} @ {{ session.session_start_time }} <b>{{ session.session_notes }}</b></a>
         &nbsp;&nbsp;<a href="{% url 'stickandpuck:skater-spots' session_date=session.session_date session_time=session.session_start_time %}" 
         class="btn btn-success btn-sm">Check available skater spots</a></li>
 {% empty %}
-    <li>There are no upcoming stick and puck sessions.</li>
+    <li class="list-group-item" style="padding: 5px 15px;">There are no upcoming stick and puck sessions.</li>
 {% endfor %}
 </ul>
 {% endblock content %}

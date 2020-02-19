@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block title %}<title>Payment Result</title>{% endblock title %}
+{% block content %}
+{% if error %}
+    <h4>Payment Error</h4>
+    <p>Sorry, something went wrong.  Please <a href="{% url 'payment:payment' %}">try again</a>.</p>
+{% elif message %}
+    <h4>Thank you for your payment!</h4>
+    <p><a href="{% url 'payment:payments-list' %}" class="btn btn-primary btn-sm">View Your Payment History</a></p>
+{% endif %}
+{% endblock content %}

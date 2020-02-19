@@ -3,12 +3,36 @@
 {% block content %}
     <h4>Open Hockey Member Details</h4>
 {% if user.is_authenticated %}
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-info alert-dismissible fade show" role="alert">
+    <strong>{{message}}</strong>
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+{% endfor %}
+{% endif %}
 {% for member in member %}
-<p>Member Name: {{ user.first_name }} {{ user.last_name }}</p>
-<p>Status: {% if member.active %} Active {% else %} Not Active {% endif %}</p>
-<p>End Date: {{ member.end_date }}</p>
+<ul class="list-group" style="display: inline-block; margin-bottom: 10px;">
+    <li class="list-group-item" style="padding: 5px 15px;">Member Name: {{ user.first_name }} {{ user.last_name }}</li>
+    <li class="list-group-item" style="padding: 5px 15px;">Membership Type: {{ member.member_type}}</li>
+    <li class="list-group-item" style="padding: 5px 15px;">Status: {% if member.active %} Active {% else %} Not Active {% endif %}</li>
+    <li class="list-group-item" style="padding: 5px 15px;">End Date: {{ member.end_date }}</li>
+</ul>
+{% if past_due %}
+<p><a class="btn btn-success btn-sm" href="{% url 'open_hockey:member-update' pk=member.pk %}">Activate Membership</a></p>
+{% endif %}
 {% empty %}
-<p>You are not currently a member.</p>
+<div class="alert alert-primary font-weight-bold" role="alert">You are not currently a member.</div>
+<p>Open hockey members are automatically added to every session for the duration of their membership.</p>
+<h6>Membership options:</h6>
+<ul class="list-group body-p" style="display: inline-block; margin-bottom: 10px;">
+    {% for type in member_types %}
+    <li class="list-group-item" style="padding: 5px 15px;">{{type.name}}: ${{type.cost}}</li>        
+    {% endfor %}
+</ul>
+<p><a class="btn btn-success btn-sm" href="{% url 'open_hockey:member-add' %}">Purchase Membership</a></p>
 {% endfor %}
 {% endif %}
 {% endblock content %}

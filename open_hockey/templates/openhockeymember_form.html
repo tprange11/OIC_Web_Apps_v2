@@ -1,10 +1,11 @@
 {% extends 'base.html' %}
-{% block title %}<title>Add or Update Open Hockey Member</title>{% endblock title %}
+{% load bootstrap4 %}
+{% block title %}<title>Choose Open Hockey Membership</title>{% endblock title %}
 {% block content %}
-    <h4>Add/Update Open Hockey Member</h4>
-    <form method="post">
+    <h4>Choose Open Hockey Membership</h4>
+    <form method="POST">
         {% csrf_token %}
-        {{ form.as_p }}
-        <input type="submit" value="Save" class="btn btn-success btn-sm"> &nbsp;&nbsp; <a href="{% url 'open_hockey:member-list' %}" class="btn btn-danger btn-sm">Cancel</a>
+        {% bootstrap_form form %}
+        <input type="submit" value="Register" class="btn btn-success btn-sm"> &nbsp;&nbsp; <a href="{% url 'open_hockey:member-detail' %}" class="btn btn-danger btn-sm">Cancel</a>
     </form>
 {% endblock content %}

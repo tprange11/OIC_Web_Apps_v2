@@ -2,10 +2,12 @@
 {% block title %}<title>Open Hockey Sessions for {{ user.username }}</title>{% endblock title %}
 {% block content %}
     <h4>Open Hockey Sessions for {{ user.username }}</h4>
-    {% if messages %}
-        {% for message in messages %}
-        <p class="error">{{ message }}</p>
-        {% endfor %}
+    {% if messages %}{% for message in messages %}
+    <div class="alert alert-danger alert-dismissible alert-link" role="alert">
+    <button class="close" type="button" data-dismiss="alert" aria-label="close">&#215;</button>
+        {{ message }}
+    </div>
+    {% endfor %}
     {% else %}
     <p>You are signed up for the following sessions of open hockey.</p>
     {% endif %}

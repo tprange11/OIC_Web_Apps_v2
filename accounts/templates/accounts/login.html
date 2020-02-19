@@ -1,35 +1,24 @@
 {% extends 'base.html' %}
+{% load bootstrap4 %}
 {% block title %}<title>OIC Web Apps Login</title>{% endblock title %}
 {% block content %}
-    <h4>Log in to your OIC Web Apps Account</h4>
-    <table>
-        <form method="post">
-            {% csrf_token %}
-            {{ form.as_table }}
-        <tr>
-            <th></th>
-            <td><input type="submit" value="Log In" class='btn btn-success btn-sm'>
-                <p id="caps-lock">Caps Lock is ON!</p></td>
-        </tr>
-        </form>
-        <tr>
-            <td>&nbsp;</td>
-            <td> </td>
-        </tr>
-        <tr>
-            <td></td>
-            <td><a href="{% url 'password_reset' %}" class="btn btn-warning btn-sm">Forgot Password?</a></td>
-        </tr>
-    </table>
-    <script>
-        var input = document.getElementById("id_password");
-        var text = document.getElementById("caps-lock");
-        input.addEventListener("keyup", function(event) {
-            if (event.getModifierState("CapsLock")) {
-                text.style.display = "block";
-            } else {
-                text.style.display = "none";
-            }
-        });
-    </script>
+<h4>Log in to your OIC Web Apps Account</h4>
+    <form method="post" class="mb-3">
+        {% csrf_token %}
+        {% bootstrap_form form %}
+    <input type="submit" value="Log In" class='btn btn-success btn-sm'>
+    </form>
+    <p id="caps-lock">Caps Lock is ON!</p>
+    <a href="{% url 'password_reset' %}" class="btn btn-warning btn-sm">Forgot Password?</a>
+<script>
+    var input = document.getElementById("id_password");
+    var text = document.getElementById("caps-lock");
+    input.addEventListener("keyup", function(event) {
+        if (event.getModifierState("CapsLock")) {
+            text.style.display = "block";
+        } else {
+            text.style.display = "none";
+        }
+    });
+</script>
 {% endblock content %}

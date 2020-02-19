@@ -2,5 +2,7 @@
 {% block title %}<title>Open Hockey Sessions Error</title>{% endblock title %}
 {% block content %}
     <h4>Oops, something went wrong!</h4>
-    <p class="error">{{ message }}</p>
+    <div class="alert alert-danger" role="alert">
+    {{ message }}
+    </div>
 {% endblock content %}

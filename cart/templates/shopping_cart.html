@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}<title>Shopping Cart OIC Web Apps</title>{% endblock title %}
+{% block content %}
+<h4>Shopping Cart Items</h4>
+<div class="container">
+    <div class="row bg-secondary text-light rounded">
+        <div class="col">Item</div>
+        <div class="col">Skater Name</div>
+        <div class="col">Event Date</div>
+        <div class="col">Cost</div>
+    </div>
+{% for item in shopping_cart_items %}
+    <div class="row">
+        <div class="col">{{item.item}}</div>
+        <div class="col">{{item.skater_name}}</div>
+        <div class="col">{{item.event_date}}</div>
+        <div class="col">${{item.amount}}</div>
+    </div>
+{% empty %}
+<p>There are no items in your cart.</p>
+{% endfor %}
+    <div class="font-weight-bold mt-3">Cart Total: ${{cart_total}}</div>
+    <div>
+        <a class="btn btn-success btn-sm mt-3" href="{% url 'payment:payment' %}">Pay Now</a>
+    </div>
+</div>
+{% endblock content %}

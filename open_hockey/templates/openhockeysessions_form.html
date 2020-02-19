@@ -1,9 +1,11 @@
-{% extends 'base.html' %}
+{% extends 'base.html' %}{% load bootstrap4 %}
 {% block title %}<title>Open Hockey Session Signup</title>{% endblock title %}
 {% block content %}
     <form method="POST" action="{% url 'open_hockey:open-hockey-signup' %}">
+        <div class="form-group-sm">
         {% csrf_token %}
-        {{ form.as_p }}
+        {% bootstrap_form form %}
         <p><input type="submit" value="Sign Up" class="btn btn-success btn-sm"></p>
+        </div>
     </form>
 {% endblock content %}

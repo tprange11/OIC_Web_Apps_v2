@@ -2,18 +2,57 @@
 {% block title %}<title>Upcoming Open Hockey Sessions</title>{% endblock title %}
 {% block content %}
     <h4>Upcoming Open Hockey Sessions</h4>
-    <p>Choose a date below to sign up for that session of open hockey.</p>
-    <p><b>The current weeks sessions will be posted every Monday.</b></p>
-    <ul>
+    {% if not is_member %}
+    <p>Choose a date below to sign up for that session of open hockey. Alternatively, you may purchase an open hockey membership
+         and not have to worry about signing up for sessions each week.</p>
+    <p>If you'd like to be notified when open hockey dates are available, update your email preference in <a href="{% url 'accounts:profile' slug=user.id %}">your profile.</a></p>
+    {% endif %}
+    <p></p>
+    <ul class="list-group" style="display: inline-block; margin-bottom: 10px;">
+        {% if is_member %}<li class="list-group-item" style="padding: 5px 15px;">You are currently a member and are automatically signed up for every session while
+             your membership is active.</li>
+        {% endif %}
         {% for date, g_spots, s_spots in data %}
         {% if g_spots == 0 and s_spots == 0 %}
-        <li>{{ date }} - <b>SORRY, THIS SESSION IS FULL!</b></li>
+        <li class="list-group-item" style="padding: 5px 15px;">{{ date }} - <b>SORRY, THIS SESSION IS FULL!</b></li>
         {% else %}
-        <li style="line-height: 3;"><a href="{% url 'open_hockey:open-hockey-signup' date=date %}" class="btn btn-warning btn-sm">{{ date }}</a>
+        <li class="list-group-item" style="padding: 5px 15px;"><a href="{% url 'open_hockey:open-hockey-signup' date=date %}" class="btn btn-warning btn-sm 
+            {% if is_member %}disabled{% endif %}">{{ date }}</a>
              - Skater Spots Available: <b>{{ s_spots }}</b>, Goalie Spots Available: <b>{{ g_spots }}</b></li>
         {% endif %}
         {% empty %}
-        <li>No Open Hockey Sessions found!</li>
+        {% if not is_member %}
+        <li class="list-group-item" style="padding: 5px 15px;">No Open Hockey Sessions found! <b>The current weeks sessions will be posted every Monday.</b></li>
+        {% endif %}
         {% endfor %}
     </ul>
+    {% if is_member %}
+    <button type="button" class="btn btn-warning btn-sm" data-toggle="modal" data-target="#exampleModalCenter">View Membership Details</button>
+    <!-- Modal -->
+    <div class="modal fade" id="exampleModalCenter" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header text-light bg-secondary">
+            <h5 class="modal-title" id="exampleModalLongTitle">Member Details</h5>
+            <button type="button" class="close text-light" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            </div>
+            <div class="modal-body">
+                <ul class="list-group">
+                    <li class="list-group-item">Member Name: {{user.first_name}} {{user.last_name}}</li>
+                    <li class="list-group-item">Type: {{member_info.member_type}}</li>
+                    <li class="list-group-item">Status: {{member_info.active}}</li>
+                    <li class="list-group-item">End Date: {{member_info.end_date}}</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+        </div>
+    </div>
+    {% else %}
+    <p><a href="{% url 'open_hockey:member-add' %}" class="btn btn-success btn-sm">Purchase a Membership</a></p>
+    {% endif %}
 {% endblock content %}

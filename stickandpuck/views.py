@@ -4,9 +4,12 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User, Group
 from django.contrib import messages
 from django.db import IntegrityError
+from django.core.exceptions import ObjectDoesNotExist
 from django.urls import reverse_lazy
 from . import models
 from . import forms
+from cart.models import Cart
+from accounts.models import Profile
 from datetime import date, timedelta
 
 # Create your views here.
@@ -78,6 +81,8 @@ class CreateStickAndPuckSessions(LoginRequiredMixin, CreateView):
     '''Display page where user can sign skaters up for stick and puck sessions'''
     model = models.StickAndPuckSessions
     group_model = Group
+    profile_model = Profile
+    cart_model = Cart
     template_name = 'stickandpucksessions_form.html'
     success_url = reverse_lazy('stickandpuck:sessions')
     form_class = forms.StickAndPuckSignupForm
@@ -113,13 +118,18 @@ class CreateStickAndPuckSessions(LoginRequiredMixin, CreateView):
             # Else save the object to the model
             else:
                 self.join_stick_and_puck_group()
+                self.add_stick_and_puck_email_to_profile()
                 self.object.save()
-                return super().form_valid(form)
         # If the skater is already signed up for that session, set message and redirect to error page
         except IntegrityError:
             context = {'user': self.request.user,
             'message': "Skater is already signed up for this session!"}
             return render(self.request, 'stickandpuck_error.html', context)
+
+        # If all goes well, add stick and puck session to Shopping Cart
+        self.add_to_cart(form.instance.skater)
+        messages.add_message(self.request, messages.INFO, 'Please make sure to view your cart and pay for your session(s)!')
+        return super().form_valid(form)
 
     def join_stick_and_puck_group(self, join_group='Stick and Puck'):
         '''Adds user to Stick and Puck Group "behind the scenes", for communication purposes.'''
@@ -129,6 +139,24 @@ class CreateStickAndPuckSessions(LoginRequiredMixin, CreateView):
         except IntegrityError:
             pass
         return
+
+    def add_stick_and_puck_email_to_profile(self):
+        '''If no user profile exists, create one and set stick_and_puck_email to True'''
+
+        # If a profile already exists, do nothing
+        try:
+            self.profile_model.objects.get(user=self.request.user)
+            return
+        # If no profile exists, add one and set stick_and_puck_email to True
+        except ObjectDoesNotExist:
+            profile = self.profile_model(user=self.request.user, slug=self.request.user.id, stick_and_puck_email=True)
+            profile.save()
+            return
+
+    def add_to_cart(self, skater):
+        '''Adds stick and puck session to shopping cart.'''
+        cart = self.cart_model(customer=self.request.user, item='Stick and Puck', skater_name=skater, event_date=self.object.session_date, amount=12)
+        cart.save()
 
 
 class StickAndPuckMySessionsListView(LoginRequiredMixin, ListView):
@@ -153,6 +181,10 @@ class StickAndPuckSessionsDeleteView(LoginRequiredMixin, DeleteView):
         return queryset
 
     def delete(self, *args, **kwargs):
+        # If a stick and puck session is removed before paying, remove it from the cart too
+        session_date = self.model.objects.filter(id=kwargs['pk']).values_list('session_date', flat=True)
+        skater = self.model.objects.filter(id=kwargs['pk']).values_list('skater', flat=True)
+        cart_item = Cart.objects.filter(event_date=session_date[0], skater_name=skater[0]).delete()
         # Set message to display on page after skater has been removed from stick and puck session
         messages.success(self.request, 'Skater has been removed from the Stick and Puck Session!')
         return super().delete(*args, **kwargs)
