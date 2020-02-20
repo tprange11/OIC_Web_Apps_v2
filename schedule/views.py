@@ -24,6 +24,10 @@ class RinkScheduleListView(LoginRequiredMixin, ListView):
             return queryset.filter(rink__contains='North')
         elif self.kwargs['rink'] == 'south':
             return queryset.filter(rink__contains='South')
+        elif self.kwargs['rink'] == 'separate':
+            queryset = {'north': super().get_queryset().filter(rink__contains='North', end_time__gte=datetime.now()).order_by('end_time'),
+                                'south': super().get_queryset().filter(rink__contains='South', end_time__gte=datetime.now()).order_by('end_time')}
+            return queryset
         else:
             return queryset.exclude(rink__contains='Meeting/Party Room')
 
@@ -37,6 +41,9 @@ class RinkScheduleListView(LoginRequiredMixin, ListView):
             start_times = start_times.filter(rink__contains='North')
         elif self.kwargs['rink'] == 'south':
             start_times = start_times.filter(rink__contains='South')
+        elif self.kwargs['rink'] == 'separate':
+            north_start_times = start_times.filter(rink__contains='North')
+            south_start_times = start_times.filter(rink__contains='South')
         else:
             start_times = start_times.exclude(rink__contains='Meeting/Party Room')
 
@@ -46,20 +53,45 @@ class RinkScheduleListView(LoginRequiredMixin, ListView):
             end_times = end_times.filter(rink__contains='North')
         elif self.kwargs['rink'] == 'south':
             end_times = end_times.filter(rink__contains='South')
+        elif self.kwargs['rink'] == 'separate':
+            north_end_times = end_times.filter(rink__contains='North')
+            south_end_times = end_times.filter(rink__contains='South')
         else:
             end_times = end_times.exclude(rink__contains='Meeting/Party Room')
 
         # Convert date time format for use in Javascript resurface countdown timer
         next_start_times = []
-        for item in start_times:
-            next_start_times.append(date.isoformat(datetime.now())+" "+item['start_time'].strftime('%H:%M:%S'))
-        context['start_times'] = next_start_times
+        north_next_start_times = []
+        south_next_start_times = []
+
+        if self.kwargs['rink'] == 'separate':
+            for item in north_start_times:
+                north_next_start_times.append(date.isoformat(datetime.now())+" "+item['start_time'].strftime('%H:%M:%S'))
+            for item in south_start_times:
+                south_next_start_times.append(date.isoformat(datetime.now())+" "+item['start_time'].strftime('%H:%M:%S'))
+            context['north_start_times'] = north_next_start_times
+            context['south_start_times'] = south_next_start_times
+        else:
+            for item in start_times:
+                next_start_times.append(date.isoformat(datetime.now())+" "+item['start_time'].strftime('%H:%M:%S'))
+            context['start_times'] = next_start_times
         
         # Convert date time format for use in Javacript resurface countdown timer
         resurface_times = []
-        for item in end_times:
-            resurface_times.append(date.isoformat(datetime.now())+" "+item['end_time'].strftime('%H:%M:%S'))
-        context['resurface_times'] = resurface_times
+        north_resurface_times = []
+        south_resurface_times = []
+
+        if self.kwargs['rink'] == 'separate':
+            for item in north_end_times:
+                north_resurface_times.append(date.isoformat(datetime.now())+" "+item['end_time'].strftime('%H:%M:%S'))
+            for item in south_end_times:
+                south_resurface_times.append(date.isoformat(datetime.now())+" "+item['end_time'].strftime('%H:%M:%S'))
+            context['north_resurface_times'] = north_resurface_times
+            context['south_resurface_times'] = south_resurface_times
+        else:
+            for item in end_times:
+                resurface_times.append(date.isoformat(datetime.now())+" "+item['end_time'].strftime('%H:%M:%S'))
+            context['resurface_times'] = resurface_times
         
         return context
         

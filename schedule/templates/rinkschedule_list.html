@@ -9,6 +9,50 @@
     {% else %}
     <h4>North and South</h4>
     {% endif %}
+    {% if rink == 'separate' %}
+    <div class="row mx-2 mb-3">
+        <div class="col col-md-6 col-12 border rounded bg-dark text-white-50 mb-2 mb-md-0" id="south">
+            <div class="row mt-2">
+                <div class="col"><h5>South Rink</h5><hr class="bg-light" /></div>
+            </div>
+            <div class="row mb-2">
+                <div class="col"><span class="resurface-timer bg-light rounded p-1">Next Resurface in: <span id="south-resurface-timer"></span></span></div>
+            </div>
+            <div class="row my-2 bg-secondary text-light">
+                <div class="col-3 font-weight-bold">Start Time</div>
+                <div class="col-3 font-weight-bold">End Time</div>
+                <div class="col-6 font-weight-bold">Event</div>
+            </div>
+            {% for object in object_list.south %}
+            <div class="row my-2" id="south-schedule-row{{forloop.counter}}">
+                <div class="col-3">{{object.start_time}}</div>
+                <div class="col-3 font-weight-bold">{{object.end_time}}</div>
+                <div class="col-6">{{object.event}}</div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="col col-md-6 col-12 border rounded bg-secondary text-white" id="north">
+            <div class="row mt-2">
+                <div class="col"><h5>North Rink</h5><hr class="bg-dark" /></div>
+            </div>
+            <div class="row mb-2">
+                <div class="col"><span class="resurface-timer bg-light rounded p-1">Next Resurface in: <span id="north-resurface-timer"></span></span></div>
+            </div>
+            <div class="row my-2 bg-dark">
+                <div class="col-3 font-weight-bold">Start Time</div>
+                <div class="col-3 font-weight-bold">End Time</div>
+                <div class="col-6 font-weight-bold">Event</div>
+            </div>
+            {% for object in object_list.north %}
+            <div class="row my-2" id="north-schedule-row{{forloop.counter}}">
+                <div class="col-3">{{object.start_time}}</div>
+                <div class="col-3 font-weight-bold">{{object.end_time}}</div>
+                <div class="col-6">{{object.event}}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% else %}
     <p class="resurface-timer">Next Resurface in: <span id="resurface-timer"></span>
         {% if rink == 'both' %}<br /><span style="font-size: 8pt; color:darkgreen;">Check rink specific schedule for more accurate countdown in case of back to back events.</span>{% endif %}</p>
     <table class="schedule">
@@ -24,24 +68,46 @@
         <tr>{% if rink == 'both' %}<td></td>{% endif %}<td colspan="3"><p>Nothing on Schedule!</p></td></tr>
         {% endfor %}
     </table><br />
+    {% endif %}
     <div class="container">
     {% if rink == 'north' %}
     <a href="{% url 'schedule:rink-schedule-list' rink='south' %}" class="btn btn-warning btn-sm schedule-button">Go To South Rink</a><br />
-    <a href="{% url 'schedule:rink-schedule-list' rink='both' %}" class="btn btn-warning btn-sm schedule-button">North and South</a>
+    <a href=" {% url 'schedule:rink-schedule-list' rink='separate' %}" class="btn btn-warning btn-sm schedule-button">North and South Split</a><br />
+    <a href="{% url 'schedule:rink-schedule-list' rink='both' %}" class="btn btn-warning btn-sm schedule-button">North and South Combined</a>
     {% elif rink == 'south' %}
     <a href="{% url 'schedule:rink-schedule-list' rink='north' %}" class="btn btn-warning btn-sm schedule-button">Go To North Rink</a><br />
-    <a href="{% url 'schedule:rink-schedule-list' rink='both' %}" class="btn btn-warning btn-sm schedule-button">North and South</a>
+    <a href=" {% url 'schedule:rink-schedule-list' rink='separate' %}" class="btn btn-warning btn-sm schedule-button">North and South Split</a><br />
+    <a href="{% url 'schedule:rink-schedule-list' rink='both' %}" class="btn btn-warning btn-sm schedule-button">North and South Combined</a>
+    {% elif rink == 'separate' %}
+    <a href="{% url 'schedule:rink-schedule-list' rink='north' %}" class="btn btn-warning btn-sm schedule-button">North Only</a><br />
+    <a href="{% url 'schedule:rink-schedule-list' rink='south' %}" class="btn btn-warning btn-sm schedule-button">South Only</a><br />
+    <a href=" {% url 'schedule:rink-schedule-list' rink='both' %}" class="btn btn-warning btn-sm schedule-button">North and South Combined</a>
     {% else %}
     <a href="{% url 'schedule:rink-schedule-list' rink='north' %}" class="btn btn-warning btn-sm schedule-button">North Only</a><br />
-    <a href="{% url 'schedule:rink-schedule-list' rink='south' %}" class="btn btn-warning btn-sm schedule-button">South Only</a>
+    <a href="{% url 'schedule:rink-schedule-list' rink='south' %}" class="btn btn-warning btn-sm schedule-button">South Only</a><br />
+    <a href=" {% url 'schedule:rink-schedule-list' rink='separate' %}" class="btn btn-warning btn-sm schedule-button">North and South Split</a>
     {% endif %}
     </div>
     <script type="text/javascript">
+    {% if rink == 'separate' %}
+    var north_resurface_times = [{% for time in north_resurface_times %}"{{ time }}",
+    {% endfor %}];
+    var north_start_times = [{% for start in north_start_times %}"{{ start }}",
+    {% endfor %}];
+    var south_resurface_times = [{% for time in south_resurface_times %}"{{ time }}",
+    {% endfor %}];
+    var south_start_times = [{% for start in south_start_times %}"{{ start }}",
+    {% endfor %}];
+    {% else %}
     var resurface_times = [{% for time in resurface_times %}"{{ time }}",
     {% endfor %}];
     var start_times = [{% for start in start_times %}"{{ start }}",
     {% endfor %}];
+    {% endif %}
     </script>
-    {% if rink == 'both' %}<script src="{% static 'js/schedule_both_rinks.js' %}"></script>{% else %}
+    {% if rink == 'both' %}<script src="{% static 'js/schedule_both_rinks.js' %}"></script>
+    {% elif rink == 'separate' %}
+    <script src="{% static 'js/schedule_both_rinks_separate.js' %}"></script>
+    {% else %}
     <script src="{% static 'js/schedule.js' %}"></script>{% endif %}
 {% endblock content %}

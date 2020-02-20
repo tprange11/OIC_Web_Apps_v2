@@ -4,5 +4,6 @@
 <h4>Choose Rink to View Schedule</h4>
 <a href=" {% url 'schedule:rink-schedule-list' rink='north' %}" class="btn btn-warning btn-sm schedule-button">North Only</a>
 <a href=" {% url 'schedule:rink-schedule-list' rink='south' %}" class="btn btn-warning btn-sm schedule-button">South Only</a>
-<a href=" {% url 'schedule:rink-schedule-list' rink='both' %}" class="btn btn-warning btn-sm schedule-button">North and South</a>
+<a href=" {% url 'schedule:rink-schedule-list' rink='separate' %}" class="btn btn-warning btn-sm schedule-button">North and South Split</a>
+<a href=" {% url 'schedule:rink-schedule-list' rink='both' %}" class="btn btn-warning btn-sm schedule-button">North and South Combined</a>
 {% endblock content %}
