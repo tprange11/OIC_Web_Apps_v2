@@ -88,11 +88,11 @@ class CreateStickAndPuckSessions(LoginRequiredMixin, CreateView):
     form_class = forms.StickAndPuckSignupForm
     skater_model = models.StickAndPuckSkaters
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        # Get list of users skaters to populate the form's select list
-        context['skaters'] = self.skater_model.objects.filter(guardian=self.request.user)
-        return context
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs.update({'user': self.request.user})
+        return kwargs
+
 
     def get_initial(self, *args, **kwargs):
         initial = super().get_initial()
@@ -173,6 +173,7 @@ class StickAndPuckMySessionsListView(LoginRequiredMixin, ListView):
 class StickAndPuckSessionsDeleteView(LoginRequiredMixin, DeleteView):
     '''Displays page where user can confirm deletion of skater from a particular stick and puck session.'''
     model = models.StickAndPuckSessions
+    skater_model = models.StickAndPuckSkaters
     success_url = reverse_lazy('stickandpuck:mysessions')
     template_name = 'stickandpucksessions_confirm_delete.html'
 
@@ -183,8 +184,9 @@ class StickAndPuckSessionsDeleteView(LoginRequiredMixin, DeleteView):
     def delete(self, *args, **kwargs):
         # If a stick and puck session is removed before paying, remove it from the cart too
         session_date = self.model.objects.filter(id=kwargs['pk']).values_list('session_date', flat=True)
-        skater = self.model.objects.filter(id=kwargs['pk']).values_list('skater', flat=True)
-        cart_item = Cart.objects.filter(event_date=session_date[0], skater_name=skater[0]).delete()
+        skater_id = self.model.objects.filter(id=kwargs['pk']).values_list('skater', flat=True)
+        skater = self.skater_model.objects.get(id=skater_id[0])
+        cart_item = Cart.objects.filter(event_date=session_date[0], skater_name=skater).delete()
         # Set message to display on page after skater has been removed from stick and puck session
         messages.success(self.request, 'Skater has been removed from the Stick and Puck Session!')
         return super().delete(*args, **kwargs)

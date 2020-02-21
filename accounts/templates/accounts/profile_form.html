@@ -14,8 +14,8 @@
     {% endfor %}
     {% endif %}
     <p><a href="{% url 'payment:payments-list' %}" class="btn btn-primary btn-sm">View Payment History</a></p>
-    <h5>Email Preferences:</h5>
     <form method="POST" class="border rounded p-2">
+        <h5>Email Preferences:</h5>
         {% csrf_token %}
         {% bootstrap_form form %}
         <input type="submit" value="Update" class="btn btn-success btn-sm">

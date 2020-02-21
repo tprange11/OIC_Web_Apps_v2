@@ -21,7 +21,7 @@ class StickAndPuckSkaters(models.Model):
 
     def __str__(self):
         '''Overrides string representation in admin site'''
-        return f"{self.last_name}, {self.first_name}, Guardian: {self.guardian.get_full_name()}"
+        return f"{self.first_name} {self.last_name}"
 
     def get_absolute_url(self):
         '''Returns user to Stick and Puck Skater List after successfully adding a skater'''
@@ -31,7 +31,7 @@ class StickAndPuckSkaters(models.Model):
 class StickAndPuckSessions(models.Model):
     '''Model that holds stick and puck sessions data'''
     guardian = models.ForeignKey(User, on_delete=models.CASCADE)
-    skater = models.CharField(max_length=150)
+    skater = models.ForeignKey(StickAndPuckSkaters, on_delete=models.CASCADE)
     session_date = models.DateField()
     session_time = models.CharField(max_length=10)
     paid = models.BooleanField(default=False)

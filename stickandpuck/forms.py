@@ -17,7 +17,22 @@ class StickAndPuckSkaterForm(forms.ModelForm):
 class StickAndPuckSignupForm(forms.ModelForm):
     '''Displays page where users can sign up for stick and puck sessions'''
 
+    
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user')
+        super().__init__(*args, **kwargs)
+        
+        self.fields['skater'].queryset = StickAndPuckSkaters.objects.filter(guardian=self.user)
+    
+
     class Meta:
         model = StickAndPuckSessions
         fields = ('skater', 'session_date', 'session_time')
-        # exclude = ['skater']
+
+# class StickAndPuckSignupForm(forms.ModelForm):
+#     '''Displays page where users can sign up for stick and puck sessions'''
+
+#     class Meta:
+#         model = StickAndPuckSessions
+#         fields = ('skater', 'session_date', 'session_time')
+#         # exclude = ['skater']
