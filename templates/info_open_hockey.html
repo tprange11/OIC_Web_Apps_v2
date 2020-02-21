@@ -14,14 +14,14 @@
         <li>Time: 6:00 AM to 7:30 AM</li>
         <li>Limited to:</li>
         <ul>
-            <li>Skaters: 22</li>
-            <li>Goalies: 2</li>
+            <li>Skaters: {{program_details.max_skaters}}</li>
+            <li>Goalies: {{program_details.max_goalies}}</li>
         </ul>
         <li>Cost:</li>
             Non-member:
             <ul>
-                <li>Skaters: $12</li>
-                <li>Goalies: Free</li>
+                <li>Skaters: ${{program_details.skater_price}}</li>
+                <li>Goalies: ${{program_details.goalie_price}}</li>
             </ul>
             Member:
             <ul>

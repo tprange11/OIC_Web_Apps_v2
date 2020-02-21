@@ -11,11 +11,12 @@
         <li>When: Various dates and times throughout the year</li>
         <li>Limited to:</li>
         <ul>
-            <li>Skaters: 26</li>
+            <li>Skaters: {{program_details.max_skaters}}</li>
         </ul>
         <li>Cost:</li>
              <ul>
-                <li>Skaters: $12</li>
+                <li>Skaters: ${{program_details.skater_price}}</li>
+                <li>Goalies: ${{program_details.goalie_price}}</li>
             </ul>
     </ul>
 {% endblock content %}

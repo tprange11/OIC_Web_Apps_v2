@@ -11,6 +11,7 @@ from . import models
 from accounts.models import Profile
 from . import forms
 from cart.models import Cart
+from programs.models import Program
 
 # Create your views here.
 
@@ -67,6 +68,7 @@ class CreateOpenHockeySessions(LoginRequiredMixin, CreateView):
     model = models.OpenHockeySessions
     group_model = Group
     profile_model = Profile
+    program_model = Program
     cart_model = Cart
     fields = ('date', 'goalie') # Do not need skater or paid fields
     template_name = 'openhockeysessions_form.html'
@@ -137,7 +139,10 @@ class CreateOpenHockeySessions(LoginRequiredMixin, CreateView):
 
     def add_to_cart(self):
         '''Adds open hockey session to shopping cart.'''
-        cart = self.cart_model(customer=self.request.user, item='Open Hockey', skater_name=self.request.user.get_full_name(), event_date=self.object.date, amount=12)
+        # Get price of open hockey program
+        program = self.program_model.objects.get(id=1)
+        price = program.skater_price
+        cart = self.cart_model(customer=self.request.user, item='Open Hockey', skater_name=self.request.user.get_full_name(), event_date=self.object.date, amount=price)
         cart.save()
 
 

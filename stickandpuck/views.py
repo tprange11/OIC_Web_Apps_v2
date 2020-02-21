@@ -10,6 +10,7 @@ from . import models
 from . import forms
 from cart.models import Cart
 from accounts.models import Profile
+from programs.models import Program
 from datetime import date, timedelta
 
 # Create your views here.
@@ -87,6 +88,7 @@ class CreateStickAndPuckSessions(LoginRequiredMixin, CreateView):
     success_url = reverse_lazy('stickandpuck:sessions')
     form_class = forms.StickAndPuckSignupForm
     skater_model = models.StickAndPuckSkaters
+    program_model = Program
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -155,7 +157,10 @@ class CreateStickAndPuckSessions(LoginRequiredMixin, CreateView):
 
     def add_to_cart(self, skater):
         '''Adds stick and puck session to shopping cart.'''
-        cart = self.cart_model(customer=self.request.user, item='Stick and Puck', skater_name=skater, event_date=self.object.session_date, amount=12)
+        # Get price of stick and puck program
+        program = self.program_model.objects.get(id=2)
+        price = program.skater_price
+        cart = self.cart_model(customer=self.request.user, item='Stick and Puck', skater_name=skater, event_date=self.object.session_date, amount=price)
         cart.save()
 
 
