@@ -1,17 +1,28 @@
 from bs4 import BeautifulSoup
 import mechanicalsoup
 from datetime import date, timedelta
-import os
+import os, sys
+
+if os.name == 'nt':
+    sys.path.append("C:\\Users\\brian\\Documents\\Python\\OIC_Web_Apps\\")
+else:
+    sys.path.append("/home/OIC/OIC_Web_Apps/")
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'OIC_Web_Apps.settings')
 
 import django
 django.setup()
 
 from django.db import IntegrityError
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
 from stickandpuck.models import StickAndPuckDates
+from accounts.models import Profile
+# from django.contrib.auth import get_user_model
+# User = get_user_model()
 
 stick_and_puck = []  # list that will hold stick and puck dates
 stick_and_puck_notes = [] # list that will hold stick and puck session notes
+new_dates = False
 
 def scrape_oic_schedule(date):
     '''Scrapes Ozaukee Ice Center schedule website for stick and puck session dates.'''
@@ -90,9 +101,45 @@ def add_stick_and_puck_dates(sessions):
         try:
             data = model(session_date=session[0], session_start_time=session[1], session_end_time=session[2], session_notes=session[3])
             data.save()
+            new_dates = True
         except IntegrityError:
             continue
     return
+
+def send_stick_and_puck_dates_email():
+    '''Sends email to Users letting them know when stick and puck dates are added.'''
+    recipients = Profile.objects.filter(stick_and_puck_email=True).select_related('user')
+
+    for recipient in recipients:
+        to_email = [recipient.user.email]
+        from_email = 'no-reply@mg.oicwebapps.com'
+        subject = 'New Stick and Puck Session(s) Added'
+
+        # Build the plain text message
+        text_message = f'Hi {recipient.user.first_name},\n\n'
+        text_message += f'New Stick and Puck sessions are now available online. Sign up at the url below.\n\n'
+        text_message += f'https://www.oicwebapps.com/web_apps/stickandpuck/\n\n'
+        text_message += f'If you no longer wish to receive these emails, log in to your account,\n'
+        text_message += f'click on your username and change the email settings in your profile.\n\n'
+        text_message += f'Thank you for using OICWebApps.com!\n\n'
+
+        # Build the html message
+        html_message = render_to_string(
+            'stick_and_puck_dates_email.html',
+            {
+                'recipient_name': recipient.user.first_name,
+            }
+        )
+
+        # Send email to each recipient separately
+        try:
+            mail = EmailMultiAlternatives(
+                subject, text_message, from_email, to_email
+            )
+            mail.attach_alternative(html_message, 'text/html')
+            mail.send()
+        except:
+            return
 
 
 if __name__ == "__main__":
@@ -112,3 +159,9 @@ if __name__ == "__main__":
         stick_and_puck.clear()
         stick_and_puck_notes.clear()
 
+    if new_dates:
+        print('New Dates Added')
+        send_stick_and_puck_dates_email()
+    else:
+        print('No SnP Dates Added')
+        send_stick_and_puck_dates_email()

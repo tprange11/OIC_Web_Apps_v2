@@ -1,11 +1,10 @@
-import os
-import sys
+import os, sys
 from datetime import date
 
 if os.name == 'nt':
     sys.path.append("C:\\Users\\brian\\Documents\\Python\\OIC_Web_Apps\\")
 else:
-    sys.path.append("/home/BrianC68/oicdev/OIC_Web_Apps/")
+    sys.path.append("/home/OIC/OIC_Web_Apps/")
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'OIC_Web_Apps.settings')
 
 import django
@@ -13,13 +12,11 @@ django.setup()
 
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
-from django.contrib.auth import get_user_model
-User = get_user_model()
 from accounts.models import Profile
 
 
 def send_mail():
-    '''Sends email to active Users in the Open Hockey Group letting them know open hockey dates for the week are posted'''
+    '''Sends email to Users letting them know open hockey dates for the week are posted'''
     recipients = Profile.objects.filter(open_hockey_email=True).select_related('user')
 
     for recipient in recipients:
