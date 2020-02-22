@@ -30,7 +30,11 @@ class CreateStickAndPuckSkaterView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         # Set the user as guardian for the Stick and Puck Skater Model
         form.instance.guardian = self.request.user
-        return super(CreateStickAndPuckSkaterView, self).form_valid(form)
+        try:
+            return super(CreateStickAndPuckSkaterView, self).form_valid(form)
+        except IntegrityError:
+            messages.add_message(self.request, messages.ERROR, 'This skater is already in your skater list!')
+            return render(self.request, template_name=self.template_name, context=self.get_context_data())
 
 
 class StickAndPuckSkatersListView(LoginRequiredMixin, ListView):
