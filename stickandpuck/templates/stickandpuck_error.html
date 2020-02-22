@@ -2,5 +2,8 @@
 {% block title %}<title>Stick and Puck Error</title>{% endblock title %}
 {% block content %}
     <h4>Oops, something went wrong!</h4>
-    <p class="error">{{ message }}</p>
+    <div class="alert alert-danger alert-dismissable alert-link" role="alert">
+        <button class="close" type="button" data-dismiss="alert" aria-label="close">&#215;</button>
+        {{ message }}
+    </div>
 {% endblock content %}

@@ -3,10 +3,12 @@
 {% block content %}
     <h4>My Stick and Puck Skater List</h4>
     {% for message in messages %}
-    <p class="error">{{ message }}</p>
+    <div class="alert alert-info alert-dismissable alert-link" role="alert">
+        <button class="close" type="button" data-dismiss="alert" aria-label="close">&#215;</button>
+        {{ message }}
+    </div>
     {% empty %}
     {% endfor %}
-
 <ul class="list-group" style="display: inline-block; margin-bottom: 10px;">
     {% for skater in object_list %}
     <li class="list-group-item" style="padding: 5px 15px;">Skater Name: {{ skater.first_name }} {{ skater.last_name }} <a href="{% url 'stickandpuck:skater-delete' pk=skater.pk %}" class="btn btn-warning btn-sm">Remove Skater</a></li>

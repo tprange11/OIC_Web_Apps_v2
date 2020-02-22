@@ -3,12 +3,12 @@
 {% block content %}
     <h4>Upcoming Stick and Puck Sessions</h4>
     <p>Choose a date below to print the Release of Liability for that session of stick and puck.</p>
-    <ul>
+    <ul class="list-group" style="display: inline-block; margin-bottom: 10px;">
         {% for session in object_list %}
-        <li style="line-height: 3;"><a href="{% url 'stickandpuck:print' date=session.session_date time=session.session_start_time %}" 
+        <li class="list-group-item" style="padding: 5px 15px;"><a href="{% url 'stickandpuck:print' date=session.session_date time=session.session_start_time %}" 
             class="btn btn-warning btn-sm">{{ session.session_date }} @ {{ session.session_start_time }}</a> <b>Session Notes: {{session.session_notes}}</b></li>
         {% empty %}
-        <li>There are no stick and puck sessions available to print.</li>
+        <li class="list-group-item" style="padding: 5px 15px;">There are no stick and puck sessions available to print.</li>
         {% endfor %}
     </ul>
 {% endblock content %}

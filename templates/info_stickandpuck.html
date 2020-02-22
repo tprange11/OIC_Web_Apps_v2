@@ -7,16 +7,16 @@
     <b>Parents and Guardians may register minor children for stick and puck sessions once you have signed up for an OIC Web Apps account.</b></p>
     <p><b>Please note: You do not need an OIC Web Apps account to skate.  You may come to any stick and puck session, but those who
         sign up with the web app will have priority.  If the session is full, you will not be allowed to skate.</b></p>
-    <ul>
-        <li>When: Various dates and times throughout the year</li>
-        <li>Limited to:</li>
-        <ul>
-            <li>Skaters: {{program_details.max_skaters}}</li>
-        </ul>
-        <li>Cost:</li>
-             <ul>
-                <li>Skaters: ${{program_details.skater_price}}</li>
-                <li>Goalies: ${{program_details.goalie_price}}</li>
-            </ul>
+    <ul class="list-group">
+        <li class="list-group-item" style="padding: 5px 15px;">When: Various dates and times throughout the year</li>
+        <li class="list-group-item" style="padding: 5px 15px;">Limited to:
+        <ul class="list-group">
+            <li class="list-group-item" style="padding: 5px 15px;">Skaters: {{program_details.max_skaters}}</li>
+        </ul></li>
+        <li class="list-group-item" style="padding: 5px 15px;">Cost:
+             <ul class="list-group">
+                <li class="list-group-item" style="padding: 5px 15px;">Skaters: ${{program_details.skater_price}}</li>
+                <li class="list-group-item" style="padding: 5px 15px;">Goalies: ${{program_details.goalie_price}}</li>
+            </ul></li>
     </ul>
 {% endblock content %}

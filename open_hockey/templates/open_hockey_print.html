@@ -3,11 +3,11 @@
 {% block content %}
     <h4>Upcoming Open Hockey Sessions</h4>
     <p>Choose a date below to print the Release of Liability for that session of open hockey.</p>
-    <ul>
+    <ul class="list-group" style="display: inline-block; margin-bottom: 10px;">
         {% for date in dates %}
-        <li style="line-height: 3;"><a href="{% url 'open_hockey:open-hockey-list' date=date %}" class="btn btn-warning btn-sm">{{ date }}</a></li>
+        <li class="list-group-item" style="padding: 5px 15px;"><a href="{% url 'open_hockey:open-hockey-list' date=date %}" class="btn btn-warning btn-sm">{{ date }}</a></li>
         {% empty %}
-        <li>There are no open hockey sessions available to print.</li>
+        <li class="list-group-item" style="padding: 5px 15px;">There are no open hockey sessions available to print.</li>
         {% endfor %}
     </ul>
 {% endblock content %}
