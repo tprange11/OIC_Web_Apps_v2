@@ -10,6 +10,7 @@ from . import models
 from cart.models import Cart
 from open_hockey.models import OpenHockeySessions, OpenHockeyMember
 from stickandpuck.models import StickAndPuckSessions
+from thane_storck.models import SkateSession
 
 # Create your views here.
 
@@ -54,6 +55,7 @@ def process_payment(request, **kwargs):
     open_hockey_sessions_model = OpenHockeySessions
     open_hockey_member_model = OpenHockeyMember
     stick_and_puck_sessions_model = StickAndPuckSessions
+    thane_storck_sessions_model = SkateSession
     today = date.today()
 
     if request.method == 'GET':
@@ -66,7 +68,7 @@ def process_payment(request, **kwargs):
         location_id = 'BSPYH5AEJGW8C' # uncomment on local machine
         cart_items = cart_model.objects.filter(customer=request.user).values_list('item', 'amount')
         total = 0
-        note = {'Open Hockey': 0, 'Stick and Puck': 0,}
+        note = {'Open Hockey': 0, 'Stick and Puck': 0, 'Thane Storck': 0}
         for item, amount in cart_items:
             total += amount
             note[item] += amount
@@ -82,14 +84,19 @@ def process_payment(request, **kwargs):
         idempotency_key = str(uuid.uuid1())
         amount = {'amount': total, 'currency': 'USD'}
         # Create the note depending on what the user is paying for....
-        if note['Open Hockey'] != 0 and note['Stick and Puck'] != 0:
-            note = f"Open Hockey ${note['Open Hockey']}, Stick and Puck ${note['Stick and Puck']}"
-        elif note['Open Hockey'] == 0:
-            note = f"Stick and Puck ${note['Stick and Puck']}"
-        else:
-            note = f"Open Hockey ${note['Open Hockey']}"
-        
-        body = {'idempotency_key': idempotency_key, 'source_id': nonce, 'amount_money': amount, 'autocomplete': True, 'note': note}
+        # if note['Open Hockey'] != 0 and note['Stick and Puck'] != 0:
+        #     note = f"Open Hockey ${note['Open Hockey']}, Stick and Puck ${note['Stick and Puck']}"
+        # elif note['Open Hockey'] == 0:
+        #     note = f"Stick and Puck ${note['Stick and Puck']}"
+        # else:
+        #     note = f"Open Hockey ${note['Open Hockey']}"
+
+        payment_note = ''
+        for k, v in note.items():
+            if v != 0:
+                payment_note += f'({k} ${v}) '
+
+        body = {'idempotency_key': idempotency_key, 'source_id': nonce, 'amount_money': amount, 'autocomplete': True, 'note': payment_note}
 
         # Send info to square api and react the the response
         api_response = client.payments.create_payment(body)
@@ -113,10 +120,11 @@ def process_payment(request, **kwargs):
                 open_hockey_sessions = open_hockey_sessions_model.objects.filter(skater=request.user, date__gte=today).update(paid=True)
                 stick_and_puck_sessions = stick_and_puck_sessions_model.objects.filter(guardian=request.user, session_date__gte=today).update(paid=True)
                 open_hockey_member = open_hockey_member_model.objects.filter(member=request.user).update(active=True)
+                thane_storck_sessions = thane_storck_sessions_model.objects.filter(skater=request.user).update(paid=True)
             except IntegrityError:
                 pass
 
-            # Clear items from the Cart Model
+            # Clear items from the Cart Model if the payment was successful
             customer_cart = Cart.objects.filter(customer=request.user).delete()
 
         elif api_response.is_error():

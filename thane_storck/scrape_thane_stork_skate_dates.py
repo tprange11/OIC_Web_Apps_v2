@@ -15,16 +15,13 @@ django.setup()
 from django.db import IntegrityError
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
-from stickandpuck.models import StickAndPuckDates
+from thane_storck.models import SkateDate
 from accounts.models import Profile
-# from django.contrib.auth import get_user_model
-# User = get_user_model()
 
-stick_and_puck = []  # list that will hold stick and puck dates
-stick_and_puck_notes = [] # list that will hold stick and puck session notes
+skate_dates = []
 
 def scrape_oic_schedule(date):
-    '''Scrapes Ozaukee Ice Center schedule website for stick and puck session dates.'''
+    '''Scrapes Ozaukee Ice Center schedule website for Thane Storck skate dates.'''
     xx_xx_xxxx = f"{date[5:7]}/{date[8:]}/{date[0:4]}"
     xxxx_xx_xx = f"{date[0:4]},{date[5:7]},{date[8:]}"
     today_with_time = date + "-00-00-00"
@@ -71,44 +68,28 @@ def scrape_oic_schedule(date):
         cols = row.find_all('td')
 
         if len(cols) > 2:
-            if cols[4].get_text().strip() == "Stick and Puck":
-                stick_and_puck.append([date, cols[0].get_text().strip(), cols[1].get_text().strip()])
-        if len(cols) == 2:
-            stick_and_puck_notes.append(cols[1].get_text().strip())
+            if cols[4].get_text().strip() == "Thane Storck":
+                skate_dates.append([date, cols[0].get_text().strip(), cols[1].get_text().strip()])
+                break
 
-    # print(stick_and_puck)
-    # print(stick_and_puck_notes)
-
-    # Add Stick and Puck age range to Stick and Puck dates list if there is one
-    if len(stick_and_puck_notes) != 0:
-        for x in range(len(stick_and_puck)):
-            if "14 and Under" in stick_and_puck[x] and "14 and Over" in stick_and_puck[x]:
-                stick_and_puck[x].append(stick_and_puck_notes[x].strip("Schedule Notes: "))
-            else:
-                stick_and_puck[x].append("All Ages")
-    else:
-        for x in range(len(stick_and_puck)):
-            stick_and_puck[x].append("All Ages")
-
-    # print(stick_and_puck)
-
-def add_stick_and_puck_dates(sessions):
-    '''Adds stick and puck dates, times and session notes to StickAndPuckDates model.'''
-    model = StickAndPuckDates
+def add_skate_dates(sessions):
+    '''Adds Thane Storck skate dates and times SkateDates model.'''
+    model = SkateDate
 
     for session in sessions:
         try:
-            data = model(session_date=session[0], session_start_time=session[1], session_end_time=session[2], session_notes=session[3])
+            data = model(skate_date=session[0], start_time=session[1], end_time=session[2])
             data.save()
             new_dates = True
         except IntegrityError:
             new_dates = False
             continue
+    # print(new_dates)
     return new_dates
 
-def send_stick_and_puck_dates_email():
-    '''Sends email to Users letting them know when stick and puck dates are added.'''
-    recipients = Profile.objects.filter(stick_and_puck_email=True).select_related('user')
+def send_skate_dates_email():
+    '''Sends email to Users letting them know when Thane Storck skate dates are added.'''
+    recipients = Profile.objects.filter(thane_storck_email=True).select_related('user')
 
     for recipient in recipients:
         to_email = [recipient.user.email]
@@ -117,15 +98,15 @@ def send_stick_and_puck_dates_email():
 
         # Build the plain text message
         text_message = f'Hi {recipient.user.first_name},\n\n'
-        text_message += f'New Stick and Puck sessions are now available online. Sign up at the url below.\n\n'
-        text_message += f'https://www.oicwebapps.com/web_apps/stickandpuck/\n\n'
+        text_message += f'New Thane Storck skate dates are now available online. Sign up at the url below.\n\n'
+        text_message += f'https://www.oicwebapps.com/web_apps/thane_storck/\n\n'
         text_message += f'If you no longer wish to receive these emails, log in to your account,\n'
         text_message += f'click on your username and change the email settings in your profile.\n\n'
         text_message += f'Thank you for using OICWebApps.com!\n\n'
 
         # Build the html message
         html_message = render_to_string(
-            'stick_and_puck_dates_email.html',
+            'thane_storck_skate_dates_email.html',
             {
                 'recipient_name': recipient.user.first_name,
             }
@@ -147,23 +128,22 @@ if __name__ == "__main__":
     the_date = date.today()
     # the_date = "2019-09-14"
 
-    # Every day scrape seven days in the future for stick and puck session dates and times
-    for x in range(7):
+    # Every day scrape the next four weeks for Saturday Thane Storck skate dates
+    for x in range(28):
         scrape_date = date.isoformat(the_date)
-        scrape_oic_schedule(scrape_date)
-        
-        if len(stick_and_puck) != 0:
-            send_email = add_stick_and_puck_dates(stick_and_puck)
-        else:
-            send_email = False
+        if the_date.weekday() == 5:
+            scrape_oic_schedule(scrape_date)
 
         the_date += timedelta(days=1)
-        stick_and_puck.clear()
-        stick_and_puck_notes.clear()
-    print(send_email)
+
+    if len(skate_dates) != 0:
+        send_email = add_skate_dates(skate_dates)
+
+    # print(skate_dates)
+    # print(send_email)
     if send_email:
         # print('New Dates Added')
-        send_stick_and_puck_dates_email()
-    else:
-        # print('No SnP Dates Added')
-        send_stick_and_puck_dates_email()
+        send_skate_dates_email()
+    # else:
+        # print('No Skate Dates Added')
+        # send_stick_and_puck_dates_email()

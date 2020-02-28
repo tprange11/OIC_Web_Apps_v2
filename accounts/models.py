@@ -19,6 +19,7 @@ class Profile(models.Model):
     user = models.ForeignKey(profile_user, on_delete=models.CASCADE)
     open_hockey_email = models.BooleanField(default=False)
     stick_and_puck_email = models.BooleanField(default=False)
+    thane_storck_email = models.BooleanField(default=False)
     figure_skating_email = models.BooleanField(default=False)
     slug = models.SlugField(unique=True, null=False)
 

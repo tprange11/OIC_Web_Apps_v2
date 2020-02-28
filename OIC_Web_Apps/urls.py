@@ -27,6 +27,7 @@ urlpatterns = [
     path('info/open_hockey/', views.OpenHockeyPage.as_view(), name='info-open-hockey'),
     path('info/stick_and_puck/', views.StickAndPuckPage.as_view(), name='info-stick-and-puck'),
     path('payment/', include('payment.urls')),
+    path('web_apps/thane_storck/', include('thane_storck.urls')),
     path('web_apps/', views.WebAppsPage.as_view(), name='web_apps'),
     path('web_apps/shopping_cart/', include('cart.urls')),
     path('web_apps/open_hockey/', include('open_hockey.urls')),

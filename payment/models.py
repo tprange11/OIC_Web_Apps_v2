@@ -12,7 +12,7 @@ class Payment(models.Model):
     square_id = models.CharField(max_length=200)
     square_receipt = models.CharField(max_length=100)
     amount = models.FloatField()
-    note = models.CharField(max_length=50)
+    note = models.CharField(max_length=200)
     date = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
