@@ -2,7 +2,8 @@
 {% block title %}<title>Upcoming Thane Storck Skate Sessions</title>{% endblock title %}
 {% block content %}
     <h4>Upcoming Thane Storck Skate Sessions</h4>
-    <p>Choose a date below to register for that session of Thane's Skate. Disabled skate sessions indicate that you have registered and paid for the skate session(s).</p>
+    <p>Choose a date below to register for that session of Thane's Skate. Disabled skate sessions indicate that you have registered for the skate session(s). You may remove yourself 
+        from a session prior to paying.  Once you have paid for the session(s), you will be unable to remove yourself from the session(s).</p>
     <p>If you'd like to be notified when Thane Storck skate dates are available for registration, update your <a href="{% url 'accounts:profile' slug=user.id %}">email preferences</a>.</p>
     {% for message in messages %}
     {% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}
