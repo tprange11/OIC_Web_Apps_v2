@@ -94,7 +94,7 @@ def send_skate_dates_email():
     for recipient in recipients:
         to_email = [recipient.user.email]
         from_email = 'no-reply@mg.oicwebapps.com'
-        subject = 'New Stick and Puck Session(s) Added'
+        subject = 'New Thane Storck Skate Date Added'
 
         # Build the plain text message
         text_message = f'Hi {recipient.user.first_name},\n\n'
