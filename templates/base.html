@@ -49,8 +49,8 @@
                     <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         Web Apps</a>
                     <div class="dropdown-menu" aria-labelledby="navbarDropdown" style="background-color:chartreuse">
-                        <a class="dropdown-item disabled" href="{% url 'open_hockey:open-hockey' %}">Open Hockey</a>
-                        <a class="dropdown-item disabled" href="{% url 'stickandpuck:stick-and-puck' %}">Stick and Puck</a>
+                        <a class="dropdown-item" href="{% url 'open_hockey:open-hockey' %}">Open Hockey</a>
+                        <a class="dropdown-item" href="{% url 'stickandpuck:stick-and-puck' %}">Stick and Puck</a>
                         {% if in_group_thane_storck %}
                         <a class="dropdown-item" href="{% url 'thane_storck:thane-skate' %}">Thane Storck</a>
                         {% endif %}
