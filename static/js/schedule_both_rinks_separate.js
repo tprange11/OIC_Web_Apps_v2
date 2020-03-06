@@ -93,9 +93,22 @@ if ( south_start_times.length == south_resurface_times.length ) {
     }
 }
 
+var south = true;
+if ( south_resurface_times.length === 0 && south_start_times.length === 0 ){
+    south = false;
+}
+var north = true;
+if ( north_resurface_times.length === 0 && north_resurface_times.length === 0 ) {
+    var north = false;
+}
 
-var southCountDownDate = new Date(south_resurface_time.replace(/-/g, '/')).getTime();
-var northCountDownDate = new Date (north_resurface_time.replace(/-/g, '/')).getTime();
+if (south) {
+    var southCountDownDate = new Date(south_resurface_time.replace(/-/g, '/')).getTime();
+}
+
+if (north) {
+    var northCountDownDate = new Date (north_resurface_time.replace(/-/g, '/')).getTime();
+}
 
 // Update the count down every 1 second
 var x = setInterval(function() {
@@ -103,44 +116,44 @@ var x = setInterval(function() {
   // Get today's date and time
   var now = new Date().getTime();
     
-  // Find the distance between now and the count down date
-  var southDistance = southCountDownDate - now;
-  var northDistance = northCountDownDate - now;
-    
-  // Time calculations for days, hours, minutes and seconds
-//  var days = Math.floor(distance / (1000 * 60 * 60 * 24));
-  var southHours = Math.floor((southDistance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  var southMinutes = Math.floor((southDistance % (1000 * 60 * 60)) / (1000 * 60));
-  var southSeconds = Math.floor((southDistance % (1000 * 60)) / 1000);
-
-  var northHours = Math.floor((northDistance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  var northMinutes = Math.floor((northDistance % (1000 * 60 * 60)) / (1000 * 60));
-  var northSeconds = Math.floor((northDistance % (1000 * 60)) / 1000);
-    
-  // Output the result in an element with id="resurface"
-  document.getElementById("south-resurface-timer").innerHTML = southHours + " Hours "
-  + southMinutes + " Mins " + southSeconds + " Secs";
-  document.getElementById("north-resurface-timer").innerHTML = northHours + " Hours "
-  + northMinutes + " Mins " + northSeconds + " Secs";
-    
-  // 10 minutes prior to the next resurface, send notification to device
-  if (southHours == 0 && southMinutes == 10 && southSeconds == 0) {
-    sendNotification();
-}
-  if (northHours == 0 && northMinutes == 10 && northSeconds == 0) {
-    sendNotification();
+  
+if (south) {
+    // Find the distance between now and the count down date
+    var southDistance = southCountDownDate - now;
+    // Time calculations for days, hours, minutes and seconds
+    //  var days = Math.floor(distance / (1000 * 60 * 60 * 24));
+    var southHours = Math.floor((southDistance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    var southMinutes = Math.floor((southDistance % (1000 * 60 * 60)) / (1000 * 60));
+    var southSeconds = Math.floor((southDistance % (1000 * 60)) / 1000);
+    // Output the result in an element with id="resurface"
+    document.getElementById("south-resurface-timer").innerHTML = southHours + " Hours "
+    + southMinutes + " Mins " + southSeconds + " Secs";
+    // 10 minutes prior to the next resurface, send notification to device
+    if (southHours == 0 && southMinutes == 10 && southSeconds == 0) {
+        sendNotification();
+    }
+    if (southHours == 0 && southMinutes <= 9 && southSeconds <= 59) {
+        document.getElementById("south-schedule-row1").style.backgroundColor = "lightgray";
+        document.getElementById("south-schedule-row1").style.color = "black";
+    }
 }
 
-if (southHours == 0 && southMinutes <= 9 && southSeconds <= 59) {
-    document.getElementById("south-schedule-row1").style.backgroundColor = "lightgray";
-    document.getElementById("south-schedule-row1").style.color = "black";
+if (north) {
+    var northDistance = northCountDownDate - now;
+    var northHours = Math.floor((northDistance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    var northMinutes = Math.floor((northDistance % (1000 * 60 * 60)) / (1000 * 60));
+    var northSeconds = Math.floor((northDistance % (1000 * 60)) / 1000);
+    document.getElementById("north-resurface-timer").innerHTML = northHours + " Hours "
+    + northMinutes + " Mins " + northSeconds + " Secs";
+    if (northHours == 0 && northMinutes == 10 && northSeconds == 0) {
+        sendNotification();
+    }
+    if (northHours == 0 && northMinutes <= 9 && northSeconds <= 59) {
+        document.getElementById("north-schedule-row1").style.backgroundColor = "black";
+    }
 }
-if (northHours == 0 && northMinutes <= 9 && northSeconds <= 59) {
-    document.getElementById("north-schedule-row1").style.backgroundColor = "black";
-}
-
     
-  // If the count down is over, write some text 
+  // If the count down is over, write some text and reload the page
   if (southDistance < 0 || northDistance < 0) {
     clearInterval(x);
     document.getElementById("south-resurface-timer").innerHTML = "Refresh Page to Reset Resurface Countdown";

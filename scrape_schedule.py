@@ -221,11 +221,12 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"{e}, scrape_oyha_teams()")
     # If it is Friday, scrape OWHL teams
-    if date.weekday(date.today()) == 4:
-        try:
-            scrape_owhl_teams(scrape_date)
-        except Exception as e:
-            print(f"{e}, scrape_owhl_teams()")
+    ### UNCOMMENT DURING OWHL SEASON ###
+    # if date.weekday(date.today()) == 4:
+    #     try:
+    #         scrape_owhl_teams(scrape_date)
+    #     except Exception as e:
+    #         print(f"{e}, scrape_owhl_teams()")
     # If it is Sunday, scrape OCHL teams
     if date.weekday(date.today()) == 6:
         try:
