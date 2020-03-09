@@ -174,7 +174,7 @@ class PrintSkateDateListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        queryset = queryset.order_by('skate_date')
+        queryset = queryset.filter(skate_date__gte=date.today()).order_by('skate_date')
         return queryset
 
     def get_context_data(self, **kwargs):
@@ -185,7 +185,7 @@ class PrintSkateDateListView(LoginRequiredMixin, ListView):
 
 
 class PrintSkateDateView(LoginRequiredMixin, ListView):
-    ''''''
+    '''Displays Liability Waiver page with skater names for printing.'''
     model = models.SkateSession
     skate_date_model = models.SkateDate
     context_object_name = 'session_skaters'
