@@ -23,7 +23,7 @@ def clear_cart_and_unpaid_items():
     OpenHockeyMember.objects.filter(end_date__gt=date.today(), active=False).delete()
     OpenHockeySessions.objects.filter(paid=False, goalie=False, date__gte=date.today()).delete()
     StickAndPuckSessions.objects.filter(paid=False, session_date__gte=date.today()).delete()
-    SkateSession.objects.filter(paid=False, session_date___gte=date.today()).delete()
+    SkateSession.objects.filter(paid=False, skate_date__skate_date__gte=date.today()).delete()
     return
 
 if __name__ == '__main__':
