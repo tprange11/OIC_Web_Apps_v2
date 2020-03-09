@@ -1,9 +1,9 @@
 from django.shortcuts import render
-from django.views.generic import TemplateView, ListView, DetailView
+from django.views.generic import TemplateView, ListView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
-import uuid, os
+import uuid
 from datetime import date
 from square.client import Client
 from . import models
@@ -27,10 +27,10 @@ class PaymentView(LoginRequiredMixin, TemplateView):
         for item_cost in items_cost:
             total += item_cost
         context['total'] = total
-        # context['app_id'] = os.getenv("SQUARE_APP_ID") # uncomment in production
-        # context['loc_id'] = os.getenv("SQUARE_LOCATION_ID") # uncomment in production
-        context['app_id'] = 'sandbox-sq0idb-Rbc4KuE-WwQ2C3nT0RodQA' # uncomment on local machine
-        context['loc_id'] = 'BSPYH5AEJGW8C' # uncomment on local machine
+        context['app_id'] = os.getenv("SQUARE_APP_ID") # uncomment in production
+        context['loc_id'] = os.getenv("SQUARE_LOCATION_ID") # uncomment in production
+        # context['app_id'] = 'sandbox-sq0idb-Rbc4KuE-WwQ2C3nT0RodQA' # uncomment on local machine
+        # context['loc_id'] = 'BSPYH5AEJGW8C' # uncomment on local machine
         return context
 
 
@@ -62,10 +62,10 @@ def process_payment(request, **kwargs):
         return
     else:
         nonce = request.POST['nonce']
-        # access_token = os.getenv('SQUARE_API_ACCESS_TOKEN') # uncomment in production
-        # location_id = os.getenv('SQUARE_LOCATION_ID') # uncomment in production
-        access_token = 'EAAAEEfoRSmtj9WaKOOwhm4fcit-hzrtJ9SdYnsUS9WIs9UrV2ljbe9Ryj49pq7r' # uncomment on local machine
-        location_id = 'BSPYH5AEJGW8C' # uncomment on local machine
+        access_token = os.getenv('SQUARE_API_ACCESS_TOKEN') # uncomment in production
+        # location_id = os.getenv('SQUARE_LOCATION_ID') 
+        # access_token = 'EAAAEEfoRSmtj9WaKOOwhm4fcit-hzrtJ9SdYnsUS9WIs9UrV2ljbe9Ryj49pq7r' # uncomment on local machine
+        # location_id = 'BSPYH5AEJGW8C' # uncomment on local machine
         cart_items = cart_model.objects.filter(customer=request.user).values_list('item', 'amount')
         total = 0
         note = {'Open Hockey': 0, 'Stick and Puck': 0, 'Thane Storck': 0}
@@ -76,8 +76,8 @@ def process_payment(request, **kwargs):
 
         client = Client(
             access_token=access_token,
-            environment='sandbox', # Uncomment on local machine
-            # environment='production', # Uncomment in production
+            # environment='sandbox', # Uncomment on local machine
+            environment='production', # Uncomment in production
         )
 
         # Assemble the body for the create_payment() api function
