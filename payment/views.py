@@ -3,7 +3,7 @@ from django.views.generic import TemplateView, ListView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
-import uuid
+import uuid, os
 from datetime import date
 from square.client import Client
 from . import models
