@@ -2,8 +2,32 @@
 {% block content %}
 {% block title %}<title>Choose Rink Schedule</title>{% endblock title %}
 <h4>Choose Rink to View Schedule</h4>
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-info alert-dismissible alert-link" role="alert">
+    <button class="close" type="button" data-dismiss="alert" aria-label="close">&#215;</button>
+        {{ message }}
+</div>
+{% empty%}
+{% endfor %}
+{% endif %}
+    
 <a href=" {% url 'schedule:rink-schedule-list' rink='north' %}" class="btn btn-warning btn-sm schedule-button">North Only</a>
 <a href=" {% url 'schedule:rink-schedule-list' rink='south' %}" class="btn btn-warning btn-sm schedule-button">South Only</a>
 <a href=" {% url 'schedule:rink-schedule-list' rink='separate' %}" class="btn btn-warning btn-sm schedule-button">North and South Split</a>
 <a href=" {% url 'schedule:rink-schedule-list' rink='both' %}" class="btn btn-warning btn-sm schedule-button">North and South Combined</a>
+{% if user.is_superuser %}
+<a href=" {% url 'schedule:update-schedule' %}" class="btn btn-secondary btn-sm schedule-button" onclick="showSpinner()" id="update-schedule">Update Schedule</a>
+<div id="spinner" class="text-center" style="display: none;">
+    <div class="spinner-border text-primary" role="status">
+      <span class="sr-only">Loading...</span>
+    </div>
+</div>
+<script>
+    function showSpinner() {
+        document.getElementById('update-schedule').style.display = 'none';
+        document.getElementById('spinner').style.display = 'block';
+    }
+</script>
+{% endif %}
 {% endblock content %}

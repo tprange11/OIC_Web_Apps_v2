@@ -1,7 +1,17 @@
+## This file is run daily to scrape the OIC online schedule and save the days events for the zamboni
+## resurface schedule.  It is also used from views.py scrape_schedule() view to update the schedule if anything
+## has been added or removed.
+
 from bs4 import BeautifulSoup
 import mechanicalsoup
 from datetime import date, datetime
-import os, requests
+import os, requests, sys
+
+if os.name == 'nt':
+    sys.path.append("C:\\Users\\brian\\Documents\\Python\\OIC_Web_Apps\\")
+else:
+    sys.path.append('/home/OIC/OIC_Web_Apps/')
+
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'OIC_Web_Apps.settings')
 
 import django
@@ -215,24 +225,27 @@ if __name__ == "__main__":
 
     scrape_date = date.isoformat(the_date)
     scrape_oic_schedule(scrape_date)
+    ### UNCOMMENT DURING HOCKEY SEASON ###
     # Scrape OYHA teams daily
     try:
         scrape_oyha_teams(scrape_date)
     except Exception as e:
         print(f"{e}, scrape_oyha_teams()")
+
     # If it is Friday, scrape OWHL teams
-    ### UNCOMMENT DURING OWHL SEASON ###
     # if date.weekday(date.today()) == 4:
     #     try:
     #         scrape_owhl_teams(scrape_date)
     #     except Exception as e:
     #         print(f"{e}, scrape_owhl_teams()")
+
     # If it is Sunday, scrape OCHL teams
-    if date.weekday(date.today()) == 6:
-        try:
-            scrape_ochl_teams()
-        except Exception as e:
-            print(f"{e}, scrape_ochl_teams()")
+    # if date.weekday(date.today()) == 6:
+    #     try:
+    #         scrape_ochl_teams()
+    #     except Exception as e:
+    #         print(f"{e}, scrape_ochl_teams()")
+
     if len(team_events) != 0:
         for item in team_events:
             for oic in oic_schedule:
@@ -243,9 +256,9 @@ if __name__ == "__main__":
                         oic[4] = f"{item[1]} vs {item[2]}"
 
     # If anything ends at midnight, change to 11:59 PM
-    for item in oic_schedule:
-        if item[2] == "12:00 AM":
-            item[2] = "11:59 PM"
+    # for item in oic_schedule:
+    #     if item[2] == "12:00 AM":
+    #         item[2] = "11:59 PM"
 
     # Insert data into Django model
     add_schedule_to_model(oic_schedule)

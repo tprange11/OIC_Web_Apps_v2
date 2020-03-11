@@ -1,11 +1,11 @@
-from django.shortcuts import render
+from django.shortcuts import redirect
 from django.views.generic import ListView, TemplateView
-from django.views.decorators.cache import never_cache
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.models import User
-from . import models
-from datetime import datetime, time, date
-
+from django.contrib import messages
+from . import models, scrape_schedule
+from datetime import datetime, date
+import os
+from .scrape_schedule import scrape_oic_schedule, scrape_ochl_teams, scrape_owhl_teams, scrape_oyha_teams, add_schedule_to_model, team_events, oic_schedule
 
 # Create your views here.
 
@@ -94,4 +94,54 @@ class RinkScheduleListView(LoginRequiredMixin, ListView):
             context['resurface_times'] = resurface_times
         
         return context
-        
+
+
+def scrape_schedule(request):
+    '''This view is called when the Update Schedule button is clicked. I will update the zamboni resurface
+    schedule if the online schedule has changed.'''
+    
+    the_date = date.today()
+    # the_date = "2019-10-26"
+
+    scrape_date = date.isoformat(the_date)
+    scrape_oic_schedule(scrape_date)
+    ### UNCOMMENT DURING HOCKEY SEASON ###
+    # Scrape OYHA teams daily
+    try:
+        scrape_oyha_teams(scrape_date)
+    except Exception as e:
+        print(f"{e}, scrape_oyha_teams()")
+
+    # If it is Friday, scrape OWHL teams
+    # if date.weekday(date.today()) == 4:
+    #     try:
+    #         scrape_owhl_teams(scrape_date)
+    #     except Exception as e:
+    #         print(f"{e}, scrape_owhl_teams()")
+
+    # If it is Sunday, scrape OCHL teams
+    # if date.weekday(date.today()) == 6:
+    #     try:
+    #         scrape_ochl_teams()
+    #     except Exception as e:
+    #         print(f"{e}, scrape_ochl_teams()")
+
+    if len(team_events) != 0:
+        for item in team_events:
+            for oic in oic_schedule:
+                if item[0] == oic[1] and item[3] == oic[3]:
+                    if item[2] == "":
+                        oic[4] = f"{item[1]}"
+                    else:
+                        oic[4] = f"{item[1]} vs {item[2]}"
+
+    # If anything ends at midnight, change to 11:59 PM
+    # for item in oic_schedule:
+    #     if item[2] == "12:00 AM":
+    #         item[2] = "11:59 PM"
+
+    # Insert data into Django model
+    add_schedule_to_model(oic_schedule)
+
+    messages.add_message(request, messages.SUCCESS, 'Rink Resurface Schedule has been updated.')
+    return redirect('schedule:choose-rink')
