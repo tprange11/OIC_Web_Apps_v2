@@ -10,7 +10,7 @@ class StickAndPuckSkaterForm(forms.ModelForm):
         model = StickAndPuckSkaters
         fields = ('first_name', 'last_name', 'date_of_birth')
         help_texts = {
-            'date_of_birth': 'mm/dd/yyy',
+            'date_of_birth': 'mm/dd/yyyy',
         }
         
 
