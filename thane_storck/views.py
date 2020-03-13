@@ -155,7 +155,7 @@ class DeleteSkateSessionView(LoginRequiredMixin, DeleteView):
         # Clear session from the cart
         skate_date = self.model.objects.filter(id=kwargs['pk']).values_list('skate_date', flat=True)
         cart_date = self.skate_date_model.objects.filter(id=skate_date[0])
-        print(cart_date[0])
+        # print(cart_date[0])
         cart_item = Cart.objects.filter(event_date=cart_date[0].skate_date).delete()
 
         # Set success message and return
