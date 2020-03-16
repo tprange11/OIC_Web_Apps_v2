@@ -51,6 +51,7 @@
                     <div class="dropdown-menu" aria-labelledby="navbarDropdown" style="background-color:chartreuse">
                         <a class="dropdown-item" href="{% url 'open_hockey:open-hockey' %}">Open Hockey</a>
                         <a class="dropdown-item" href="{% url 'stickandpuck:stick-and-puck' %}">Stick and Puck</a>
+                        <a class="dropdown-item" href="{% url 'figure_skating:figure-skating' %}">Figure Skating</a>
                         {% if in_group_thane_storck %}
                         <a class="dropdown-item" href="{% url 'thane_storck:thane-skate' %}">Thane Storck</a>
                         {% endif %}
@@ -123,10 +124,10 @@
                     </li>
                 {% else %}
                 <li class="nav-item">
-                        <a class="nav-link" href="{% url 'accounts:signup' %}">Sign Up</a>
+                        <a class="nav-link disabled" href="{% url 'accounts:signup' %}">Sign Up</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'accounts:login' %}">Log In</a>
+                        <a class="nav-link disabled" href="{% url 'accounts:login' %}">Log In</a>
                     </li>
                 {% endif %}
             </ul>
