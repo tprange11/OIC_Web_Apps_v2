@@ -277,21 +277,26 @@ class OpenHockeySessionsPrint(LoginRequiredMixin, TemplateView):
     '''Displays a page with open hockey sessions available to print'''
 
     template_name = 'open_hockey_print.html'
+    model = models.OpenHockeySessions
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
         the_date = date.today()
         open_hockey_dates = []
+        skater_lists = []
 
         while the_date.weekday() < 5:
             if the_date.weekday() == 1:
                 open_hockey_dates.append(the_date)
+                skater_lists.append(self.model.objects.get_session_participants(the_date))
             if the_date.weekday() == 4:
                 open_hockey_dates.append(the_date)
+                skater_lists.append(self.model.objects.get_session_participants(the_date))
             the_date += timedelta(days=1)
 
         context['dates'] = open_hockey_dates
+        context['skater_lists'] = skater_lists
         return context
 
 
