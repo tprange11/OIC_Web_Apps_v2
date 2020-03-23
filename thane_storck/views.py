@@ -27,7 +27,7 @@ class SkateDateListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         # Get all skaters signed up for each session to display the list of skaters for each session
-        skate_sessions = self.session_model.objects.all()
+        skate_sessions = self.session_model.objects.filter(skate_date__skate_date__gte=date.today())
         context['skate_sessions'] = skate_sessions
         return context
 
@@ -115,9 +115,10 @@ class CreateSkateSessionView(LoginRequiredMixin, CreateView):
     def add_to_cart(self):
         '''Adds Thane Storck session to shopping cart.'''
         # Get price of Thane Storck program
-        # program = self.program_model.objects.get(id=4)
         price = self.program_model.objects.get(id=4).skater_price
-        cart = self.cart_model(customer=self.request.user, item='Thane Storck', skater_name=self.request.user.get_full_name(), event_date=self.object.skate_date.skate_date, amount=price)
+        start_time = self.session_model.objects.filter(skate_date=self.object.skate_date.skate_date).values_list('start_time', flat=True)
+        cart = self.cart_model(customer=self.request.user, item='Thane Storck', skater_name=self.request.user.get_full_name(), 
+            event_date=self.object.skate_date.skate_date, event_start_time=start_time[0], amount=price)
         cart.save()
 
     def join_thane_storck_group(self, join_group='Thane Storck'):

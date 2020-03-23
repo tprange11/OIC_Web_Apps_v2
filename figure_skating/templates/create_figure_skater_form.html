@@ -1,0 +1,17 @@
+{% extends 'base.html' %}{% load bootstrap4 %}
+{% block title %}<title>Figure Skating --> Add Skater</title>{% endblock title %}
+{% block content %}
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-danger alert-dismissable alert-link" role="alert">
+    <button class="close" type="button" data-dismiss="alert" aria-label="close">&#215;</button>
+    {{ message }}
+</div>
+{% endfor %}
+{% endif %}
+<form method="POST" action="{% url 'figure_skating:add-skater' %}">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+    <p><input type="submit" value="Save Skater" class="btn btn-success btn-sm"></p>
+</form>
+{% endblock content %}

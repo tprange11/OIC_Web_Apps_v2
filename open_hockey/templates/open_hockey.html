@@ -42,7 +42,7 @@
                 <ul class="list-group">
                     <li class="list-group-item">Member Name: {{user.first_name}} {{user.last_name}}</li>
                     <li class="list-group-item">Type: {{member_info.member_type}}</li>
-                    <li class="list-group-item">Status: {{member_info.active}}</li>
+                    <li class="list-group-item">Status: {% if member_info.active %}Active{% else %} Not Active{% endif %}</li>
                     <li class="list-group-item">End Date: {{member_info.end_date}}</li>
                 </ul>
             </div>

@@ -3,22 +3,35 @@
 {% block content %}
 <h4>Shopping Cart Items</h4>
 <div class="container">
-    <div class="row bg-secondary text-light rounded">
-        <div class="col">Item</div>
-        <div class="col">Skater Name</div>
-        <div class="col">Event Date</div>
-        <div class="col">Cost</div>
+    <div class="row bg-secondary text-light rounded mx-1">
+        <div class="col-6 col-md-2">Item</div>
+        <div class="col-6 col-md-2">Skater Name</div>
+        <div class="col-6 col-md-2">Event Date</div>
+        <div class="col-6 col-md-2">Start Time</div>
+        <div class="col-6 col-md-2">Cost</div>
+        <div class="col-6 col-md-2">Remove Item</div>
     </div>
+    <ul class="list-group mt-2">
 {% for item in shopping_cart_items %}
-    <div class="row">
-        <div class="col">{{item.item}}</div>
-        <div class="col">{{item.skater_name}}</div>
-        <div class="col">{{item.event_date}}</div>
-        <div class="col">${{item.amount}}</div>
+    <li class="list-group-item" style="padding-left: 5px; padding-right: 0px;">
+    <div class="row align-items-center">
+        <div class="col-6 col-md-2">{{item.item}}</div>
+        <div class="col-6 col-md-2">{{item.skater_name}}</div>
+        <div class="col-6 col-md-2">{{item.event_date}}</div>
+        <div class="col-6 col-md-2">{{item.event_start_time}}</div>
+        <div class="col-6 col-md-2">${{item.amount}}</div>
+        <div class="col-6 col-md-2">
+            <form action="{% url 'cart:cart-remove-item' pk=item.pk %}" method="POST">
+                {% csrf_token %}
+                <input type="submit" value="X" class="btn btn-danger btn-sm">
+            </form>
+        </div>
     </div>
+    </li>
 {% empty %}
 <p>There are no items in your cart.</p>
 {% endfor %}
+    </ul>
     <div class="font-weight-bold mt-3">Cart Total: ${{cart_total}}</div>
     <div>
         <a class="btn btn-success btn-sm mt-3" href="{% url 'payment:payment' %}">Pay Now</a>

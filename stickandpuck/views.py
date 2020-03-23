@@ -164,7 +164,7 @@ class CreateStickAndPuckSessions(LoginRequiredMixin, CreateView):
         # Get price of stick and puck program
         program = self.program_model.objects.get(id=2)
         price = program.skater_price
-        cart = self.cart_model(customer=self.request.user, item='Stick and Puck', skater_name=skater, event_date=self.object.session_date, amount=price)
+        cart = self.cart_model(customer=self.request.user, item='Stick and Puck', skater_name=skater, event_date=self.object.session_date, event_start_time=self.object.session_time, amount=price)
         cart.save()
 
 
@@ -193,9 +193,10 @@ class StickAndPuckSessionsDeleteView(LoginRequiredMixin, DeleteView):
     def delete(self, *args, **kwargs):
         # If a stick and puck session is removed before paying, remove it from the cart too
         session_date = self.model.objects.filter(id=kwargs['pk']).values_list('session_date', flat=True)
+        start_time = self.model.objects.filter(id=kwargs['pk']).values_list('session_time', flat=True)
         skater_id = self.model.objects.filter(id=kwargs['pk']).values_list('skater', flat=True)
         skater = self.skater_model.objects.get(id=skater_id[0])
-        cart_item = Cart.objects.filter(event_date=session_date[0], skater_name=skater).delete()
+        cart_item = Cart.objects.filter(event_date=session_date[0], event_start_time=start_time[0], skater_name=skater).delete()
         # Set message to display on page after skater has been removed from stick and puck session
         messages.success(self.request, 'Skater has been removed from the Stick and Puck Session!')
         return super().delete(*args, **kwargs)
@@ -206,12 +207,18 @@ class StickAndPuckSessionsDeleteView(LoginRequiredMixin, DeleteView):
 class StickAndPuckPrintListView(LoginRequiredMixin, ListView):
     '''Displays page with list of upcoming stick and puck dates for printing purposes.'''
     model = models.StickAndPuckDates
+    sessions_model = models.StickAndPuckSessions
     template_name = 'stickandpuckprint_list.html'
 
     def get_queryset(self):
         queryset = super().get_queryset()
         # Filter queryset by dates greater than or equal to today, order by primary key('pk')
         return queryset.filter(session_date__gte=date.today()).order_by('pk')
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['session_skaters'] = self.sessions_model.objects.filter(session_date__gte=date.today())
+        return context
 
 
 class StickAndPuckPrintView(LoginRequiredMixin, ListView):

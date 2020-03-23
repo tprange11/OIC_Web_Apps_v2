@@ -142,7 +142,7 @@ class CreateOpenHockeySessions(LoginRequiredMixin, CreateView):
         # Get price of open hockey program
         program = self.program_model.objects.get(id=1)
         price = program.skater_price
-        cart = self.cart_model(customer=self.request.user, item='Open Hockey', skater_name=self.request.user.get_full_name(), event_date=self.object.date, amount=price)
+        cart = self.cart_model(customer=self.request.user, item='Open Hockey', skater_name=self.request.user.get_full_name(), event_date=self.object.date, event_start_time='6:15 AM', amount=price)
         cart.save()
 
 
@@ -240,12 +240,12 @@ class CreateOpenHockeyMemberView(LoginRequiredMixin, CreateView):
 
     def add_to_cart(self, amount):
         '''Adds open hockey membership fee to shopping cart.'''
-        cart = self.cart_model(customer=self.request.user, item='Open Hockey', skater_name=self.request.user.get_full_name(), event_date=date.today(), amount=amount)
+        cart = self.cart_model(customer=self.request.user, item='OH Membership', skater_name=self.request.user.get_full_name(), event_date=date.today(), event_start_time='6:15 AM', amount=amount)
         cart.save()
 
 
 class UpdateOpenHockeyMemberView(LoginRequiredMixin, UpdateView):
-    '''Displays page where user can activaet and expired open hockey membership.'''
+    '''Displays page where user can activate an expired open hockey membership.'''
 
     model = models.OpenHockeyMember
     type_model = models.OpenHockeyMemberType
@@ -268,7 +268,7 @@ class UpdateOpenHockeyMemberView(LoginRequiredMixin, UpdateView):
 
     def add_to_cart(self, amount):
         '''Adds open hockey membership fee to shopping cart.'''
-        cart = self.cart_model(customer=self.request.user, item='Open Hockey', skater_name=self.request.user.get_full_name(), event_date=date.today(), amount=amount)
+        cart = self.cart_model(customer=self.request.user, item='OH Membership', skater_name=self.request.user.get_full_name(), event_date=date.today(), amount=amount)
         cart.save()
 
 

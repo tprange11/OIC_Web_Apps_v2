@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}<title>OIC - Figure Skating</title>{% endblock title %}
+{% block content %}
+    <h3>Figure Skating @ OIC</h3>
+    <p>Figure skating is available at the Ozaukee Ice Center for kids and adults of all ages. You may sign up for an OIC Web Apps account prior to skating. 
+        Once you have registered for an account, you may use the Figure Skating Web App to sign up and pay for open figure skating sessions.</p>
+    <p>Parents and guardians may sign up for an account and register children under the age of 18 for open figure skating sessions.</p>
+    <ul class="list-group">
+        <li class="list-group-item" style="padding: 5px 15px;">When: Various dates and times throughout the year</li>
+        <li class="list-group-item" style="padding: 5px 15px;">Limited to: {{program_details.max_skaters}} Skaters</li>
+        <li class="list-group-item" style="padding: 5px 15px;">Cost: ${{program_details.skater_price}}</li>
+    </ul>
+{% endblock content %}

@@ -23,7 +23,14 @@ class StickAndPuckPage(TemplateView):
         context = super().get_context_data(**kwargs)
         context['program_details'] = Program.objects.get(id=2)
         return context
-    
+
+class FigureSkatingPage(TemplateView):
+    template_name = 'info_figure_skating.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['program_details'] = Program.objects.get(id=3)
+        return context
 
 class WebAppsPage(TemplateView):
     template_name = 'web_apps.html'

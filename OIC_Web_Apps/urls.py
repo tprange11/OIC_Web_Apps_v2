@@ -26,6 +26,7 @@ urlpatterns = [
     path('thanks/', views.ThanksPage.as_view(), name='thanks'),
     path('info/open_hockey/', views.OpenHockeyPage.as_view(), name='info-open-hockey'),
     path('info/stick_and_puck/', views.StickAndPuckPage.as_view(), name='info-stick-and-puck'),
+    path('info/figure_skating/', views.FigureSkatingPage.as_view(), name='info-figure-skating'),
     path('payment/', include('payment.urls')),
     path('web_apps/thane_storck/', include('thane_storck.urls')),
     path('web_apps/', views.WebAppsPage.as_view(), name='web_apps'),
@@ -39,6 +40,7 @@ urlpatterns = [
         )), name='serviceworker.js'),
     path('offline/', (TemplateView.as_view(template_name = 'offline.html',
         content_type = 'text/html')), name = 'offline'),
+    path('web_apps/figure_skating/', include('figure_skating.urls')),
     # path('web_apps/web_apps_sw.js', (TemplateView.as_view(
     #     template_name = 'web_apps_sw.js',
     #     content_type = 'application/javascript'

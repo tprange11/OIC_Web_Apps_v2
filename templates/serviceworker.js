@@ -1,5 +1,5 @@
 
-var STATIC_CACHE = 'oicwebapps-v6';
+var STATIC_CACHE = 'oicwebapps-v7';
 // var DYNAMIC_CACHE = 'oicwebapps-dyn-v1';
 
 self.addEventListener('install', function(event) {
@@ -25,6 +25,7 @@ self.addEventListener('install', function(event) {
                     '/static/manifest.json',
                     '/info/open_hockey/',
                     '/info/stick_and_puck/',
+                    '/info/figure_skating/',
                     'https://code.jquery.com/jquery-3.4.1.slim.min.js',
                     'https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js',
                     'https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js',

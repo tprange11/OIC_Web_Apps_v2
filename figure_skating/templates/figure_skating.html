@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% block content %}
+{% block title %}<title>Open Figure Skating @ OIC</title>{% endblock title %}
+<h4>Open Figure Skating</h4>
+{% if messages %}
+    {% for message in messages %}
+    {% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}
+    <div class="alert alert-danger alert-dismissible alert-link" role="alert">
+        <button class="close" type="button" data-dismiss="alert" aria-label="close">&#215;</button>
+            {{ message }}
+    </div>
+    {% else %}
+    <div class="alert alert-success alert-dismissible alert-link" role="alert">
+        <button class="close" type="button" data-dismiss="alert" aria-label="close">&#215;</button>
+            {{ message }}
+    </div>
+    {% endif %}
+{% endfor %}
+{% endif %}
+<ul class="list-group" style="display: inline-block; margin-bottom: 10px;">
+    <li class="list-group-item"><!-- Button trigger myskater modal -->
+    <button type="button" class="btn btn-warning btn-sm" data-toggle="modal" data-target="#myskaters">
+        My Skaters</button>
+    <a class="btn btn-warning btn-sm" href="{% url 'figure_skating:add-skater' %}">Add Skater</a></li>
+    <li class="list-group-item"><!-- Button trigger mysessions modal -->
+        <button type="button" class="btn btn-warning btn-sm" data-toggle="modal" data-target="#mysessions">
+        My Sessions</button></li>
+    <li class="list-group-item"><!-- Button trigger upcomingsessions modal -->
+        <button type="button" class="btn btn-warning btn-sm" data-toggle="modal" data-target="#upcomingsessions">
+        Upcoming Figure Skating Sessions</button></li>
+    <!-- <li class="list-group-item"><a href="{% url 'figure_skating:session-register'%}" class="btn btn-success btn-sm">Sign Up Skater(s)</a></li> -->
+</ul>
+<br>
+<!-- myskaters modal -->
+<div class="modal fade" id="myskaters" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="mySkatersBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header text-light bg-secondary">
+          <h5 class="modal-title" id="mySkatersBackdropLabel">My Skaters</h5>
+          <button type="button" class="close text-light" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+            <ul class="list-group">
+            {% for skater in my_skaters %}
+                <li class="list-group-item">
+                    <div class="row">
+                        <div class="col">
+                            {{skater}}
+                        </div>
+                        <div class="col">
+                            <form action="{% url 'figure_skating:remove-skater' pk=skater.pk %}" method="POST">
+                                {% csrf_token %}
+                                <input type="submit" class="btn btn-danger btn-sm" value="Remove Skater">
+                            </form>
+                        </div>
+                    </div></li>
+            {% empty %}
+            <li class="list-group-item">No registered skaters!</li>
+            {% endfor %}
+            </ul>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+<!-- mysessions Modal -->
+<div class="modal fade" id="mysessions" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="mySessionsBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header text-light bg-secondary">
+          <h5 class="modal-title" id="mySessionsBackdropLabel">My Sessions</h5>
+            <button type="button" class="close text-light" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+            <p class="font-weight-bold">You must pay for your sessions to complete registration. Unpaid sessions will be removed! Go to 
+                <a href="{% url 'cart:shopping-cart' %}">your cart</a> and pay for any unpaid sessions.</p>
+            <ul class="list-group">
+            {% for session in my_sessions %}
+                <li class="list-group-item">{{session.skater}} {{session.session}} 
+                {% if session.paid %}
+                    <span class="font-weight-bold text-success">Paid</span>
+                {% else %}
+                    <span class="font-weight-bold text-danger">Unpaid</span>
+                    <form method="POST" action="{% url 'figure_skating:session-remove' pk=session.pk %}">
+                    {% csrf_token %}
+                    <input type="submit" value="Remove Skater from Session" class="btn btn-danger btn-sm mt-2">
+                    </form>
+                {% endif %}
+                    </li>
+            {% empty %}
+            <li class="list-group-item">No skaters registered for any sessions!</li>
+            {% endfor %}
+            </ul>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+<!-- upcomingsessions Modal -->
+<div class="modal fade" id="upcomingsessions" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="upcomingSessionsBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header text-light bg-secondary">
+          <h5 class="modal-title" id="upcomingSessionsBackdropLabel">Upcoming Open Figure Skating Sessions</h5>
+            <button type="button" class="close text-light" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">If you would like to be notified of upcoming Figure Skating Sessions, update your email preferences in <a href="{% url 'accounts:profile' slug=user.id %}">your profile</a>.
+            <ul class="list-group">
+            {% for date in fs_dates %}
+                <li class="list-group-item">{{date}}
+                {% if max_skaters <= date.num_skaters %}
+                <a href="{% url 'figure_skating:session-register' session=date.pk %}" class="btn btn-success btn-sm disabled">Session Full</a></li>
+                    {% else %}
+                    <a href="{% url 'figure_skating:session-register' session=date.pk %}" class="btn btn-success btn-sm">Sign Up</a></li>
+                {% endif %}
+            {% empty %}
+                <li class="list-group-item">No upcoming figure skating sessions found!</li>
+            {% endfor %}
+            </ul>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}
