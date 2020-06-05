@@ -131,19 +131,15 @@ if __name__ == "__main__":
     # Every day scrape the next four weeks for Saturday Thane Storck skate dates
     for x in range(28):
         scrape_date = date.isoformat(the_date)
-        if the_date.weekday() == 5:
+        if the_date.weekday() == 6:
             scrape_oic_schedule(scrape_date)
 
         the_date += timedelta(days=1)
 
     if len(skate_dates) != 0:
         send_email = add_skate_dates(skate_dates)
-
+               
     # print(skate_dates)
     # print(send_email)
     if send_email:
-        # print('New Dates Added')
         send_skate_dates_email()
-    # else:
-        # print('No Skate Dates Added')
-        # send_stick_and_puck_dates_email()
