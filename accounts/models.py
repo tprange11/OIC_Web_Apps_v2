@@ -28,3 +28,15 @@ class Profile(models.Model):
 
     class Meta:
         unique_together = ['user', 'slug']
+
+
+class ReleaseOfLiability(models.Model):
+    '''Model that holds user release of liability.'''
+
+    # Model Fields
+    user = models.ForeignKey(profile_user, on_delete=models.CASCADE)
+    release_of_liability = models.BooleanField(default=False, null=False, blank=False)
+    release_of_liability_date_signed = models.DateTimeField(auto_now_add=True, null=True)
+
+    class Meta:
+        unique_together = ['user', 'release_of_liability']

@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
 from django import forms
-from accounts.models import Profile
+from accounts.models import Profile, ReleaseOfLiability
 
 
 class UserCreateForm(UserCreationForm):
@@ -33,4 +33,15 @@ class ProfileForm(forms.ModelForm):
             'stick_and_puck_email': 'Receive Stick and Puck emails.',
             'figure_skating_email': 'Receive Figure Skating emails.',
             'thane_storck_email': 'Receive Thane Storck Skate emails.',
+        }
+
+
+class ReleaseOfLiablityForm(forms.ModelForm):
+    '''Form used for Release of Liability Agreement'''
+
+    class Meta:
+        model = ReleaseOfLiability
+        fields = ['release_of_liability']
+        labels = {
+            'release_of_liability': 'By checking this box I AGREE to the Release of Liability'
         }

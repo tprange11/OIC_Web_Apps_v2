@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Profile
+from .models import Profile, ReleaseOfLiability
 
 # Register your models here.
 
@@ -10,4 +10,13 @@ class ProfileAdmin(admin.ModelAdmin):
     def user_name(self, obj):
         return f"{obj.user.first_name} {obj.user.last_name}"
 
+
+class ReleaseOfLiabilityAdmin(admin.ModelAdmin):
+    list_display = ['user_name', 'release_of_liability', 'release_of_liability_date_signed']
+    readonly_fields = ['user_name', 'release_of_liability', 'release_of_liability_date_signed']
+
+    def user_name(self, obj):
+        return f"{obj.user.first_name} {obj.user.last_name}"
+
 admin.site.register(Profile, ProfileAdmin)
+admin.site.register(ReleaseOfLiability, ReleaseOfLiabilityAdmin)

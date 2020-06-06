@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% load bootstrap4 %}
+{% block title %}<title>OIC Web Apps Release of Liablity</title>{% endblock title %}
+{% block content %}
+<div class="release">
+<h4>Ozaukee Ice Center Release of Liability</h4>
+<h5 style="color:red;">RELEASE OF LIABILITY</h5>
+<p style="font-size: 16px;">I understand that there are certain dangers inherent in playing hockey and/or ice-skating, which include but are not limited to injuries from contact with other players/skaters, sideboards, goal standards, the ice, the puck, and equipment.  In consideration of being allowed to participate and use the facilities of the Ozaukee Ice Center, I, individually and for all others who may make a claim based on injury to me, accept and assume the risk of all personal injury and property damage and fully release, discharge, hold harmless and agree to indemnify the Ozaukee Youth Hockey Association, Inc. and all of its employees and agents from any liability, claims, loss or damage to me for any personal injury and damage to property which may occur while I am at the Ozaukee Ice Center. I understand that the purpose and intent of this RELEASE is to prevent me, and others who may claim through me, from recovering money from the Ozaukee Youth Hockey Association, Inc. and its employees for any personal injury and property damage I suffer while playing hockey, skating or participating in activities at the Ozaukee Ice Center.</p>
+<h5 style="color:red;">DISCLAIMER</h5>
+<p style="font-size: 16px;">By visiting the Ozaukee Ice Center, you voluntarily assume all risks related to exposure to COVID-19.</p>
+
+<form method="POST" class="mb-3">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+    <input type="submit" value="Agree and Continue" class="btn btn-warning btn-sm">
+</form>
+</div>
+{% endblock content %}
+    

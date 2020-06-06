@@ -20,6 +20,13 @@
     <meta name="msapplication-config" content="{%static 'browserconfig.xml'%}">
     <meta name="theme-color" content="#299c39">
     <script src="https://kit.fontawesome.com/2cb1c0d76b.js" crossorigin="anonymous"></script>
+    {% if request.path == '/accounts/release_of_liability/' %}
+    <style>
+        .navbar {
+            visibility: hidden;
+        }
+    </style>
+    {% endif %}
 </head>
 <body>
     <!-- navbar -->
