@@ -2,30 +2,5 @@
 {% block title %}<title>OIC - Open Hockey</title>{% endblock title %}
 {% block content %}
     <h3>Adult Open Hockey @ OIC</h3>
-    <p>Open Hockey is available for adults 18 and over.  You may sign up for an OIC Web Apps account prior to skating. 
-        Once you have registered for an account, you may use the Open Hockey Web App to sign up for open hockey sessions.</p>
-    <p>Prepaid open hockey memberships are available for 3, 6, 9 and 12 month periods. Members are automatically added to each 
-        session during their membership and are guaranteed a spot each session.  Please refer to member pricing below.</p>
-    <p><b>Please note: You do not need an OIC Web Apps account to skate.  You may come Tuesday and Friday mornings, but those who
-        sign up with the web app will have priority.  If the session is full, you will not be allowed to skate. If someone on the session list
-        does not show up, you would be allowed to pay and skate for that session.</b></p>
-    <ul class="list-group">
-        <li class="list-group-item" style="padding: 5px 15px;">When: Tuesday and Friday mornings year round</li>
-        <li class="list-group-item" style="padding: 5px 15px;">Time: 6:00 AM to 7:30 AM</li>
-        <li class="list-group-item" style="padding: 5px 15px;">Limited to:
-        <ul class="list-group">
-            <li class="list-group-item" style="padding: 5px 15px;">Skaters: {{program_details.max_skaters}}</li>
-            <li class="list-group-item" style="padding: 5px 15px;">Goalies: {{program_details.max_goalies}}</li>
-        </ul></li>
-        <li class="list-group-item" style="padding: 5px 15px;">Cost:
-            <ul class="list-group">Non-member:
-                <li class="list-group-item" style="padding: 5px 15px;">Skaters: ${{program_details.skater_price}}</li>
-                <li class="list-group-item" style="padding: 5px 15px;">Goalies: ${{program_details.goalie_price}}</li>
-            </ul>
-            <ul class="list-group">Member:
-                {% for membership in memberships %}
-                    <li class="list-group-item" style="padding: 5px 15px;">{{membership.name}} - ${{membership.cost}}</li>
-                {% endfor %}
-            </ul></li>
-    </ul>
+    <p>Currently no open hockey programs are offered.</p>
 {% endblock content %}
