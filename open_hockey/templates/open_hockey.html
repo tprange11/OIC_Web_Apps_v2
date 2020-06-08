@@ -16,7 +16,7 @@
         {% if g_spots == 0 and s_spots == 0 %}
         <li class="list-group-item" style="padding: 5px 15px;">{{ date }} - <b>SORRY, THIS SESSION IS FULL!</b></li>
         {% else %}
-        <li class="list-group-item" style="padding: 5px 15px;"><a href="{% url 'open_hockey:open-hockey-signup' date=date %}" class="btn btn-warning btn-sm 
+        <li class="list-group-item" style="padding: 5px 15px;"><a href="{% url 'open_hockey:open-hockey-signup' date=date %}" class="btn btn-warning btn-sm disabled
             {% if is_member %}disabled{% endif %}">{{ date }}</a>
              - Skater Spots Available: <b>{{ s_spots }}</b>, Goalie Spots Available: <b>{{ g_spots }}</b></li>
         {% endif %}
