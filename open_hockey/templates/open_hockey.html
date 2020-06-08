@@ -3,9 +3,9 @@
 {% block content %}
     <h4>Upcoming Yeti Skate Sessions</h4>
     {% if not is_member %}
-    <p>Choose a date below to sign up for that session of open hockey. Alternatively, you may purchase an open hockey membership
+    <p>Choose a date below to sign up for that session of Yeti Skate. Alternatively, you may purchase an Yeti Skate membership
          and not have to worry about signing up for sessions each week.</p>
-    <p>If you'd like to be notified when open hockey dates are available, update your email preference in <a href="{% url 'accounts:profile' slug=user.id %}">your profile.</a></p>
+    <p>If you'd like to be notified when Yeti Skate dates are available, update your email preference in <a href="{% url 'accounts:profile' slug=user.id %}">your profile.</a></p>
     {% endif %}
     <p></p>
     <ul class="list-group" style="display: inline-block; margin-bottom: 10px;">

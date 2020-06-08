@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}<title>Open Hockey Sessions for {{ user.username }}</title>{% endblock title %}
+{% block title %}<title>Yeti Skate Sessions for {{ user.username }}</title>{% endblock title %}
 {% block content %}
     <h4>Yeti Skate Sessions for {{ user.username }}</h4>
     {% if messages %}{% for message in messages %}
@@ -9,7 +9,7 @@
     </div>
     {% endfor %}
     {% else %}
-    <p>You are signed up for the following sessions of open hockey.</p>
+    <p>You are signed up for the following sessions of Yeti Skate.</p>
     {% endif %}
     <ul class="list-group" style="display: inline-block; margin-bottom: 10px;">
         {% for session in sessions %}

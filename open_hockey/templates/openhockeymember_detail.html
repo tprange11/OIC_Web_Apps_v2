@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}<title>Open Hockey Member Detail</title>{% endblock title %}
+{% block title %}<title>Yeti Skate Member Detail</title>{% endblock title %}
 {% block content %}
     <h4>Yeti Skate Member Details</h4>
 {% if user.is_authenticated %}
@@ -25,7 +25,7 @@
 {% endif %}
 {% empty %}
 <div class="alert alert-primary font-weight-bold" role="alert">You are not currently a member.</div>
-<p>Open hockey members are automatically added to every session for the duration of their membership.</p>
+<p>Yeti Skate members are automatically added to every session for the duration of their membership.</p>
 <h6>Membership options:</h6>
 <ul class="list-group body-p" style="display: inline-block; margin-bottom: 10px;">
     {% for type in member_types %}
