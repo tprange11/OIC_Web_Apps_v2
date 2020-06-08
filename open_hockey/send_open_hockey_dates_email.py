@@ -22,11 +22,11 @@ def send_mail():
     for recipient in recipients:
         to_email = [recipient.user.email]
         from_email = 'no-reply@mg.oicwebapps.com'
-        subject = 'Open Hockey Dates Now Available'
+        subject = 'Yeti Skate Dates Now Available'
 
         # Build the plain text message
         text_message = f'Hi {recipient.user.first_name},\n\n'
-        text_message += f'Open Hockey dates are now available online. Sign up at the url below.\n\n'
+        text_message += f'Yeti Skate dates are now available online. Sign up at the url below.\n\n'
         text_message += f'https://www.oicwebapps.com/web_apps/open_hockey/\n\n'
         text_message += f'If you no longer wish to receive these emails, log in to your account,\n'
         text_message += f'click on your username and change the email settings in your profile.\n\n'
