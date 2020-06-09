@@ -29,9 +29,6 @@
                 {{ date.skate_date }} {{date.start_time}} to {{date.end_time}}</a>
             {% endif %}
             <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#skaterModalCenter{{forloop.counter}}">Registered Skaters</button>
-            {% if user.is_superuser or user.id == 11 %}
-            <br><a href="{% url 'thane_storck:thane-skate-print' pk=date.pk %}" class="btn btn-success btn-sm mt-2">Print Release of Liability</a>
-            {% endif %}
             {% if date.session_pk != None and date.paid == False %}
             <form method="POST" action="{% url 'thane_storck:session-remove' pk=date.session_pk %}">
                 {% csrf_token %}
