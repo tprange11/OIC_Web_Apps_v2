@@ -10,6 +10,7 @@ class FigureSkatingDate(models.Model):
     skate_date = models.DateField()
     start_time = models.CharField(max_length=10)
     end_time = models.CharField(max_length=10)
+    available_spots = models.IntegerField(default=0)
 
     class Meta:
         # Default ordering skate_date descending

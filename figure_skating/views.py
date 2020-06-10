@@ -97,7 +97,8 @@ class CreateFigureSkatingSessionView(LoginRequiredMixin, CreateView):
         self.object = form.save(commit=False)
         try:
             # If skater spots are full, do not save object
-            if self.model.objects.filter(session=form.instance.session.id).count() >= self.program_model.objects.get(pk=3).max_skaters:
+            # if self.model.objects.filter(session=form.instance.session.id).count() >= self.program_model.objects.get(pk=3).max_skaters:
+            if self.model.objects.filter(session=form.instance.session.id).count() >= FigureSkatingDate.objects.get(pk=form.instance.session.id).available_spots:
                 messages.add_message(self.request, messages.ERROR, 'Sorry, this session is now full!')
                 return redirect('figure_skating:figure-skating')
         except:

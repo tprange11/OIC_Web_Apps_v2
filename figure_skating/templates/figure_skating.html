@@ -118,9 +118,10 @@
             <ul class="list-group">
             {% for date in fs_dates %}
                 <li class="list-group-item">{{date}}
-                {% if max_skaters <= date.num_skaters %}
+                {% if date.available_spots <= date.num_skaters %}
                 <a href="{% url 'figure_skating:session-register' session=date.pk %}" class="btn btn-success btn-sm disabled">Session Full</a></li>
                     {% else %}
+                    (Available Spots: {{ date.available_spots }})
                     <a href="{% url 'figure_skating:session-register' session=date.pk %}" class="btn btn-success btn-sm">Sign Up</a></li>
                 {% endif %}
             {% empty %}
