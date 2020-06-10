@@ -111,10 +111,13 @@ class CreateAdultSkillsSkateSessionView(LoginRequiredMixin, CreateView):
         try:
             group = self.group_model.objects.get(name=join_group)
             self.request.user.groups.add(group)
-            # If a profile already exists, set adult_skills_email to True
-            profile = self.profile_model.objects.get(user=self.request.user)
-            profile.adult_skills_email = True
-            profile.save()
+            try:
+                # If a profile already exists, set adult_skills_email to True
+                profile = self.profile_model.objects.get(user=self.request.user)
+                profile.adult_skills_email = True
+                profile.save()
+            except ObjectDoesNotExist:
+                pass
         except IntegrityError:
             pass
         return
@@ -129,7 +132,7 @@ class CreateAdultSkillsSkateSessionView(LoginRequiredMixin, CreateView):
         # If no profile exists, add one and set adult_skills_email to True
         except ObjectDoesNotExist:
             profile = self.profile_model(user=self.request.user, slug=self.request.user.id, adult_skills_email=True)
-            profile.create()
+            profile.save()
             return
 
 
