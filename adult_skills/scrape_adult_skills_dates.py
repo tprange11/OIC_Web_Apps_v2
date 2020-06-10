@@ -6,7 +6,7 @@ import os, sys
 if os.name == 'nt':
     sys.path.append("C:\\Users\\brian\\Documents\\Python\\OIC_Web_Apps\\")
 else:
-    sys.path.append("/home/BrianC68/oicdev/OIC_Web_Apps/")
+    sys.path.append("/home/OIC/OIC_Web_Apps/")
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'OIC_Web_Apps.settings')
 
 import django
