@@ -8,6 +8,7 @@ from figure_skating.models import FigureSkatingSession, FigureSkater, FigureSkat
 from open_hockey.models import OpenHockeySessions, OpenHockeyMember
 from stickandpuck.models import StickAndPuckSessions, StickAndPuckSkaters
 from thane_storck.models import SkateSession, SkateDate
+from adult_skills.models import AdultSkillsSkateDate, AdultSkillsSkateSession
 
 # Create your views here.
 
@@ -50,6 +51,8 @@ class RemoveItemFromCartView(LoginRequiredMixin, DeleteView):
     snp_skater_model = StickAndPuckSkaters
     ts_model = SkateSession
     ts_skate_date_model = SkateDate
+    as_model = AdultSkillsSkateSession
+    as_skate_date_model = AdultSkillsSkateDate
     success_url = reverse_lazy('cart:shopping-cart')
 
     def delete(self, request, *args, **kwargs):
@@ -64,6 +67,9 @@ class RemoveItemFromCartView(LoginRequiredMixin, DeleteView):
         elif cart_item.item == 'Thane Storck':
             skate_date = self.ts_skate_date_model.objects.filter(skate_date=cart_item.event_date)
             self.ts_model.objects.filter(skater=request.user, skate_date=skate_date[0]).delete()
+        elif cart_item.item == 'Adult Skills':
+            skate_date = self.as_skate_date_model.objects.filter(skate_date=cart_item.event_date)
+            self.as_model.objects.filter(skater=request.user, skate_date=skate_date[0]).delete()
         elif cart_item.item == 'Figure Skating':
             skater_name = cart_item.skater_name.split(' ')
             skater_id = self.fs_skater_model.objects.filter(guardian=request.user, first_name=skater_name[0], last_name=skater_name[1])

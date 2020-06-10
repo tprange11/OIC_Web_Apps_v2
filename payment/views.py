@@ -12,6 +12,7 @@ from open_hockey.models import OpenHockeySessions, OpenHockeyMember
 from stickandpuck.models import StickAndPuckSessions
 from thane_storck.models import SkateSession
 from figure_skating.models import FigureSkatingSession
+from adult_skills.models import AdultSkillsSkateSession
 
 # Create your views here.
 
@@ -28,8 +29,8 @@ class PaymentView(LoginRequiredMixin, TemplateView):
         for item_cost in items_cost:
             total += item_cost
         context['total'] = total
-        context['app_id'] = os.getenv("SQUARE_APP_ID") # uncomment in production
-        context['loc_id'] = os.getenv("SQUARE_LOCATION_ID") # uncomment in production
+        context['app_id'] = os.getenv("SQUARE_APP_ID") # uncomment in production and development
+        context['loc_id'] = os.getenv("SQUARE_LOCATION_ID") # uncomment in production and development
         # context['app_id'] = 'sandbox-sq0idb-Rbc4KuE-WwQ2C3nT0RodQA' # uncomment on local machine
         # context['loc_id'] = 'BSPYH5AEJGW8C' # uncomment on local machine
         return context
@@ -58,17 +59,18 @@ def process_payment(request, **kwargs):
     stick_and_puck_sessions_model = StickAndPuckSessions
     thane_storck_sessions_model = SkateSession
     figure_skating_sessions_model = FigureSkatingSession
+    adult_skills_sessions_model = AdultSkillsSkateSession
     today = date.today()
 
     if request.method == 'GET':
         return
     else:
         nonce = request.POST['nonce']
-        access_token = os.getenv('SQUARE_API_ACCESS_TOKEN') # uncomment in production
+        access_token = os.getenv('SQUARE_API_ACCESS_TOKEN') # uncomment in production and development
         # access_token = 'EAAAEEfoRSmtj9WaKOOwhm4fcit-hzrtJ9SdYnsUS9WIs9UrV2ljbe9Ryj49pq7r' # uncomment on local machine
         cart_items = cart_model.objects.filter(customer=request.user).values_list('item', 'amount')
         total = 0
-        note = {'Open Hockey': 0, 'Stick and Puck': 0, 'Thane Storck': 0, 'Figure Skating': 0}
+        note = {'Open Hockey': 0, 'Stick and Puck': 0, 'Thane Storck': 0, 'Figure Skating': 0, 'Adult Skills': 0}
         for item, amount in cart_items:
             total += amount
             if item == 'OH Membership':
@@ -80,7 +82,7 @@ def process_payment(request, **kwargs):
         client = Client(
             access_token=access_token,
             # environment='sandbox', # Uncomment on local machine
-            environment=os.getenv('SQUARE_API_ENVIRONMENT'), # Uncomment in production
+            environment=os.getenv('SQUARE_API_ENVIRONMENT'), # Uncomment in production and development
         )
 
         # Assemble the body for the create_payment() api function
@@ -125,6 +127,7 @@ def process_payment(request, **kwargs):
                 open_hockey_member = open_hockey_member_model.objects.filter(member=request.user).update(active=True)
                 thane_storck_sessions = thane_storck_sessions_model.objects.filter(skater=request.user).update(paid=True)
                 figure_skating_sessions_model.objects.filter(guardian=request.user, session__skate_date__gte=today).update(paid=True)
+                adult_skills_sessions_model.objects.filter(skater=request.user).update(paid=True)
             except IntegrityError:
                 pass
 

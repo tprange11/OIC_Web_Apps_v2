@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}<title>Upcoming Adult Skills Skate Sessions</title>{% endblock title %}
+{% block content %}
+    <h4>Upcoming Adult Skills Skate Sessions</h4>
+    <p>Choose a date below to register for that session of Adult Skills. Disabled skate sessions indicate that you have registered for the skate session(s). You may remove yourself 
+        from a session prior to paying.  Once you have paid for the session(s), you will be unable to remove yourself from the session(s).</p>
+    <p>If you'd like to be notified when Adult Skills skate dates are available for registration, update your <a href="{% url 'accounts:profile' slug=user.id %}">email preferences</a>.</p>
+    {% for message in messages %}
+    {% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}
+    <div class="alert alert-danger alert-dismissible alert-link" role="alert">
+        <button class="close" type="button" data-dismiss="alert" aria-label="close">&#215;</button>
+            {{ message }}
+    </div>
+    {% else %}
+    <div class="alert alert-info alert-dismissible alert-link" role="alert">
+        <button class="close" type="button" data-dismiss="alert" aria-label="close">&#215;</button>
+            {{ message }}
+    </div>
+    {% endif %}
+    {% empty %}
+    {% endfor %}
+    <ul class="list-group" style="display: inline-block; margin-bottom: 10px;">
+        {% for date in skate_dates %}
+            {% if date.disabled %}
+                <li class="list-group-item" style="padding: 5px 15px;"><a href="{% url 'adult_skills:register' pk=date.pk %}" class="btn btn-warning btn-sm mb-2 mb-sm-0 disabled">
+                    {{ date.skate_date }} {{date.start_time}} to {{date.end_time}}</a>
+            {% else %}
+                <li class="list-group-item" style="padding: 5px 15px;"><a href="{% url 'adult_skills:register' pk=date.pk %}" class="btn btn-warning btn-sm mb-2 mb-sm-0">
+                {{ date.skate_date }} {{date.start_time}} to {{date.end_time}}</a>
+            {% endif %}
+            {% if date.session_pk != None and date.paid == False %}
+            <form method="POST" action="{% url 'adult_skills:session-remove' pk=date.session_pk %}">
+                {% csrf_token %}
+                <input type="hidden" name="pk" value="{{date.session_pk}}">
+                <input type="submit" value="Remove Me From This Skate" class="btn btn-danger btn-sm mt-2">
+            </form>
+            {% endif %}</li>
+        {% empty %}
+        <li class="list-group-item" style="padding: 5px 15px;">Sorry, no skates are available at this time.</li>
+        {% endfor %}
+    </ul>
+{% endblock content %}

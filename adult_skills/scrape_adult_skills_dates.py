@@ -6,7 +6,7 @@ import os, sys
 if os.name == 'nt':
     sys.path.append("C:\\Users\\brian\\Documents\\Python\\OIC_Web_Apps\\")
 else:
-    sys.path.append("/home/OIC/OIC_Web_Apps/")
+    sys.path.append("/home/BrianC68/oicdev/OIC_Web_Apps/")
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'OIC_Web_Apps.settings')
 
 import django
@@ -15,13 +15,13 @@ django.setup()
 from django.db import IntegrityError
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
-from thane_storck.models import SkateDate
+from adult_skills.models import AdultSkillsSkateDate
 from accounts.models import Profile
 
 skate_dates = []
 
 def scrape_oic_schedule(date):
-    '''Scrapes Ozaukee Ice Center schedule website for Thane Storck skate dates.'''
+    '''Scrapes Ozaukee Ice Center schedule website for Adult Skills skate dates.'''
     xx_xx_xxxx = f"{date[5:7]}/{date[8:]}/{date[0:4]}"
     xxxx_xx_xx = f"{date[0:4]},{date[5:7]},{date[8:]}"
     today_with_time = date + "-00-00-00"
@@ -68,13 +68,13 @@ def scrape_oic_schedule(date):
         cols = row.find_all('td')
 
         if len(cols) > 2:
-            if cols[4].get_text().strip() == "Thane Storck":
+            if cols[4].get_text().strip() == "Adult Skills":
                 skate_dates.append([date, cols[0].get_text().strip(), cols[1].get_text().strip()])
                 break
 
 def add_skate_dates(sessions):
-    '''Adds Thane Storck skate dates and times SkateDates model.'''
-    model = SkateDate
+    '''Adds Adult Skills skate dates and times AdultSkillsSkateDates model.'''
+    model = AdultSkillsSkateDate
 
     for session in sessions:
         try:
@@ -88,25 +88,25 @@ def add_skate_dates(sessions):
     return new_dates
 
 def send_skate_dates_email():
-    '''Sends email to Users letting them know when Thane Storck skate dates are added.'''
-    recipients = Profile.objects.filter(thane_storck_email=True).select_related('user')
+    '''Sends email to Users letting them know when Adult Skills skate dates are added.'''
+    recipients = Profile.objects.filter(adult_skills_email=True).select_related('user')
 
     for recipient in recipients:
         to_email = [recipient.user.email]
         from_email = 'no-reply@mg.oicwebapps.com'
-        subject = 'New Thane Storck Skate Date Added'
+        subject = 'New Adult Skills Skate Date Added'
 
         # Build the plain text message
         text_message = f'Hi {recipient.user.first_name},\n\n'
-        text_message += f'New Thane Storck skate dates are now available online. Sign up at the url below.\n\n'
-        text_message += f'https://www.oicwebapps.com/web_apps/thane_storck/\n\n'
+        text_message += f'New Adult Skills skate dates are now available online. Sign up at the url below.\n\n'
+        text_message += f'https://www.oicwebapps.com/web_apps/adult_skills/\n\n'
         text_message += f'If you no longer wish to receive these emails, log in to your account,\n'
         text_message += f'click on your username and change the email settings in your profile.\n\n'
         text_message += f'Thank you for using OICWebApps.com!\n\n'
 
         # Build the html message
         html_message = render_to_string(
-            'thane_storck_skate_dates_email.html',
+            'adult_skills_skate_dates_email.html',
             {
                 'recipient_name': recipient.user.first_name,
             }
@@ -127,11 +127,12 @@ if __name__ == "__main__":
     
     the_date = date.today()
     # the_date = "2019-09-14"
+    send_email = False
 
-    # Every day scrape the next four weeks for Saturday Thane Storck skate dates
+    # Every day scrape the next four weeks for Saturday Adult Skills skate dates
     for x in range(28):
         scrape_date = date.isoformat(the_date)
-        if the_date.weekday() == 6:
+        if the_date.weekday() == 5:
             scrape_oic_schedule(scrape_date)
 
         the_date += timedelta(days=1)
