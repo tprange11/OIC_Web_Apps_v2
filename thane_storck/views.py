@@ -97,8 +97,11 @@ class CreateSkateSessionView(LoginRequiredMixin, CreateView):
             elif self.object.goalie == False and self.model.objects.filter(goalie=False, skate_date=self.object.skate_date).count() == Program.objects.get(pk=4).max_skaters:
                 messages.add_message(self.request, messages.ERROR, 'Sorry, skater spots are full!')
                 return redirect('thane_storck:thane-skate')
-            # Todo
-            if not self.object.goalie:
+            # If all goes well, do the following.
+            # If skater is a goalie, staff member or Bob Sheehan they skate for free.
+            if self.object.goalie or self.request.user.is_staff or self.request.user.id == 52:
+                self.object.paid = True
+            else:
                 self.add_to_cart()
             self.join_thane_storck_group()
             self.add_thane_storck_email_to_profile()
@@ -106,7 +109,8 @@ class CreateSkateSessionView(LoginRequiredMixin, CreateView):
         except IntegrityError:
             pass
         # If all goes well set success message and return
-        if self.object.goalie:
+        # If user is a goalie, staff or Bob Sheehan set this message.
+        if self.object.goalie or self.request.user.is_staff or self.request.user.id == 52:
             messages.add_message(self.request, messages.INFO, 'You have successfully registered for the skate!')
         else:
             messages.add_message(self.request, messages.INFO, 'To complete your registration, you must view your cart and pay for your item(s)!')
