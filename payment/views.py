@@ -8,6 +8,7 @@ from datetime import date
 from square.client import Client
 from . import models
 from cart.models import Cart
+from programs.models import Program
 from open_hockey.models import OpenHockeySessions, OpenHockeyMember
 from stickandpuck.models import StickAndPuckSessions
 from thane_storck.models import SkateSession
@@ -55,6 +56,7 @@ def process_payment(request, **kwargs):
 
     template_name = 'sq-payment-result.html'
     cart_model = Cart
+    program_model = Program
     open_hockey_sessions_model = OpenHockeySessions
     open_hockey_member_model = OpenHockeyMember
     stick_and_puck_sessions_model = StickAndPuckSessions
@@ -67,12 +69,15 @@ def process_payment(request, **kwargs):
     if request.method == 'GET':
         return
     else:
+
         nonce = request.POST['nonce']
         access_token = os.getenv('SQUARE_API_ACCESS_TOKEN') # uncomment in production and development
         # access_token = 'EAAAEEfoRSmtj9WaKOOwhm4fcit-hzrtJ9SdYnsUS9WIs9UrV2ljbe9Ryj49pq7r' # uncomment on local machine
         cart_items = cart_model.objects.filter(customer=request.user).values_list('item', 'amount')
         total = 0
-        note = {'Open Hockey': 0, 'Stick and Puck': 0, 'Thane Storck': 0, 'Figure Skating': 0, 'Adult Skills': 0, 'Mike Schultz': 0}
+        programs = program_model.objects.all().values_list('program_name', flat=True)
+        # note = {'Open Hockey': 0, 'Stick and Puck': 0, 'Thane Storck': 0, 'Figure Skating': 0, 'Adult Skills': 0, 'Mike Schultz': 0}
+        note = {program: 0 for program in programs}
         for item, amount in cart_items:
             total += amount
             if item == 'OH Membership':
