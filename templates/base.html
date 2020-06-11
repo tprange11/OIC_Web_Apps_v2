@@ -63,6 +63,9 @@
                         <a class="dropdown-item" href="{% url 'open_hockey:open-hockey' %}">Yeti Skate</a>
                         <a class="dropdown-item" href="{% url 'stickandpuck:stick-and-puck' %}">Stick and Puck</a>
                         <a class="dropdown-item" href="{% url 'figure_skating:figure-skating' %}">Figure Skating</a>
+                        {% if in_group_mike_schultz %}
+                        <a class="dropdown-item" href="{% url 'mike_schultz:mike-schultz' %}">Mike Schultz</a>
+                        {% endif %}
                         {% if in_group_thane_storck %}
                         <a class="dropdown-item" href="{% url 'thane_storck:thane-skate' %}">Thane Storck</a>
                         {% endif %}
@@ -123,6 +126,7 @@
                             Staff</a>
                         <div class="dropdown-menu" aria-labelledby="staffNavbarDropdown" style="background-color:chartreuse">
                             <a class="dropdown-item" href="{% url 'adult_skills:adult-skills-sessions' %}">Adult Skills Sessions</a>
+                            <a class="dropdown-item" href="{% url 'mike_schultz:mike-schultz-sessions' %}">Mike Schultz Sessions</a>
                             <a class="dropdown-item" href="{% url 'open_hockey:open-hockey-print' %}">Print Yeti Skate</a>
                             <a class="dropdown-item" href="{% url 'open_hockey:member-list' %}">Yeti Skate Members</a>
                             <a class="dropdown-item" href="{% url 'stickandpuck:print-list' %}">Print Stick and Puck</a>

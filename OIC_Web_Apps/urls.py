@@ -34,6 +34,7 @@ urlpatterns = [
     path('web_apps/open_hockey/', include('open_hockey.urls')),
     path('web_apps/stick_and_puck/', include('stickandpuck.urls')),
     path('web_apps/adult_skills/', include('adult_skills.urls')),
+    path('web_apps/mike_schultz/', include('mike_schultz.urls')),
     path('web_apps/schedule/', include('schedule.urls')),
     path('serviceworker.js', (TemplateView.as_view(
         template_name = 'serviceworker.js',

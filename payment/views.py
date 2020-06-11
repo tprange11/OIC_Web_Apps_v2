@@ -13,6 +13,7 @@ from stickandpuck.models import StickAndPuckSessions
 from thane_storck.models import SkateSession
 from figure_skating.models import FigureSkatingSession
 from adult_skills.models import AdultSkillsSkateSession
+from mike_schultz.models import MikeSchultzSkateSession
 
 # Create your views here.
 
@@ -60,6 +61,7 @@ def process_payment(request, **kwargs):
     thane_storck_sessions_model = SkateSession
     figure_skating_sessions_model = FigureSkatingSession
     adult_skills_sessions_model = AdultSkillsSkateSession
+    mike_schultz_sessions_model = MikeSchultzSkateSession
     today = date.today()
 
     if request.method == 'GET':
@@ -70,7 +72,7 @@ def process_payment(request, **kwargs):
         # access_token = 'EAAAEEfoRSmtj9WaKOOwhm4fcit-hzrtJ9SdYnsUS9WIs9UrV2ljbe9Ryj49pq7r' # uncomment on local machine
         cart_items = cart_model.objects.filter(customer=request.user).values_list('item', 'amount')
         total = 0
-        note = {'Open Hockey': 0, 'Stick and Puck': 0, 'Thane Storck': 0, 'Figure Skating': 0, 'Adult Skills': 0}
+        note = {'Open Hockey': 0, 'Stick and Puck': 0, 'Thane Storck': 0, 'Figure Skating': 0, 'Adult Skills': 0, 'Mike Schultz': 0}
         for item, amount in cart_items:
             total += amount
             if item == 'OH Membership':
@@ -122,12 +124,13 @@ def process_payment(request, **kwargs):
 
             # Update Open Hockey, Stick and Puck Session and Member models to mark items as paid or active if it applies.
             try:
-                open_hockey_sessions = open_hockey_sessions_model.objects.filter(skater=request.user, date__gte=today).update(paid=True)
-                stick_and_puck_sessions = stick_and_puck_sessions_model.objects.filter(guardian=request.user, session_date__gte=today).update(paid=True)
-                open_hockey_member = open_hockey_member_model.objects.filter(member=request.user).update(active=True)
-                thane_storck_sessions = thane_storck_sessions_model.objects.filter(skater=request.user).update(paid=True)
+                open_hockey_sessions_model.objects.filter(skater=request.user, date__gte=today).update(paid=True)
+                stick_and_puck_sessions_model.objects.filter(guardian=request.user, session_date__gte=today).update(paid=True)
+                open_hockey_member_model.objects.filter(member=request.user).update(active=True)
+                thane_storck_sessions_model.objects.filter(skater=request.user).update(paid=True)
                 figure_skating_sessions_model.objects.filter(guardian=request.user, session__skate_date__gte=today).update(paid=True)
                 adult_skills_sessions_model.objects.filter(skater=request.user).update(paid=True)
+                mike_schultz_sessions_model.objects.filter(skater=request.user).update(paid=True)
             except IntegrityError:
                 pass
 
