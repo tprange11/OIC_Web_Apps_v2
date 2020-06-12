@@ -14,6 +14,8 @@ from open_hockey.models import OpenHockeyMember, OpenHockeySessions
 from stickandpuck.models import StickAndPuckSessions
 from thane_storck.models import SkateSession
 from figure_skating.models import FigureSkatingSession
+from adult_skills.models import AdultSkillsSkateSession
+from mike_schultz.models import MikeSchultzSkateSession
 
 from datetime import date
 
@@ -26,6 +28,8 @@ def clear_cart_and_unpaid_items():
     StickAndPuckSessions.objects.filter(paid=False, session_date__gte=date.today()).delete()
     SkateSession.objects.filter(paid=False, skate_date__skate_date__gte=date.today()).delete()
     FigureSkatingSession.objects.filter(paid=False, session__skate_date__gte=date.today()).delete()
+    AdultSkillsSkateSession.objects.filter(paid=False, skate_date__skate_date__gte=date.today()).delete()
+    MikeSchultzSkateSession.objects.filter(paid=False, skate_date__skate_date__gte=date.today()).delete()
     return
 
 if __name__ == '__main__':
