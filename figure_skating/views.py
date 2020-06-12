@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from django.views.generic import TemplateView, CreateView, DeleteView, FormView
+from django.views.generic import TemplateView, CreateView, DeleteView, ListView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from django.db import IntegrityError
@@ -160,3 +160,25 @@ class DeleteFigureSkatingSessionView(LoginRequiredMixin, DeleteView):
         # Set success message and return
         messages.add_message(self.request, messages.SUCCESS, 'Skater has been removed from the figure skating session!')
         return super().delete(*args, **kwargs)
+
+
+#################### The following view is for staff only ##########################
+
+class FigureSkatingStaffListView(LoginRequiredMixin, ListView):
+    '''Displays page for staff that lists upcoming adult skills skate sessions.'''
+
+    model = FigureSkatingDate
+    sessions_model = FigureSkatingSession
+    context_object_name = 'skate_dates'
+    template_name = 'figure_skating_sessions_list.html'
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        queryset = queryset.filter(skate_date__gte=date.today()).order_by('skate_date')
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        session_skaters = self.sessions_model.objects.filter(session__skate_date__gte=date.today()).order_by('session')
+        context['session_skaters'] = session_skaters
+        return context

@@ -10,5 +10,5 @@ urlpatterns = [
     path('sessions/register/<session>/', views.CreateFigureSkatingSessionView.as_view(), name='session-register'),
     path('session/register/', views.CreateFigureSkatingSessionView.as_view(), name='session-register'),
     path('session/remove/<pk>', views.DeleteFigureSkatingSessionView.as_view(), name='session-remove'),
-    
+    path('sessions/list/', views.FigureSkatingStaffListView.as_view(), name='figure-skating-sessions'),
 ]
