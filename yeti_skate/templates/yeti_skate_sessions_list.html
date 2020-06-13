@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}<title>Upcoming Yeti Skate Sessions</title>{% endblock title %}
+{% block content %}
+    <h4>Upcoming Yeti Skate Sessions</h4>
+    <p>Choose a date below to see who has registered and paid for the skate.</p>
+    <ul class="list-group" style="display: inline-block; margin-bottom: 10px;">
+        {% for date in skate_dates %}
+        <li class="list-group-item" style="padding: 5px 15px;">
+            <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#skaterModalCenter{{forloop.counter}}">{{ date.skate_date }} @ {{ date.start_time }} Registered Skaters</button></li>
+            <div class="modal fade" id="skaterModalCenter{{forloop.counter}}" tabindex="-1" role="dialog" aria-labelledby="skaterModalCenterTitle" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header text-light bg-secondary">
+                    <h5 class="modal-title" id="skaterModalLongTitle{{forloop.counter}}">{{date.skate_date}} Registered Skaters</h5>
+                    <button type="button" class="close text-light" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                    </div>
+                    <div class="modal-body">
+                        <ul class="list-group">
+                            {% for skater in session_skaters %}
+                            {% if skater.skate_date.pk == date.pk %}<li class="list-group-item">Skater Name: {{skater.skater.first_name}} {{skater.skater.last_name}}
+                                <b>{% if skater.goalie %}(Goalie) {% endif %}{%if skater.paid %}(Paid){%elif not skater.paid%}(Not Paid){% endif %}</b></li>{% endif %}{% endfor %}
+                        </ul>
+                    </div>
+                    <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+                </div>
+            </div>
+        {% empty %}
+        <li class="list-group-item" style="padding: 5px 15px;">There are no Yeti Skate sessions available to print.</li>
+        {% endfor %}
+    </ul>
+{% endblock content %}

@@ -31,5 +31,8 @@
         {% if not in_group_mike_schultz %}
         document.querySelector('#id_mike_schultz_email').parentNode.parentNode.style.display = 'none';
         {% endif %}
+        {% if not in_group_yeti_skate %}
+        document.querySelector('#id_yeti_skate_email').parentNode.parentNode.style.display = 'none';
+        {% endif %}
     </script>
 {% endblock content %}

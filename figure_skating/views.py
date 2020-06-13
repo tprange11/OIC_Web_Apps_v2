@@ -155,7 +155,7 @@ class DeleteFigureSkatingSessionView(LoginRequiredMixin, DeleteView):
         skate_time = self.model.objects.filter(id=kwargs['pk']).values_list('session__start_time', flat=True)
         skater_id = self.model.objects.filter(id=kwargs['pk']).values_list('skater', flat=True)
         skater = self.skater_model.objects.get(id=skater_id[0])
-        cart_item = Cart.objects.filter(event_date=skate_date[0], event_start_time=skate_time[0], skater_name=skater).delete()
+        cart_item = Cart.objects.filter(item=Program.objects.all().get(id=3).program_name, event_date=skate_date[0], event_start_time=skate_time[0], skater_name=skater).delete()
 
         # Set success message and return
         messages.add_message(self.request, messages.SUCCESS, 'Skater has been removed from the figure skating session!')

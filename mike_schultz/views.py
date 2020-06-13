@@ -169,7 +169,7 @@ class DeleteMikeSchultzSkateSessionView(LoginRequiredMixin, DeleteView):
         skate_date = self.model.objects.filter(id=kwargs['pk']).values_list('skate_date', flat=True)
         cart_date = self.skate_date_model.objects.filter(id=skate_date[0])
         # print(cart_date[0])
-        cart_item = Cart.objects.filter(event_date=cart_date[0].skate_date).delete()
+        cart_item = Cart.objects.filter(item=Program.objects.all().get(id=6), event_date=cart_date[0].skate_date).delete()
 
         # Set success message and return
         messages.add_message(self.request, messages.SUCCESS, 'You have been removed from that skate session!')

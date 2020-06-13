@@ -1,6 +1,6 @@
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
-from django.views.generic import ListView, CreateView, DeleteView, FormView
+from django.views.generic import ListView, CreateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import Group
 from django.contrib import messages
@@ -16,12 +16,12 @@ from datetime import date
 
 # Create your views here.
 
-class SkateDateListView(LoginRequiredMixin, ListView):
-    '''Page that displays upcoming Thane Storck skates.'''
+class YetiSkateDateListView(LoginRequiredMixin, ListView):
+    '''Page that displays upcoming Yeti skates.'''
 
-    template_name = 'thane_storck_skate_dates.html'
-    model = models.SkateDate
-    session_model = models.SkateSession
+    template_name = 'yeti_skate_dates.html'
+    model = models.YetiSkateDate
+    session_model = models.YetiSkateSession
     context_object_name = 'skate_dates'
 
     def get_context_data(self, **kwargs):
@@ -58,18 +58,19 @@ class SkateDateListView(LoginRequiredMixin, ListView):
         return queryset
 
 
-class CreateSkateSessionView(LoginRequiredMixin, CreateView):
+class CreateYetiSkateSessionView(LoginRequiredMixin, CreateView):
     '''Page that displays form for user to register for skate sessions.'''
 
-    model = models.SkateSession
-    form_class = forms.CreateSkateSessionForm
+    model = models.YetiSkateSession
+    form_class = forms.CreateYetiSkateSessionForm
     group_model = Group
     profile_model = Profile
     program_model = Program
-    session_model = models.SkateDate
+    session_model = models.YetiSkateDate
     cart_model = Cart
-    template_name = 'thane_storck_skate_sessions_form.html'
-    success_url = '/web_apps/thane_storck/'
+    template_name = 'yeti_skate_sessions_form.html'
+    # success_url = '/web_apps/yeti_skate/'
+    success_url = reverse_lazy('yeti_skate:yeti-skate')
 
     def get_initial(self, *args, **kwargs):
         initial = super().get_initial()
@@ -90,52 +91,61 @@ class CreateSkateSessionView(LoginRequiredMixin, CreateView):
         self.object = form.save(commit=False)
         try:
             # If goalie spots are full, do not save object
-            if self.object.goalie == True and self.model.objects.filter(goalie=True, skate_date=self.object.skate_date).count() == Program.objects.get(pk=4).max_goalies:
+            if self.object.goalie == True and self.model.objects.filter(goalie=True, skate_date=self.object.skate_date).count() == Program.objects.get(pk=7).max_goalies:
                 messages.add_message(self.request, messages.ERROR, 'Sorry, goalie spots are full!')
-                return redirect('thane_storck:thane-skate')
+                return redirect('yeti_skate:yeti-skate')
             # If skater spots are full, do not save object
-            elif self.object.goalie == False and self.model.objects.filter(goalie=False, skate_date=self.object.skate_date).count() == Program.objects.get(pk=4).max_skaters:
+            elif self.object.goalie == False and self.model.objects.filter(goalie=False, skate_date=self.object.skate_date).count() == Program.objects.get(pk=7).max_skaters:
                 messages.add_message(self.request, messages.ERROR, 'Sorry, skater spots are full!')
-                return redirect('thane_storck:thane-skate')
-            # If all goes well, do the following.
-            # If skater is a goalie, staff member or Bob Sheehan they skate for free.
-            if self.object.goalie or self.request.user.is_staff or self.request.user.id == 52:
-                self.object.paid = True
-            else:
-                self.add_to_cart()
-            self.join_thane_storck_group()
-            self.add_thane_storck_email_to_profile()
+                return redirect('yeti_skate:yeti-skate')
+            # If spots are not full do the following
+            goalies_free = self.add_to_cart()
+            self.join_yeti_skate_group()
+            self.add_yeti_skate_email_to_profile()
             self.object.save()
         except IntegrityError:
             pass
         # If all goes well set success message and return
-        # If user is a goalie, staff or Bob Sheehan set this message.
-        if self.object.goalie or self.request.user.is_staff or self.request.user.id == 52:
+        if self.object.goalie and goalies_free:
             messages.add_message(self.request, messages.INFO, 'You have successfully registered for the skate!')
         else:
             messages.add_message(self.request, messages.INFO, 'To complete your registration, you must view your cart and pay for your item(s)!')
         return super().form_valid(form)
 
     def add_to_cart(self):
-        '''Adds Thane Storck session to shopping cart.'''
-        # Get price of Thane Storck program
-        price = self.program_model.objects.get(id=4).skater_price
+        '''Adds Yeti Skate session to shopping cart.'''
+        # Get price of Yeti Skate program
+        if self.object.goalie:
+            price = self.program_model.objects.get(id=7).goalie_price
+            if price == 0:
+                return True
+        else:
+            price = self.program_model.objects.get(id=7).skater_price
+            item_name = self.program_model.objects.get(id=7).program_name
         start_time = self.session_model.objects.filter(skate_date=self.object.skate_date.skate_date).values_list('start_time', flat=True)
-        cart = self.cart_model(customer=self.request.user, item='Thane Storck', skater_name=self.request.user.get_full_name(), 
+        cart = self.cart_model(customer=self.request.user, item='Yeti Skate', skater_name=self.request.user.get_full_name(), 
             event_date=self.object.skate_date.skate_date, event_start_time=start_time[0], amount=price)
         cart.save()
+        return False
 
-    def join_thane_storck_group(self, join_group='Thane Storck'):
-        '''Adds user to Thane Storck group "behind the scenes", for communication purposes.'''
+    def join_yeti_skate_group(self, join_group='Yeti Skate'):
+        '''Adds user to Yeti Skate group "behind the scenes", for communication purposes.'''
         try:
             group = self.group_model.objects.get(name=join_group)
             self.request.user.groups.add(group)
+            try:
+                # If a profile already exists, set yeti_skate_email to True
+                profile = self.profile_model.objects.get(user=self.request.user)
+                profile.yeti_skate_email = True
+                profile.save()
+            except ObjectDoesNotExist:
+                pass
         except IntegrityError:
             pass
         return
 
-    def add_thane_storck_email_to_profile(self):
-        '''If no user profile exists, create one and set thane_storck_email to True.'''
+    def add_yeti_skate_email_to_profile(self):
+        '''If no user profile exists, create one and set yeti_skate_email to True.'''
         
         # If a profile already exists, do nothing
         try:
@@ -143,16 +153,16 @@ class CreateSkateSessionView(LoginRequiredMixin, CreateView):
             return
         # If no profile exists, add one and set open_hockey_email to True
         except ObjectDoesNotExist:
-            profile = self.profile_model(user=self.request.user, slug=self.request.user.id, thane_storck_email=True)
+            profile = self.profile_model(user=self.request.user, slug=self.request.user.id, yeti_skate_email=True)
             profile.save()
             return
 
 
-class DeleteSkateSessionView(LoginRequiredMixin, DeleteView):
+class DeleteYetiSkateSessionView(LoginRequiredMixin, DeleteView):
     '''Allows user to remove themself from a skate session'''
-    model = models.SkateSession
-    skate_date_model = models.SkateDate
-    success_url = reverse_lazy('thane_storck:thane-skate')
+    model = models.YetiSkateSession
+    skate_date_model = models.YetiSkateDate
+    success_url = reverse_lazy('yeti_skate:yeti-skate')
 
     def delete(self, *args, **kwargs):
         '''Things that need doing once a session is removed.'''
@@ -161,7 +171,7 @@ class DeleteSkateSessionView(LoginRequiredMixin, DeleteView):
         skate_date = self.model.objects.filter(id=kwargs['pk']).values_list('skate_date', flat=True)
         cart_date = self.skate_date_model.objects.filter(id=skate_date[0])
         # print(cart_date[0])
-        cart_item = Cart.objects.filter(item=Program.objects.all().get(id=4).program_name, event_date=cart_date[0].skate_date).delete()
+        cart_item = Cart.objects.filter(item=Program.objects.all().get(id=7).program_name, event_date=cart_date[0].skate_date).delete()
 
         # Set success message and return
         messages.add_message(self.request, messages.SUCCESS, 'You have been removed from that skate session!')
@@ -169,13 +179,13 @@ class DeleteSkateSessionView(LoginRequiredMixin, DeleteView):
 
 ################ The following views are for staff only ##########################################################
 
-class PrintSkateDateListView(LoginRequiredMixin, ListView):
-    '''Displays page with list of upcoming Thane Storck skates with buttons for printing each skate.'''
+class YetiSkateDateStaffListView(LoginRequiredMixin, ListView):
+    '''Displays page with list of upcoming Yeti Skate skates with buttons for viewing registered skaters.'''
 
-    model = models.SkateDate
-    sessions_model = models.SkateSession
+    model = models.YetiSkateDate
+    sessions_model = models.YetiSkateSession
     context_object_name = 'skate_dates'
-    template_name = 'thane_storck_print_list.html'
+    template_name = 'yeti_skate_sessions_list.html'
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -187,25 +197,3 @@ class PrintSkateDateListView(LoginRequiredMixin, ListView):
         session_skaters = self.sessions_model.objects.filter(skate_date__skate_date__gte=date.today()).order_by('skate_date')
         context['session_skaters'] = session_skaters
         return context
-
-
-class PrintSkateDateView(LoginRequiredMixin, ListView):
-    '''Displays Liability Waiver page with skater names for printing.'''
-    model = models.SkateSession
-    skate_date_model = models.SkateDate
-    context_object_name = 'session_skaters'
-    template_name = 'thane_storck_print_view.html'
-
-    def get_queryset(self):
-        queryset = super().get_queryset().filter(skate_date=self.kwargs['pk'])
-        return queryset
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        skate_date_info = self.skate_date_model.objects.filter(pk=self.kwargs['pk']).values_list('skate_date', 'start_time')
-        for info in skate_date_info:
-            context['skate_date'] = info[0]
-            context['skate_time'] = info[1]
-        context['skate_info'] = skate_date_info
-        return context
-

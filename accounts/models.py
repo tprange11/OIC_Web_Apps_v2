@@ -23,6 +23,7 @@ class Profile(models.Model):
     figure_skating_email = models.BooleanField(default=False)
     adult_skills_email = models.BooleanField(default=False)
     mike_schultz_email = models.BooleanField(default=False)
+    yeti_skate_email = models.BooleanField(default=False)
     slug = models.SlugField(unique=True, null=False)
 
     def get_absolute_url(self):

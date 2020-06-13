@@ -27,15 +27,16 @@ class ProfileForm(forms.ModelForm):
     class Meta:
         model = Profile
         fields = ['user', 'open_hockey_email', 'stick_and_puck_email', 'figure_skating_email',
-                 'thane_storck_email', 'adult_skills_email', 'mike_schultz_email']
+                 'thane_storck_email', 'adult_skills_email', 'mike_schultz_email', 'yeti_skate_email']
         widgets = {'user': forms.HiddenInput()}
         labels = {
-            'open_hockey_email': 'Receive Yeti Skate emails.',
+            'open_hockey_email': 'Receive Open Hockey emails.',
             'stick_and_puck_email': 'Receive Stick and Puck emails.',
             'figure_skating_email': 'Receive Figure Skating emails.',
             'thane_storck_email': 'Receive Thane Storck Skate emails.',
             'adult_skills_email': 'Receive Adult Skills Skate emails.',
             'mike_schultz_email': 'Receive Mike Schultz Skate emails.',
+            'yeti_skate_email': 'Receive Yeti Skate emails.',
         }
 
 

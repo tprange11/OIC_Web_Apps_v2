@@ -180,7 +180,7 @@ class DeleteOpenHockeySessions(LoginRequiredMixin, DeleteView):
     def delete(self, *args, **kwargs):
         # If someone removes themselves from an open hockey session before paying, remove it from the cart too
         session_date = self.model.objects.filter(id=kwargs['pk']).values_list('date', flat=True)
-        cart_item = Cart.objects.filter(event_date=session_date[0]).delete()
+        cart_item = Cart.objects.filter(item=Program.objects.all().get(id=1).program_name, event_date=session_date[0]).delete()
         # Continue with removing the open hockey session
         messages.success(self.request, 'You have been removed from the Open Hockey Session!')
         return super().delete(*args, **kwargs)

@@ -4,12 +4,14 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from django.db import IntegrityError
 from . import models
+from programs.models import Program
 from figure_skating.models import FigureSkatingSession, FigureSkater, FigureSkatingDate
 from open_hockey.models import OpenHockeySessions, OpenHockeyMember
 from stickandpuck.models import StickAndPuckSessions, StickAndPuckSkaters
 from thane_storck.models import SkateSession, SkateDate
 from adult_skills.models import AdultSkillsSkateDate, AdultSkillsSkateSession
 from mike_schultz.models import MikeSchultzSkateDate, MikeSchultzSkateSession
+from yeti_skate.models import YetiSkateDate, YetiSkateSession
 
 # Create your views here.
 
@@ -43,6 +45,7 @@ class RemoveItemFromCartView(LoginRequiredMixin, DeleteView):
     '''View removes an item from the cart and deletes the corresponding session record.'''
 
     model = models.Cart
+    progam_model = Program
     fs_model = FigureSkatingSession
     fs_skater_model = FigureSkater
     fs_date_model = FigureSkatingDate
@@ -56,27 +59,32 @@ class RemoveItemFromCartView(LoginRequiredMixin, DeleteView):
     as_skate_date_model = AdultSkillsSkateDate
     ms_model = MikeSchultzSkateSession
     ms_skate_date_model = MikeSchultzSkateDate
+    yeti_skate_model = YetiSkateSession
+    yeti_skate_date_model = YetiSkateDate
     success_url = reverse_lazy('cart:shopping-cart')
 
     def delete(self, request, *args, **kwargs):
         # Determine which model session we are deleting that corresponds to cart item.
         cart_item = self.model.objects.get(pk=kwargs['pk'])
-        if cart_item.item == 'Stick and Puck':
+        if cart_item.item == Program.objects.all().get(id=2).program_name: #'Stick and Puck'
             skater_name = cart_item.skater_name.split(' ')
             skater_id = self.snp_skater_model.objects.filter(guardian=request.user, first_name=skater_name[0], last_name=skater_name[1])
             self.snp_model.objects.filter(skater=skater_id[0], session_date=cart_item.event_date, session_time=cart_item.event_start_time).delete()
-        elif cart_item.item == 'Open Hockey':
+        elif cart_item.item == Program.objects.all().get(id=1).program_name: #'Open Hockey'
             self.oh_model.objects.filter(skater=request.user, date=cart_item.event_date).delete()
-        elif cart_item.item == 'Thane Storck':
+        elif cart_item.item == Program.objects.all().get(id=4).program_name: #'Thane Storck':
             skate_date = self.ts_skate_date_model.objects.filter(skate_date=cart_item.event_date)
             self.ts_model.objects.filter(skater=request.user, skate_date=skate_date[0]).delete()
-        elif cart_item.item == 'Adult Skills':
+        elif cart_item.item == Program.objects.all().get(id=5).program_name: #'Adult Skills':
             skate_date = self.as_skate_date_model.objects.filter(skate_date=cart_item.event_date)
             self.as_model.objects.filter(skater=request.user, skate_date=skate_date[0]).delete()
-        elif cart_item.item == 'Mike Schultz':
+        elif cart_item.item == Program.objects.all().get(id=6).program_name: #'Mike Schultz':
             skate_date = self.ms_skate_date_model.objects.filter(skate_date=cart_item.event_date)
             self.ms_model.objects.filter(skater=request.user, skate_date=skate_date[0]).delete()
-        elif cart_item.item == 'Figure Skating':
+        elif cart_item.item == Program.objects.all().get(id=7).program_name: # Yeti Skate
+            skate_date = self.yeti_skate_date_model.objects.filter(skate_date=cart_item.event_date)
+            self.yeti_skate_model.objects.filter(skater=request.user, skate_date=skate_date[0]).delete()
+        elif cart_item.item == Program.objects.all().get(id=3).program_name: #'Figure Skating':
             skater_name = cart_item.skater_name.split(' ')
             skater_id = self.fs_skater_model.objects.filter(guardian=request.user, first_name=skater_name[0], last_name=skater_name[1])
             skate_date_id = self.fs_date_model.objects.filter(skate_date=cart_item.event_date, start_time=cart_item.event_start_time)
