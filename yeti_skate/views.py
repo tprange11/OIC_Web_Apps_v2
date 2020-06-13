@@ -99,14 +99,18 @@ class CreateYetiSkateSessionView(LoginRequiredMixin, CreateView):
                 messages.add_message(self.request, messages.ERROR, 'Sorry, skater spots are full!')
                 return redirect('yeti_skate:yeti-skate')
             # If spots are not full do the following
-            goalies_free = self.add_to_cart()
+            if self.request.user.is_staff: # Employees skate for free
+                self.object.paid = True
+                goalies_free = True
+            else:
+                goalies_free = self.add_to_cart()
             self.join_yeti_skate_group()
             self.add_yeti_skate_email_to_profile()
             self.object.save()
         except IntegrityError:
             pass
         # If all goes well set success message and return
-        if self.object.goalie and goalies_free:
+        if self.object.goalie or self.request.user.is_staff and goalies_free:
             messages.add_message(self.request, messages.INFO, 'You have successfully registered for the skate!')
         else:
             messages.add_message(self.request, messages.INFO, 'To complete your registration, you must view your cart and pay for your item(s)!')
@@ -122,11 +126,11 @@ class CreateYetiSkateSessionView(LoginRequiredMixin, CreateView):
         else:
             price = self.program_model.objects.get(id=7).skater_price
             item_name = self.program_model.objects.get(id=7).program_name
-        start_time = self.session_model.objects.filter(skate_date=self.object.skate_date.skate_date).values_list('start_time', flat=True)
-        cart = self.cart_model(customer=self.request.user, item='Yeti Skate', skater_name=self.request.user.get_full_name(), 
+            start_time = self.session_model.objects.filter(skate_date=self.object.skate_date.skate_date).values_list('start_time', flat=True)
+            cart = self.cart_model(customer=self.request.user, item=item_name, skater_name=self.request.user.get_full_name(), 
             event_date=self.object.skate_date.skate_date, event_start_time=start_time[0], amount=price)
-        cart.save()
-        return False
+            cart.save()
+            return False
 
     def join_yeti_skate_group(self, join_group='Yeti Skate'):
         '''Adds user to Yeti Skate group "behind the scenes", for communication purposes.'''
