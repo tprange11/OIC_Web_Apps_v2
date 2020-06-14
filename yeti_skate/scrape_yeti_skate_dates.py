@@ -130,17 +130,18 @@ if __name__ == "__main__":
     # the_date = "2019-09-14"
     send_email = False
 
-    # Every day scrape the next four weeks for Saturday Yeti Skate dates
-    for x in range(8):
-        scrape_date = date.isoformat(the_date)
-        if the_date.weekday() == 1 or the_date.weekday() == 4:
-            scrape_oic_schedule(scrape_date)
+    # Every Sunday scrape the next Tuesday/Friday days for Yeti Skate dates
+    if the_date.weekday() == 6:
+        for x in range(6):
+            scrape_date = date.isoformat(the_date)
+            if the_date.weekday() == 1 or the_date.weekday() == 4:
+                scrape_oic_schedule(scrape_date)
 
-        the_date += timedelta(days=1)
+            the_date += timedelta(days=1)
 
     if len(skate_dates) != 0:
         send_email = add_skate_dates(skate_dates)
-               
+
     # print(skate_dates)
     # print(send_email)
     if send_email:
