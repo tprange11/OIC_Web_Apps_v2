@@ -49,7 +49,11 @@
                         <ul class="list-group">
                             {% for skater in skate_sessions %}
                             {% if skater.skate_date.pk == date.pk %}<li class="list-group-item">Skater Name: {{skater.skater.first_name}} {{skater.skater.last_name}}
-                                {% if skater.goalie %}<b>(Goalie)</b>{% endif %}</li>{% endif %}{% endfor %}
+                                {% if skater.goalie %}<b>(Goalie)</b>{% endif %}
+                                {% if user.is_superuser %}
+                                {% if skater.paid %}<b>(Paid)</b>{% else %}<b>(Not Paid)</b>{% endif %}
+                                {% endif %}
+                            </li>{% endif %}{% endfor %}
                         </ul>
                     </div>
                     <div class="modal-footer">
