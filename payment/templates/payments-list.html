@@ -37,4 +37,19 @@
         </div>
 {% endfor %}
 </div>
+<div class="pagination justify-content-center">
+    <div class="step-links">
+        {% if page_obj.has_previous %}
+            <a class="btn btn-sm btn-secondary" href="?page=1">&lt;&lt;</a>
+            <a class="btn btn-sm btn-dark mx-2" href="?page={{ page_obj.previous_page_number }}">&lt;</a>
+        {% endif %}
+        <span class="btn btn-sm btn-dark disabled">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        </span>
+        {% if page_obj.has_next %}
+            <a class="btn btn-sm btn-dark mx-2" href="?page={{ page_obj.next_page_number }}">&gt;</a>
+            <a class="btn btn-sm btn-secondary" href="?page={{ page_obj.paginator.num_pages }}">&gt;&gt;</a>
+        {% endif %}
+    </div class="step-links">
+</div>
 {% endblock content %}
