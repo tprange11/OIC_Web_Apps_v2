@@ -45,7 +45,7 @@ class PaymentListView(LoginRequiredMixin, ListView):
     model = models.Payment
     template_name = 'payments-list.html'
     context_object_name = 'payments'
-    paginate_by = 2
+    paginate_by = 12
 
     def get_queryset(self):
         queryset = super().get_queryset().filter(payer=self.request.user)
