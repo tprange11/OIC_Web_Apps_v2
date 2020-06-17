@@ -16,6 +16,7 @@ class ProfileAdmin(admin.ModelAdmin):
 class ReleaseOfLiabilityAdmin(admin.ModelAdmin):
     list_display = ['user_name', 'release_of_liability', 'release_of_liability_date_signed']
     readonly_fields = ['user_name', 'release_of_liability', 'release_of_liability_date_signed']
+    search_fields = ['user__first_name', 'user__last_name']
 
     def user_name(self, obj):
         return f"{obj.user.first_name} {obj.user.last_name}"

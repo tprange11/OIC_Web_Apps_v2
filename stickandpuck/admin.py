@@ -4,7 +4,8 @@ from stickandpuck.models import StickAndPuckDates, StickAndPuckSessions, StickAn
 
 class StickAndPuckSessionsAdmin(admin.ModelAdmin):
     list_display = ['guardian_name', 'skater', 'session_date', 'session_time', 'paid']
-    search_fields = ['guardian__first_name', 'guardian__last_name', 'skater', 'session_date']
+    search_fields = ['guardian__first_name', 'guardian__last_name', 'skater__first_name', 'skater__last_name', 'session_date']
+    # list_filter = ['session_date']
 
     def guardian_name(self, obj):
         return f"{obj.guardian.first_name} {obj.guardian.last_name}"

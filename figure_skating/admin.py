@@ -12,7 +12,12 @@ class FigureSkatingDateAdmin(admin.ModelAdmin):
 
 
 class FigureSkatingSessionAdmin(admin.ModelAdmin):
-    list_display = ['guardian', 'skater', 'session', 'paid']
+    list_display = ['guardian_name', 'skater', 'session', 'paid']
+    list_filter = ['session']
+    search_fields = ['guardian__first_name', 'guardian__last_name', 'skater__first_name', 'skater__last_name']
+
+    def guardian_name(self, obj):
+        return f"{obj.guardian.first_name} {obj.guardian.last_name}"
 
 
 admin.site.register(FigureSkater, FigureSkaterAdmin)
