@@ -154,6 +154,7 @@ def process_payment(request, **kwargs):
             payment_error.save()
             
             # Create response context and send to template for display.
-            context = {'error': True}
+            error_message = api_response.errors[0]['detail']
+            context = {'error': True, 'error_message': error_message}
         
         return render(request, template_name, context)

@@ -4,6 +4,10 @@
 {% if error %}
     <h4>Payment Error</h4>
     <p>Sorry, something went wrong.  Please <a href="{% url 'payment:payment' %}">try again</a>.</p>
+    <div class="alert alert-danger">
+        <h5 class="alert-heading">Error Message</h5>
+        &quot;{{ error_message|capfirst }}&quot;
+    </div>
 {% elif message %}
     <h4>Thank you for your payment!</h4>
     <p><a href="{% url 'payment:payments-list' %}" class="btn btn-primary btn-sm">View Your Payment History</a></p>
