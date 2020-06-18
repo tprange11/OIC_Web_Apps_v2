@@ -4,7 +4,7 @@
     <h4>Upcoming Yeti Skate Sessions</h4>
     <p>Choose a date below to register for that session of Yeti Skate. Disabled skate sessions indicate that you have registered for the skate session(s). You may remove yourself 
         from a session prior to paying.  Once you have paid for the session(s), you will be unable to remove yourself from the session(s).</p>
-    <p>If you'd like to be notified when Yeti skate dates are available for registration, update your <a href="{% url 'accounts:profile' slug=user.id %}">email preferences</a>.</p>
+    <p>If you'd like to be notified when Yeti Skate dates are available for registration, update your <a href="{% url 'accounts:profile' slug=user.id %}">email preferences</a>.</p>
     {% for message in messages %}
     {% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}
     <div class="alert alert-danger alert-dismissible alert-link" role="alert">
@@ -19,7 +19,7 @@
     {% endif %}
     {% empty %}
     {% endfor %}
-    <ul class="list-group" style="display: inline-block; margin-bottom: 10px;">
+    <ul class="list-group mb-3" style="display: inline-block">
         {% for date in skate_dates %}
             {% if date.disabled %}
                 <li class="list-group-item" style="padding: 5px 15px;"><a href="{% url 'yeti_skate:register' pk=date.pk %}" class="btn btn-warning btn-sm mb-2 mb-sm-0 disabled">
