@@ -15,7 +15,7 @@ django.setup()
 from django.db import IntegrityError
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
-from stickandpuck.models import StickAndPuckDates
+from stickandpuck.models import StickAndPuckDate
 from accounts.models import Profile
 # from django.contrib.auth import get_user_model
 # User = get_user_model()
@@ -93,8 +93,8 @@ def scrape_oic_schedule(date):
     # print(stick_and_puck)
 
 def add_stick_and_puck_dates(sessions):
-    '''Adds stick and puck dates, times and session notes to StickAndPuckDates model.'''
-    model = StickAndPuckDates
+    '''Adds stick and puck dates, times and session notes to StickAndPuckDate model.'''
+    model = StickAndPuckDate
 
     for session in sessions:
         try:

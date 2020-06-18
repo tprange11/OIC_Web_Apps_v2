@@ -6,7 +6,7 @@ User = get_user_model()
 # Create your models here.
 
 
-class StickAndPuckSkaters(models.Model):
+class StickAndPuckSkater(models.Model):
     '''Model that holds skater information'''
     guardian = models.ForeignKey(User, on_delete=models.CASCADE)
     first_name = models.CharField(max_length=25)
@@ -28,10 +28,10 @@ class StickAndPuckSkaters(models.Model):
         return reverse('stickandpuck:stick-and-puck')
 
 
-class StickAndPuckSessions(models.Model):
+class StickAndPuckSession(models.Model):
     '''Model that holds stick and puck sessions data'''
     guardian = models.ForeignKey(User, on_delete=models.CASCADE)
-    skater = models.ForeignKey(StickAndPuckSkaters, on_delete=models.CASCADE)
+    skater = models.ForeignKey(StickAndPuckSkater, on_delete=models.CASCADE)
     session_date = models.DateField()
     session_time = models.CharField(max_length=10)
     paid = models.BooleanField(default=False)
@@ -47,7 +47,7 @@ class StickAndPuckSessions(models.Model):
         ordering = ['-session_date', 'session_time']
 
 
-class StickAndPuckDates(models.Model):
+class StickAndPuckDate(models.Model):
     '''Model that holds stick and puck session dates'''
     session_date = models.DateField()
     session_start_time = models.CharField(max_length=10)

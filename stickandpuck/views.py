@@ -22,7 +22,7 @@ class StickAndPuckIndex(LoginRequiredMixin, TemplateView):
 
 class CreateStickAndPuckSkaterView(LoginRequiredMixin, CreateView):
     '''Displays page where users can add skaters to their account'''
-    model = models.StickAndPuckSkaters
+    model = models.StickAndPuckSkater
     template_name = 'stickandpuckskaters_form.html'
     success_url = reverse_lazy('stickandpuck:skater-list')
     form_class = forms.StickAndPuckSkaterForm
@@ -37,9 +37,9 @@ class CreateStickAndPuckSkaterView(LoginRequiredMixin, CreateView):
             return render(self.request, template_name=self.template_name, context=self.get_context_data())
 
 
-class StickAndPuckSkatersListView(LoginRequiredMixin, ListView):
+class StickAndPuckSkaterListView(LoginRequiredMixin, ListView):
     '''Displays page with list of stick and puck skaters'''
-    model = models.StickAndPuckSkaters
+    model = models.StickAndPuckSkater
     template_name = 'stickandpuckskaters_list.html'
 
     def get_queryset(self):
@@ -48,9 +48,9 @@ class StickAndPuckSkatersListView(LoginRequiredMixin, ListView):
         return queryset.filter(guardian=self.request.user.id)
 
 
-class DeleteStickAndPuckSkaters(LoginRequiredMixin, DeleteView):
+class DeleteStickAndPuckSkater(LoginRequiredMixin, DeleteView):
     '''Display page where user can confirm deletion of a stick and puck skater'''
-    model = models.StickAndPuckSkaters
+    model = models.StickAndPuckSkater
     success_url = reverse_lazy('stickandpuck:skater-list')
     template_name = 'stickandpuckskaters_confirm_delete.html'
 
@@ -60,10 +60,10 @@ class DeleteStickAndPuckSkaters(LoginRequiredMixin, DeleteView):
         return super().delete(*args, **kwargs)
 
 
-class StickAndPuckSessionsListView(LoginRequiredMixin, ListView):
+class StickAndPuckSessionListView(LoginRequiredMixin, ListView):
     '''Displays page with list of users upcoming stick and puck sessions'''
     template_name = 'stickandpucksessions_list.html'
-    model = models.StickAndPuckDates
+    model = models.StickAndPuckDate
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -71,10 +71,10 @@ class StickAndPuckSessionsListView(LoginRequiredMixin, ListView):
         return queryset.filter(session_date__gte=date.today()).order_by('session_date', 'pk')
 
 
-class StickAndPuckSessionsCount(LoginRequiredMixin, TemplateView):
+class StickAndPuckSessionCount(LoginRequiredMixin, TemplateView):
     '''Displays page where user can check for how many open skater spots exist for a particular session of stick and puck'''
     template_name = 'stickandpucksessions_count.html'
-    model = models.StickAndPuckSessions
+    model = models.StickAndPuckSession
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -82,16 +82,16 @@ class StickAndPuckSessionsCount(LoginRequiredMixin, TemplateView):
         return context
 
 
-class CreateStickAndPuckSessions(LoginRequiredMixin, CreateView):
+class CreateStickAndPuckSession(LoginRequiredMixin, CreateView):
     '''Display page where user can sign skaters up for stick and puck sessions'''
-    model = models.StickAndPuckSessions
+    model = models.StickAndPuckSession
     group_model = Group
     profile_model = Profile
     cart_model = Cart
     template_name = 'stickandpucksessions_form.html'
     success_url = reverse_lazy('stickandpuck:sessions')
     form_class = forms.StickAndPuckSignupForm
-    skater_model = models.StickAndPuckSkaters
+    skater_model = models.StickAndPuckSkater
     program_model = Program
 
     def get_form_kwargs(self):
@@ -170,7 +170,7 @@ class CreateStickAndPuckSessions(LoginRequiredMixin, CreateView):
 
 class StickAndPuckMySessionsListView(LoginRequiredMixin, ListView):
     '''Displays page with list of the users stick and puck sessions.'''
-    model = models.StickAndPuckSessions
+    model = models.StickAndPuckSession
     template_name = 'stickandpuckmysessions_list.html'
     
     def get_queryset(self):
@@ -179,10 +179,10 @@ class StickAndPuckMySessionsListView(LoginRequiredMixin, ListView):
         return queryset.filter(guardian=self.request.user.id, session_date__gte=date.today()).order_by('session_date', 'session_time')
 
 
-class StickAndPuckSessionsDeleteView(LoginRequiredMixin, DeleteView):
+class StickAndPuckSessionDeleteView(LoginRequiredMixin, DeleteView):
     '''Displays page where user can confirm deletion of skater from a particular stick and puck session.'''
-    model = models.StickAndPuckSessions
-    skater_model = models.StickAndPuckSkaters
+    model = models.StickAndPuckSession
+    skater_model = models.StickAndPuckSkater
     success_url = reverse_lazy('stickandpuck:mysessions')
     template_name = 'stickandpucksessions_confirm_delete.html'
 
@@ -206,8 +206,8 @@ class StickAndPuckSessionsDeleteView(LoginRequiredMixin, DeleteView):
 
 class StickAndPuckPrintListView(LoginRequiredMixin, ListView):
     '''Displays page with list of upcoming stick and puck dates for printing purposes.'''
-    model = models.StickAndPuckDates
-    sessions_model = models.StickAndPuckSessions
+    model = models.StickAndPuckDate
+    sessions_model = models.StickAndPuckSession
     template_name = 'stickandpuckprint_list.html'
 
     def get_queryset(self):
@@ -223,7 +223,7 @@ class StickAndPuckPrintListView(LoginRequiredMixin, ListView):
 
 class StickAndPuckPrintView(LoginRequiredMixin, ListView):
     '''Displays page to print Release of Liability with skaters names preprinted.'''
-    model = models.StickAndPuckSessions
+    model = models.StickAndPuckSession
     template_name = 'stickandpuckprint_view.html'
 
     def get_queryset(self):

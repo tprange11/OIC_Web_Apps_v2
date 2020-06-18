@@ -10,7 +10,7 @@ from . import models
 from cart.models import Cart
 from programs.models import Program
 from open_hockey.models import OpenHockeySessions, OpenHockeyMember
-from stickandpuck.models import StickAndPuckSessions
+from stickandpuck.models import StickAndPuckSession
 from thane_storck.models import SkateSession
 from figure_skating.models import FigureSkatingSession
 from adult_skills.models import AdultSkillsSkateSession
@@ -61,7 +61,7 @@ def process_payment(request, **kwargs):
     program_model = Program
     open_hockey_sessions_model = OpenHockeySessions
     open_hockey_member_model = OpenHockeyMember
-    stick_and_puck_sessions_model = StickAndPuckSessions
+    stick_and_puck_sessions_model = StickAndPuckSession
     thane_storck_sessions_model = SkateSession
     figure_skating_sessions_model = FigureSkatingSession
     adult_skills_sessions_model = AdultSkillsSkateSession

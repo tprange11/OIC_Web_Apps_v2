@@ -7,7 +7,7 @@ from . import models
 from programs.models import Program
 from figure_skating.models import FigureSkatingSession, FigureSkater, FigureSkatingDate
 from open_hockey.models import OpenHockeySessions, OpenHockeyMember
-from stickandpuck.models import StickAndPuckSessions, StickAndPuckSkaters
+from stickandpuck.models import StickAndPuckSession, StickAndPuckSkater
 from thane_storck.models import SkateSession, SkateDate
 from adult_skills.models import AdultSkillsSkateDate, AdultSkillsSkateSession
 from mike_schultz.models import MikeSchultzSkateDate, MikeSchultzSkateSession
@@ -51,8 +51,8 @@ class RemoveItemFromCartView(LoginRequiredMixin, DeleteView):
     fs_date_model = FigureSkatingDate
     oh_model = OpenHockeySessions
     oh_member_model = OpenHockeyMember
-    snp_model = StickAndPuckSessions
-    snp_skater_model = StickAndPuckSkaters
+    snp_model = StickAndPuckSession
+    snp_skater_model = StickAndPuckSkater
     ts_model = SkateSession
     ts_skate_date_model = SkateDate
     as_model = AdultSkillsSkateSession
