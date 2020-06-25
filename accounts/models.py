@@ -43,3 +43,21 @@ class ReleaseOfLiability(models.Model):
 
     class Meta:
         unique_together = ['user', 'release_of_liability']
+
+
+class ChildSkater(models.Model):
+    '''Model that holds users child or dependant skater(s) information.'''
+
+    # Model Fields
+    user = models.ForeignKey(profile_user, on_delete=models.CASCADE)
+    first_name = models.CharField(max_length=25, blank=False)
+    last_name = models.CharField(max_length=50, blank=False)
+    date_of_birth = models.DateField(blank=True, null=True)
+
+    class Meta:
+        # Prevent duplicate skaters
+        unique_together = ['user', 'first_name', 'last_name', 'date_of_birth']
+
+    def __str__(self):
+        '''Overrides string representation of class.'''
+        return f"{self.first_name} {self.last_name}"

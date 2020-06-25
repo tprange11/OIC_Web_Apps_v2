@@ -95,27 +95,19 @@
                     <a class="nav-link disabled" href="#"><i class="fas fa-shopping-cart fa-lg"></i></a>
                 </li>
                 {% endif %}
-                {% if appname != 'open_hockey' and appname != 'stickandpuck' %}
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'accounts:profile' slug=user.id %}" style="color: chartreuse">{{ user.username }}</a>
+                {% if user.is_authenticated %}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="userNavbarDropdown" 
+                        role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="color: chartreuse;">
+                    {{ user.username }}</a>
+                <div class="dropdown-menu" aria-labelledby="userNavbarDropdown" style="background-color:chartreuse">
+                    <a class="dropdown-item" href="{% url 'accounts:profile' slug=user.id %}">My Profile</a>
+                    {% if appname == 'open_hockey' %}
+                    <a class="dropdown-item" href="{% url 'open_hockey:skater-sessions' %}">My Sessions</a>
+                    <a class="dropdown-item" href="{% url 'open_hockey:member-detail' member=user %}">Membership</a>
+                    {% endif %}
+                </div>
                 </li>
-                {% else %}
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="userNavbarDropdown" 
-                            role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="color: chartreuse;">
-                        {{ user.username }}</a>
-                    <div class="dropdown-menu" aria-labelledby="userNavbarDropdown" style="background-color:chartreuse">
-                        <a class="dropdown-item" href="{% url 'accounts:profile' slug=user.id %}">My Profile</a>
-                        {% if appname == 'open_hockey' %}
-                        <a class="dropdown-item" href="{% url 'open_hockey:skater-sessions' %}">My Sessions</a>
-                        <a class="dropdown-item" href="{% url 'open_hockey:member-detail' member=user %}">Membership</a>
-                        {% endif %}
-                        {% if appname == 'stickandpuck' %}
-                        <a class="dropdown-item" href="{% url 'stickandpuck:mysessions' %}">My Sessions</a>
-                        <a class="dropdown-item" href="{% url 'stickandpuck:skater-list' %}">My Skaters</a>
-                        {% endif %}
-                    </div>
-                    </li>
                 {% endif %}{# appname != 'open_hockey' #}
                     {% if user.is_superuser %}
                     <li class="nav-item">

@@ -2,6 +2,8 @@ from django.db import models, IntegrityError
 from django.contrib.auth import get_user_model
 User = get_user_model()
 
+from accounts.models import Profile, ChildSkater
+
 class MikeSchultzSkateDate(models.Model):
     '''Model holds dates for the Mike Schultz skate.'''
 
@@ -24,13 +26,14 @@ class MikeSchultzSkateSession(models.Model):
     '''Model that stores skate session data.'''
 
     # Model Fields
-    skater = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    skater = models.ForeignKey(ChildSkater, on_delete=models.CASCADE, null=True)
     skate_date = models.ForeignKey(MikeSchultzSkateDate, on_delete=models.CASCADE, related_name='session_skaters')
     goalie = models.BooleanField(default=False)
     paid = models.BooleanField(default=False)
 
     class Meta:
         # Prevent duplicate entries
-        unique_together = ['skater', 'skate_date']
+        unique_together = ['user', 'skater', 'skate_date']
         # Default ordering date descending
         ordering = ['-skate_date']

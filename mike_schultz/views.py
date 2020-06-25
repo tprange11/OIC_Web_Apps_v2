@@ -8,7 +8,7 @@ from django.db import IntegrityError
 from django.core.exceptions import ObjectDoesNotExist
 
 from . import models, forms
-from accounts.models import Profile
+from accounts.models import Profile, ChildSkater
 from programs.models import Program
 from cart.models import Cart
 
@@ -22,7 +22,25 @@ class MikeSchultzSkateDateListView(LoginRequiredMixin, ListView):
     template_name = 'mike_schultz_skate_dates.html'
     model = models.MikeSchultzSkateDate
     session_model = models.MikeSchultzSkateSession
+    group_model = Group
+    profile_model = Profile
     context_object_name = 'skate_dates'
+
+    def get(self, request, *args, **kwargs):
+        '''Adds user to Mike Schultz group "behind the scenes", for communication purposes.'''
+        try:
+            group = self.group_model.objects.get(name='Mike Schultz')
+            self.request.user.groups.add(group)
+            try:
+                # If a profile already exists, set mike_schultz_email to True
+                profile = self.profile_model.objects.get(user=self.request.user)
+                profile.mike_schultz_email = True
+                profile.save()
+            except ObjectDoesNotExist:
+                pass
+        except IntegrityError:
+            pass
+        return super().get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -34,24 +52,23 @@ class MikeSchultzSkateDateListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         queryset = super().get_queryset()
         queryset = queryset.filter(skate_date__gte=date.today()).values('pk', 'skate_date', 'start_time', 'end_time')
-        skater_sessions = self.session_model.objects.filter(skater=self.request.user).values_list('skate_date','pk', 'paid')
-        # print(skater_sessions)
+        skater_sessions = self.session_model.objects.filter(user=self.request.user).values_list('skate_date','pk', 'paid')#.order_by('pk')
         # If user is already signed up for the skate, add key value pair to disable button
         for item in queryset:
             for session in skater_sessions:
-                # If the session date and skate date match and paid is True, add disabled = True to queryset
+                # If the session date and skate date match add session_pk and paid to queryset
                 if item['pk'] == session[0] and session[2] == True:
-                    item['disabled'] = True
+                    # item['disabled'] = True
                     item['session_pk'] = session[1]
                     item['paid'] = session[2]
                     break
                 elif item['pk'] == session[0] and session[2] == False:
-                    item['disabled'] = True
+                    # item['disabled'] = True
                     item['session_pk'] = session[1]
                     item['paid'] = session[2]
                     break
                 else:
-                    item['disabled'] = False
+                    # item['disabled'] = False
                     item['session_pk'] = None
                     item['paid'] = False
                     continue
@@ -71,11 +88,16 @@ class CreateMikeSchultzSkateSessionView(LoginRequiredMixin, CreateView):
     template_name = 'mike_schultz_skate_sessions_form.html'
     success_url = '/web_apps/mike_schultz/'
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs.update({'user': self.request.user})
+        return kwargs
+
     def get_initial(self, *args, **kwargs):
         initial = super().get_initial()
         if self.request.method == 'GET':
             initial['skate_date'] = self.kwargs['pk']
-            initial['skater'] = self.request.user
+            initial['user'] = self.request.user
         return initial
 
     def get_context_data(self, **kwargs):
@@ -99,7 +121,7 @@ class CreateMikeSchultzSkateSessionView(LoginRequiredMixin, CreateView):
                 return redirect('mike_schultz:mike-schultz')
             # If spots are not full do the following
             goalies_free = self.add_to_cart()
-            self.join_mike_schultz_group()
+            # self.join_mike_schultz_group()
             self.add_mike_schultz_email_to_profile()
             self.object.save()
         except IntegrityError:
@@ -121,26 +143,26 @@ class CreateMikeSchultzSkateSessionView(LoginRequiredMixin, CreateView):
         else:
             price = self.program_model.objects.get(id=6).skater_price
         start_time = self.session_model.objects.filter(skate_date=self.object.skate_date.skate_date).values_list('start_time', flat=True)
-        cart = self.cart_model(customer=self.request.user, item='Mike Schultz', skater_name=self.request.user.get_full_name(), 
+        cart = self.cart_model(customer=self.request.user, item='Mike Schultz', skater_name=self.object.skater, 
             event_date=self.object.skate_date.skate_date, event_start_time=start_time[0], amount=price)
         cart.save()
         return False
 
-    def join_mike_schultz_group(self, join_group='Mike Schultz'):
-        '''Adds user to Mike Schultz group "behind the scenes", for communication purposes.'''
-        try:
-            group = self.group_model.objects.get(name=join_group)
-            self.request.user.groups.add(group)
-            try:
-                # If a profile already exists, set mike_schultz_email to True
-                profile = self.profile_model.objects.get(user=self.request.user)
-                profile.mike_schultz_email = True
-                profile.save()
-            except ObjectDoesNotExist:
-                pass
-        except IntegrityError:
-            pass
-        return
+    # def join_mike_schultz_group(self, join_group='Mike Schultz'):
+    #     '''Adds user to Mike Schultz group "behind the scenes", for communication purposes.'''
+    #     try:
+    #         group = self.group_model.objects.get(name=join_group)
+    #         self.request.user.groups.add(group)
+    #         try:
+    #             # If a profile already exists, set mike_schultz_email to True
+    #             profile = self.profile_model.objects.get(user=self.request.user)
+    #             profile.mike_schultz_email = True
+    #             profile.save()
+    #         except ObjectDoesNotExist:
+    #             pass
+    #     except IntegrityError:
+    #         pass
+    #     return
 
     def add_mike_schultz_email_to_profile(self):
         '''If no user profile exists, create one and set mike_schultz_email to True.'''
@@ -167,12 +189,15 @@ class DeleteMikeSchultzSkateSessionView(LoginRequiredMixin, DeleteView):
 
         # Clear session from the cart
         skate_date = self.model.objects.filter(id=kwargs['pk']).values_list('skate_date', flat=True)
+        skater_id = self.model.objects.filter(id=kwargs['pk']).values_list('skater', flat=True)
+        skater = ChildSkater.objects.get(id=skater_id[0])
+        # print(skater_id[0])
+        # print(skater)
         cart_date = self.skate_date_model.objects.filter(id=skate_date[0])
-        # print(cart_date[0])
-        cart_item = Cart.objects.filter(item=Program.objects.all().get(id=6), event_date=cart_date[0].skate_date).delete()
+        cart_item = Cart.objects.filter(item=Program.objects.all().get(id=6), skater_name=skater, event_date=cart_date[0].skate_date).delete()
 
         # Set success message and return
-        messages.add_message(self.request, messages.SUCCESS, 'You have been removed from that skate session!')
+        messages.add_message(self.request, messages.SUCCESS, 'Skater has been removed from that skate session!')
         return super().delete(*args, **kwargs)
 
 ################ The following views are for staff only ##########################################################

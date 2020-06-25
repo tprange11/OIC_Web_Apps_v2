@@ -4,6 +4,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from django.db import IntegrityError
 from . import models
+from accounts.models import ChildSkater
 from programs.models import Program
 from figure_skating.models import FigureSkatingSession, FigureSkater, FigureSkatingDate
 from open_hockey.models import OpenHockeySessions, OpenHockeyMember
@@ -80,7 +81,9 @@ class RemoveItemFromCartView(LoginRequiredMixin, DeleteView):
             self.as_model.objects.filter(skater=request.user, skate_date=skate_date[0]).delete()
         elif cart_item.item == Program.objects.all().get(id=6).program_name: #'Mike Schultz':
             skate_date = self.ms_skate_date_model.objects.filter(skate_date=cart_item.event_date)
-            self.ms_model.objects.filter(skater=request.user, skate_date=skate_date[0]).delete()
+            skater_name = cart_item.skater_name.split(' ')
+            skater_id = ChildSkater.objects.filter(first_name=skater_name[0], last_name=skater_name[1])
+            self.ms_model.objects.filter(skater=skater_id[0], skate_date=skate_date[0]).delete()
         elif cart_item.item == Program.objects.all().get(id=7).program_name: # Yeti Skate
             skate_date = self.yeti_skate_date_model.objects.filter(skate_date=cart_item.event_date)
             self.yeti_skate_model.objects.filter(skater=request.user, skate_date=skate_date[0]).delete()

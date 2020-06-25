@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
 from django import forms
-from accounts.models import Profile, ReleaseOfLiability
+from accounts.models import Profile, ReleaseOfLiability, ChildSkater
 
 
 class UserCreateForm(UserCreationForm):
@@ -48,4 +48,21 @@ class ReleaseOfLiablityForm(forms.ModelForm):
         fields = ['release_of_liability']
         labels = {
             'release_of_liability': 'By checking this box I AGREE to the Release of Liability'
+        }
+
+
+class CreateChildSkaterForm(forms.ModelForm):
+    '''Form used to add child skaters to ChildSkater model.'''
+
+    class Meta:
+        model = ChildSkater
+        fields = ['first_name', 'last_name', 'date_of_birth']
+        # widgets = {'user': forms.HiddenInput()}
+        labels = {
+            'first_name': 'First Name',
+            'last_name': 'Last Name',
+            'date_of_birth': 'Date of Birth'
+        }
+        help_texts = {
+            'date_of_birth': 'mm/dd/yyyy',
         }
