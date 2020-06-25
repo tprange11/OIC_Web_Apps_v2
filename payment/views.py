@@ -138,7 +138,7 @@ def process_payment(request, **kwargs):
                 thane_storck_sessions_model.objects.filter(skater=request.user).update(paid=True)
                 figure_skating_sessions_model.objects.filter(guardian=request.user, session__skate_date__gte=today).update(paid=True)
                 adult_skills_sessions_model.objects.filter(skater=request.user).update(paid=True)
-                mike_schultz_sessions_model.objects.filter(skater=request.user).update(paid=True)
+                mike_schultz_sessions_model.objects.filter(user=request.user).update(paid=True)
                 yeti_sessions_model.objects.filter(skater=request.user).update(paid=True)
             except IntegrityError:
                 pass
