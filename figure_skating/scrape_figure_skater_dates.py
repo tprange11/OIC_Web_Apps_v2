@@ -130,7 +130,7 @@ if __name__ == "__main__":
     # the_date = "2019-09-14"
 
     # Every day scrape the next seven days for Figure Skating dates
-    for x in range(21):
+    for x in range(35):
         scrape_date = date.isoformat(the_date)
         scrape_oic_schedule(scrape_date)
         the_date += timedelta(days=1)

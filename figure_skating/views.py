@@ -26,7 +26,7 @@ class FigureSkatingView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        fs_dates = self.fs_dates_model.objects.filter(skate_date__gte=date.today()).annotate(num_skaters=Count('figureskatingsession'))
+        fs_dates = self.fs_dates_model.objects.filter(skate_date__gte=date.today()).annotate(num_skaters=Count('figureskatingsession')).order_by('pk')
         context['fs_dates'] = fs_dates
         sessions = self.session_model.objects.filter(guardian=self.request.user, session__skate_date__gte=date.today()).order_by('session__skate_date')
         context['my_sessions'] = sessions
