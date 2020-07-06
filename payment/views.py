@@ -16,6 +16,7 @@ from figure_skating.models import FigureSkatingSession
 from adult_skills.models import AdultSkillsSkateSession
 from mike_schultz.models import MikeSchultzSkateSession
 from yeti_skate.models import YetiSkateSession
+from womens_hockey.models import WomensHockeySkateSession
 
 # Create your views here.
 
@@ -67,6 +68,7 @@ def process_payment(request, **kwargs):
     adult_skills_sessions_model = AdultSkillsSkateSession
     mike_schultz_sessions_model = MikeSchultzSkateSession
     yeti_sessions_model = YetiSkateSession
+    womens_hockey_sessions_model = WomensHockeySkateSession
     today = date.today()
 
     if request.method == 'GET':
@@ -140,6 +142,7 @@ def process_payment(request, **kwargs):
                 adult_skills_sessions_model.objects.filter(skater=request.user).update(paid=True)
                 mike_schultz_sessions_model.objects.filter(user=request.user).update(paid=True)
                 yeti_sessions_model.objects.filter(skater=request.user).update(paid=True)
+                womens_hockey_sessions_model.objects.filter(user=request.user).update(paid=True)
             except IntegrityError:
                 pass
 

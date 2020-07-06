@@ -6,6 +6,7 @@ profile_user = get_user_model()
 
 # Create your models here.
 
+
 class User(User, PermissionsMixin):
 
     def __str__(self):
@@ -14,7 +15,7 @@ class User(User, PermissionsMixin):
 
 class Profile(models.Model):
     '''Model that holds user profile data.'''
-    
+
     # Model Fields
     user = models.ForeignKey(profile_user, on_delete=models.CASCADE)
     open_hockey_email = models.BooleanField(default=False)
@@ -24,6 +25,7 @@ class Profile(models.Model):
     adult_skills_email = models.BooleanField(default=False)
     mike_schultz_email = models.BooleanField(default=False)
     yeti_skate_email = models.BooleanField(default=False)
+    womens_hockey_email = models.BooleanField(default=False)
     slug = models.SlugField(unique=True, null=False)
 
     def get_absolute_url(self):
@@ -38,8 +40,10 @@ class ReleaseOfLiability(models.Model):
 
     # Model Fields
     user = models.ForeignKey(profile_user, on_delete=models.CASCADE)
-    release_of_liability = models.BooleanField(default=False, null=False, blank=False)
-    release_of_liability_date_signed = models.DateTimeField(auto_now_add=True, null=True)
+    release_of_liability = models.BooleanField(
+        default=False, null=False, blank=False)
+    release_of_liability_date_signed = models.DateTimeField(
+        auto_now_add=True, null=True)
 
     class Meta:
         unique_together = ['user', 'release_of_liability']

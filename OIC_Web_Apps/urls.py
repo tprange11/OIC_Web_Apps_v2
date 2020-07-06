@@ -24,9 +24,12 @@ urlpatterns = [
     path('accounts/', include('accounts.urls', namespace='accounts')),
     path('accounts/', include('django.contrib.auth.urls')),
     path('thanks/', views.ThanksPage.as_view(), name='thanks'),
-    path('info/open_hockey/', views.OpenHockeyPage.as_view(), name='info-open-hockey'),
-    path('info/stick_and_puck/', views.StickAndPuckPage.as_view(), name='info-stick-and-puck'),
-    path('info/figure_skating/', views.FigureSkatingPage.as_view(), name='info-figure-skating'),
+    path('info/open_hockey/', views.OpenHockeyPage.as_view(),
+         name='info-open-hockey'),
+    path('info/stick_and_puck/', views.StickAndPuckPage.as_view(),
+         name='info-stick-and-puck'),
+    path('info/figure_skating/', views.FigureSkatingPage.as_view(),
+         name='info-figure-skating'),
     path('payment/', include('payment.urls')),
     path('web_apps/thane_storck/', include('thane_storck.urls')),
     path('web_apps/', views.WebAppsPage.as_view(), name='web_apps'),
@@ -36,16 +39,13 @@ urlpatterns = [
     path('web_apps/adult_skills/', include('adult_skills.urls')),
     path('web_apps/mike_schultz/', include('mike_schultz.urls')),
     path('web_apps/yeti_skate/', include('yeti_skate.urls')),
+    path('web_apps/womens_hockey/', include('womens_hockey.urls')),
     path('web_apps/schedule/', include('schedule.urls')),
     path('serviceworker.js', (TemplateView.as_view(
-        template_name = 'serviceworker.js',
-        content_type = 'application/javascript'
-        )), name='serviceworker.js'),
-    path('offline/', (TemplateView.as_view(template_name = 'offline.html',
-        content_type = 'text/html')), name = 'offline'),
+        template_name='serviceworker.js',
+        content_type='application/javascript'
+    )), name='serviceworker.js'),
+    path('offline/', (TemplateView.as_view(template_name='offline.html',
+                                           content_type='text/html')), name='offline'),
     path('web_apps/figure_skating/', include('figure_skating.urls')),
-    # path('web_apps/web_apps_sw.js', (TemplateView.as_view(
-    #     template_name = 'web_apps_sw.js',
-    #     content_type = 'application/javascript'
-    # )), name='web_apps_sw.js'),
 ]
