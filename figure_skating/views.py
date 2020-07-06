@@ -15,6 +15,7 @@ from cart.models import Cart
 from accounts.models import Profile
 from datetime import date
 
+
 class FigureSkatingView(LoginRequiredMixin, TemplateView):
     '''Page that displays index view for Figure Skating web app.'''
 
@@ -26,15 +27,18 @@ class FigureSkatingView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        fs_dates = self.fs_dates_model.objects.filter(skate_date__gte=date.today()).annotate(num_skaters=Count('figureskatingsession')).order_by('pk')
+        fs_dates = self.fs_dates_model.objects.filter(skate_date__gte=date.today()).annotate(
+            num_skaters=Count('figureskatingsession')).order_by('skate_date', 'start_time')
         context['fs_dates'] = fs_dates
-        sessions = self.session_model.objects.filter(guardian=self.request.user, session__skate_date__gte=date.today()).order_by('session__skate_date')
+        sessions = self.session_model.objects.filter(
+            guardian=self.request.user, session__skate_date__gte=date.today()).order_by('session__skate_date')
         context['my_sessions'] = sessions
         skaters = self.skater_model.objects.filter(guardian=self.request.user)
         context['my_skaters'] = skaters
         max_skaters = self.program_model.objects.get(pk=3).max_skaters
         context['max_skaters'] = max_skaters
         return context
+
 
 class CreateFigureSkaterView(LoginRequiredMixin, CreateView):
     '''Page where user adds Figure Skaters to the FigureSkater model.'''
@@ -48,10 +52,12 @@ class CreateFigureSkaterView(LoginRequiredMixin, CreateView):
         form.instance.guardian = self.request.user
         try:
             success = super().form_valid(form)
-            messages.add_message(self.request, messages.SUCCESS, 'Skater has been added to My Skaters!')
+            messages.add_message(self.request, messages.SUCCESS,
+                                 'Skater has been added to My Skaters!')
             return success
         except IntegrityError:
-            messages.add_message(self.request, messages.ERROR, 'This skater is already in My Skaters.')
+            messages.add_message(self.request, messages.ERROR,
+                                 'This skater is already in My Skaters.')
             return render(self.request, template_name=self.template_name, context=self.get_context_data())
 
 
@@ -62,7 +68,8 @@ class DeleteFigureSkaterView(LoginRequiredMixin, DeleteView):
 
     def delete(self, *args, **kwargs):
         # Set success message and return
-        messages.add_message(self.request, messages.SUCCESS, 'Skater has been removed from My Skaters!')
+        messages.add_message(self.request, messages.SUCCESS,
+                             'Skater has been removed from My Skaters!')
         return super().delete(*args, **kwargs)
 
 
@@ -99,7 +106,8 @@ class CreateFigureSkatingSessionView(LoginRequiredMixin, CreateView):
             # If skater spots are full, do not save object
             # if self.model.objects.filter(session=form.instance.session.id).count() >= self.program_model.objects.get(pk=3).max_skaters:
             if self.model.objects.filter(session=form.instance.session.id).count() >= FigureSkatingDate.objects.get(pk=form.instance.session.id).available_spots:
-                messages.add_message(self.request, messages.ERROR, 'Sorry, this session is now full!')
+                messages.add_message(
+                    self.request, messages.ERROR, 'Sorry, this session is now full!')
                 return redirect('figure_skating:figure-skating')
         except:
             pass
@@ -108,14 +116,16 @@ class CreateFigureSkatingSessionView(LoginRequiredMixin, CreateView):
         self.join_figure_skating_group()
         self.add_figure_skating_email_to_profile()
         self.object.save()
-        messages.add_message(self.request, messages.SUCCESS, 'Skater has been added to the session(s).\nYou must view your cart and pay for your session(s) to complete registration!')
+        messages.add_message(self.request, messages.SUCCESS,
+                             'Skater has been added to the session(s).\nYou must view your cart and pay for your session(s) to complete registration!')
         return super().form_valid(form)
 
     def add_to_cart(self, skater):
         '''Adds Open Figure Skating session to shopping cart.'''
         # Get price of Figure Skating program
         price = self.program_model.objects.get(id=3).skater_price
-        cart = self.cart_model(customer=self.request.user, item='Figure Skating', skater_name=skater, event_date=self.object.session.skate_date, event_start_time=self.object.session.start_time, amount=price)
+        cart = self.cart_model(customer=self.request.user, item='Figure Skating', skater_name=skater,
+                               event_date=self.object.session.skate_date, event_start_time=self.object.session.start_time, amount=price)
         cart.save()
 
     def join_figure_skating_group(self, join_group='Figure Skating'):
@@ -135,7 +145,8 @@ class CreateFigureSkatingSessionView(LoginRequiredMixin, CreateView):
             return
         # If no profile exists, add one and set open_hockey_email to True
         except ObjectDoesNotExist:
-            profile = self.profile_model(user=self.request.user, slug=self.request.user.id, figure_skating_email=True)
+            profile = self.profile_model(
+                user=self.request.user, slug=self.request.user.id, figure_skating_email=True)
             profile.save()
             return
 
@@ -151,14 +162,19 @@ class DeleteFigureSkatingSessionView(LoginRequiredMixin, DeleteView):
         '''Things that need doing once a session is removed.'''
 
         # Clear session from the cart
-        skate_date = self.model.objects.filter(id=kwargs['pk']).values_list('session__skate_date', flat=True)
-        skate_time = self.model.objects.filter(id=kwargs['pk']).values_list('session__start_time', flat=True)
-        skater_id = self.model.objects.filter(id=kwargs['pk']).values_list('skater', flat=True)
+        skate_date = self.model.objects.filter(
+            id=kwargs['pk']).values_list('session__skate_date', flat=True)
+        skate_time = self.model.objects.filter(
+            id=kwargs['pk']).values_list('session__start_time', flat=True)
+        skater_id = self.model.objects.filter(
+            id=kwargs['pk']).values_list('skater', flat=True)
         skater = self.skater_model.objects.get(id=skater_id[0])
-        cart_item = Cart.objects.filter(item=Program.objects.all().get(id=3).program_name, event_date=skate_date[0], event_start_time=skate_time[0], skater_name=skater).delete()
+        cart_item = Cart.objects.filter(item=Program.objects.all().get(
+            id=3).program_name, event_date=skate_date[0], event_start_time=skate_time[0], skater_name=skater).delete()
 
         # Set success message and return
-        messages.add_message(self.request, messages.SUCCESS, 'Skater has been removed from the figure skating session!')
+        messages.add_message(self.request, messages.SUCCESS,
+                             'Skater has been removed from the figure skating session!')
         return super().delete(*args, **kwargs)
 
 
@@ -174,11 +190,13 @@ class FigureSkatingStaffListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        queryset = queryset.filter(skate_date__gte=date.today()).order_by('skate_date')
+        queryset = queryset.filter(
+            skate_date__gte=date.today()).order_by('skate_date')
         return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        session_skaters = self.sessions_model.objects.filter(session__skate_date__gte=date.today()).order_by('session')
+        session_skaters = self.sessions_model.objects.filter(
+            session__skate_date__gte=date.today()).order_by('session')
         context['session_skaters'] = session_skaters
         return context
