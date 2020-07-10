@@ -132,7 +132,7 @@ def process_payment(request, **kwargs):
             payment_record = model(payer=payer, square_id=square_id, square_receipt=square_receipt, amount=amount, note=note)
             payment_record.save()
 
-            # Update Open Hockey, Stick and Puck Session and Member models to mark items as paid or active if it applies.
+            # Update model(s) to mark items as paid.
             try:
                 open_hockey_sessions_model.objects.filter(skater=request.user, date__gte=today).update(paid=True)
                 stick_and_puck_sessions_model.objects.filter(guardian=request.user, session_date__gte=today).update(paid=True)
