@@ -1,0 +1,25 @@
+{% extends 'base.html' %}{% load bootstrap4 static %}
+{% block title %}<title>Send Group Email Message</title>{% endblock title %}
+{% block content %}
+<h5>Send Email Message to {{ group_name }} Group</h5>
+{% for message in messages %}
+{% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}
+<div class="alert alert-danger alert-dismissible alert-link" role="alert">
+    <button class="close" type="button" data-dismiss="alert" aria-label="close">&#215;</button>
+        {{ message }}
+</div>
+{% else %}
+<div class="alert alert-info alert-dismissible alert-link" role="alert">
+    <button class="close" type="button" data-dismiss="alert" aria-label="close">&#215;</button>
+        {{ message }}
+</div>
+{% endif %}
+{% empty %}
+{% endfor %}
+<form method="POST">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+    <p><input type="submit" value="Send Email" class="btn btn-secondary btn-sm"></p>
+</form>
+{% endblock content %}
+    

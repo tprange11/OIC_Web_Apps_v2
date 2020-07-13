@@ -5,6 +5,7 @@
     <p>Choose a date below to register for that session of Yeti Skate. Disabled skate sessions indicate that you have registered for the skate session(s). You may remove yourself 
         from a session prior to paying.  Once you have paid for the session(s), you will be unable to remove yourself from the session(s).</p>
     <p>If you'd like to be notified when Yeti Skate dates are available for registration, update your <a href="{% url 'accounts:profile' slug=user.id %}">email preferences</a>.</p>
+    <p><a href="{% url 'group_message:group-message' group=7 %}" class="btn btn-secondary btn-sm">Send Group Message</a></p>
     {% for message in messages %}
     {% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}
     <div class="alert alert-danger alert-dismissible alert-link" role="alert">
