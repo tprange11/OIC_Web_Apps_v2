@@ -30,6 +30,7 @@ urlpatterns = [
          name='info-stick-and-puck'),
     path('info/figure_skating/', views.FigureSkatingPage.as_view(),
          name='info-figure-skating'),
+    path('group_message/', include('group_message.urls')),
     path('payment/', include('payment.urls')),
     path('web_apps/thane_storck/', include('thane_storck.urls')),
     path('web_apps/', views.WebAppsPage.as_view(), name='web_apps'),
