@@ -7,7 +7,7 @@ from . import models
 from accounts.models import ChildSkater
 from programs.models import Program
 from figure_skating.models import FigureSkatingSession, FigureSkater, FigureSkatingDate
-from open_hockey.models import OpenHockeySessions, OpenHockeyMember
+# from open_hockey.models import OpenHockeySessions, OpenHockeyMember
 from stickandpuck.models import StickAndPuckSession, StickAndPuckSkater
 from thane_storck.models import SkateSession, SkateDate
 from adult_skills.models import AdultSkillsSkateDate, AdultSkillsSkateSession
@@ -51,8 +51,8 @@ class RemoveItemFromCartView(LoginRequiredMixin, DeleteView):
     fs_model = FigureSkatingSession
     fs_skater_model = FigureSkater
     fs_date_model = FigureSkatingDate
-    oh_model = OpenHockeySessions
-    oh_member_model = OpenHockeyMember
+    # oh_model = OpenHockeySessions
+    # oh_member_model = OpenHockeyMember
     snp_model = StickAndPuckSession
     snp_skater_model = StickAndPuckSkater
     ts_model = SkateSession
@@ -74,8 +74,8 @@ class RemoveItemFromCartView(LoginRequiredMixin, DeleteView):
             skater_name = cart_item.skater_name.split(' ')
             skater_id = self.snp_skater_model.objects.filter(guardian=request.user, first_name=skater_name[0], last_name=skater_name[1])
             self.snp_model.objects.filter(skater=skater_id[0], session_date=cart_item.event_date, session_time=cart_item.event_start_time).delete()
-        elif cart_item.item == Program.objects.all().get(id=1).program_name: #'Open Hockey'
-            self.oh_model.objects.filter(skater=request.user, date=cart_item.event_date).delete()
+        # elif cart_item.item == Program.objects.all().get(id=1).program_name: #'Open Hockey'
+        #     self.oh_model.objects.filter(skater=request.user, date=cart_item.event_date).delete()
         elif cart_item.item == Program.objects.all().get(id=4).program_name: #'Thane Storck':
             skate_date = self.ts_skate_date_model.objects.filter(skate_date=cart_item.event_date)
             self.ts_model.objects.filter(skater=request.user, skate_date=skate_date[0]).delete()

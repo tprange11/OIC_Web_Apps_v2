@@ -18,6 +18,8 @@ from django.urls import path, include
 from . import views
 from django.views.generic import TemplateView
 
+handler404 = 'OIC_Web_Apps.views.handler404'
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.HomePage.as_view(), name='home'),
@@ -31,11 +33,12 @@ urlpatterns = [
     path('info/figure_skating/', views.FigureSkatingPage.as_view(),
          name='info-figure-skating'),
     path('group_message/', include('group_message.urls')),
+    # path('message_boards/', include('message_boards.urls')),
     path('payment/', include('payment.urls')),
     path('web_apps/thane_storck/', include('thane_storck.urls')),
     path('web_apps/', views.WebAppsPage.as_view(), name='web_apps'),
     path('web_apps/shopping_cart/', include('cart.urls')),
-    path('web_apps/open_hockey/', include('open_hockey.urls')),
+    # path('web_apps/open_hockey/', include('open_hockey.urls')),
     path('web_apps/stick_and_puck/', include('stickandpuck.urls')),
     path('web_apps/adult_skills/', include('adult_skills.urls')),
     path('web_apps/mike_schultz/', include('mike_schultz.urls')),

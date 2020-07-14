@@ -9,7 +9,7 @@ from square.client import Client
 from . import models
 from cart.models import Cart
 from programs.models import Program
-from open_hockey.models import OpenHockeySessions, OpenHockeyMember
+# from open_hockey.models import OpenHockeySessions, OpenHockeyMember
 from stickandpuck.models import StickAndPuckSession
 from thane_storck.models import SkateSession
 from figure_skating.models import FigureSkatingSession
@@ -60,8 +60,8 @@ def process_payment(request, **kwargs):
     template_name = 'sq-payment-result.html'
     cart_model = Cart
     program_model = Program
-    open_hockey_sessions_model = OpenHockeySessions
-    open_hockey_member_model = OpenHockeyMember
+    # open_hockey_sessions_model = OpenHockeySessions
+    # open_hockey_member_model = OpenHockeyMember
     stick_and_puck_sessions_model = StickAndPuckSession
     thane_storck_sessions_model = SkateSession
     figure_skating_sessions_model = FigureSkatingSession
@@ -81,7 +81,6 @@ def process_payment(request, **kwargs):
         cart_items = cart_model.objects.filter(customer=request.user).values_list('item', 'amount')
         total = 0
         programs = program_model.objects.all().values_list('program_name', flat=True)
-        # note = {'Open Hockey': 0, 'Stick and Puck': 0, 'Thane Storck': 0, 'Figure Skating': 0, 'Adult Skills': 0, 'Mike Schultz': 0}
         note = {program: 0 for program in programs}
         for item, amount in cart_items:
             total += amount
@@ -134,9 +133,9 @@ def process_payment(request, **kwargs):
 
             # Update model(s) to mark items as paid.
             try:
-                open_hockey_sessions_model.objects.filter(skater=request.user, date__gte=today).update(paid=True)
+                # open_hockey_sessions_model.objects.filter(skater=request.user, date__gte=today).update(paid=True)
                 stick_and_puck_sessions_model.objects.filter(guardian=request.user, session_date__gte=today).update(paid=True)
-                open_hockey_member_model.objects.filter(member=request.user).update(active=True)
+                # open_hockey_member_model.objects.filter(member=request.user).update(active=True)
                 thane_storck_sessions_model.objects.filter(skater=request.user).update(paid=True)
                 figure_skating_sessions_model.objects.filter(guardian=request.user, session__skate_date__gte=today).update(paid=True)
                 adult_skills_sessions_model.objects.filter(skater=request.user).update(paid=True)
