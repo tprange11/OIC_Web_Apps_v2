@@ -81,5 +81,8 @@
     {% if not in_group_womens_hockey %}
     document.querySelector('#id_womens_hockey_email').parentNode.parentNode.style.display = 'none';
     {% endif %}
+    {% if not in_group_figure_skating %}
+    document.querySelector('#id_figure_skating_email').parentNode.parentNode.style.display = 'none';
+    {% endif %}
 </script>
 {% endblock content %}
