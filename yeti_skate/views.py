@@ -99,11 +99,10 @@ class CreateYetiSkateSessionView(LoginRequiredMixin, CreateView):
                 messages.add_message(self.request, messages.ERROR, 'Sorry, skater spots are full!')
                 return redirect('yeti_skate:yeti-skate')
             # If spots are not full do the following
-            if self.request.user.is_staff: # Employees skate for free
+            if self.request.user.is_staff or self.object.goalie: # Employees and goalies skate for free
                 self.object.paid = True
-                goalies_free = True
             else:
-                goalies_free = self.add_to_cart()
+                self.add_to_cart()
             self.join_yeti_skate_group()
             self.add_yeti_skate_email_to_profile()
             self.object.save()
@@ -128,7 +127,7 @@ class CreateYetiSkateSessionView(LoginRequiredMixin, CreateView):
             item_name = self.program_model.objects.get(id=7).program_name
             start_time = self.session_model.objects.filter(skate_date=self.object.skate_date.skate_date).values_list('start_time', flat=True)
             cart = self.cart_model(customer=self.request.user, item=item_name, skater_name=self.request.user.get_full_name(), 
-            event_date=self.object.skate_date.skate_date, event_start_time=start_time[0], amount=price)
+            event_date = self.object.skate_date.skate_date, event_start_time=start_time[0], amount=price)
             cart.save()
             return False
 
