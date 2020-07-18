@@ -40,7 +40,7 @@
         {% endfor %}
     </ul>
     {% comment %} User.id 54 is for Josh Sulsberger to monitor registered skaters {% endcomment %}
-    {% if user.is_superuser or user.id == 54 %}
+    {% if user.is_superuser or user.id == 54 or user.id == 57 %}
         <p><a href="{% url 'adult_skills:adult-skills-sessions' %}" class="btn btn-primary btn-sm m-3">
             View Registered Skaters</a></p>
     {% endif %}
