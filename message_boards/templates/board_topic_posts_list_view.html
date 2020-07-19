@@ -1,0 +1,34 @@
+{% extends 'base.html' %}{% load static %}
+{% block title %}<title>OIC Web Apps {{board.name}} Message Board</title>{% endblock title %}
+{% block css %}<link rel="stylesheet" href="{% static 'css/mb.css' %}">{% endblock css %}
+{% block content %}
+<ul class="board-nav">
+    <li class="board-nav-item"><a href="{% url 'message_boards:message-boards' %}">Boards</a></li>
+    <li class="board-nav-item"><a href="{% url 'message_boards:board-topics' slug=board.slug %}">{{ board.name }}</a></li>
+    <li class="board-nav-item">{{ topic.subject }}</li>
+</ul>
+<div class="container posts rounded py-2">
+{% for post in posts %}
+<div class="post rounded my-2">
+    <div class="row p-2">
+        <div class="col-md-3 col-12">{{ post.created_by }} <span class="post-count small">Posts: {{ post.created_by.posts.count }}</span></div>
+        <div class="col-md-9 col-12 mt-md-0 mt-2"><span class="last-updated small">Last Updated: {{ post.updated_at }}</span></div>
+    </div>
+    <div class="row p-2">
+        <div class="col message">
+            {{ post.message|linebreaks }}
+            <p><small>{{ post.created_by.get_full_name }}</small>
+            {% if request.user == post.created_by and not topic.locked %}
+            <a href="{% url 'message_boards:post-edit' slug=board.slug topic_pk=topic.pk pk=post.pk %}" id="edit-post" class="small">Edit Post</a></p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endfor %}
+</div>
+{% if topic.locked %}
+<a href="{% url 'message_boards:topic-post-reply' slug=board.slug pk=topic.pk %}" class="btn btn-secondary disabled mt-3">Topic is Locked <i class="fas fa-lock lock"></i></a>    
+{% else %}
+<a href="{% url 'message_boards:topic-post-reply' slug=board.slug pk=topic.pk %}" class="btn btn-secondary mt-3">Post Reply</a>
+{% endif %}
+{% endblock content %}

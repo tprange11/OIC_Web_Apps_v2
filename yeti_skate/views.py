@@ -11,6 +11,7 @@ from . import models, forms
 from accounts.models import Profile
 from programs.models import Program
 from cart.models import Cart
+from message_boards.models import Topic
 
 from datetime import date
 
@@ -21,6 +22,7 @@ class YetiSkateDateListView(LoginRequiredMixin, ListView):
 
     template_name = 'yeti_skate_dates.html'
     model = models.YetiSkateDate
+    topic_model = Topic
     session_model = models.YetiSkateSession
     context_object_name = 'skate_dates'
 
@@ -29,6 +31,8 @@ class YetiSkateDateListView(LoginRequiredMixin, ListView):
         # Get all skaters signed up for each session to display the list of skaters for each session
         skate_sessions = self.session_model.objects.filter(skate_date__skate_date__gte=date.today())
         context['skate_sessions'] = skate_sessions
+        latest_topic = Topic.objects.filter(board=2).order_by('-last_updated').first()
+        context['latest_topic'] = latest_topic
         return context
 
     def get_queryset(self):

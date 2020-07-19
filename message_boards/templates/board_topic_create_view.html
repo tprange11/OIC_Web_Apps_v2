@@ -1,0 +1,23 @@
+{% extends 'base.html' %}{% load bootstrap4 %}{% load static %}
+{% block title %}<title>OIC Web Apps {{board.name}} New Topic</title>{% endblock title %}
+{% block css %}<link rel="stylesheet" href="{% static 'css/mb.css' %}">{% endblock css %}
+{% block content %}
+<ul class="board-nav">
+    <li class="board-nav-item"><a href="{% url 'message_boards:message-boards' %}">Boards</a></li>
+    <li class="board-nav-item"><a href="{% url 'message_boards:board-topics' slug=board.slug %}">{{ board.name }}</a></li>
+    <li class="board-nav-item">New Topic</li>
+</ul>
+<h5>{{board.name}} New Topic</h5>
+    <form method="POST">
+        {% csrf_token %}
+        {% bootstrap_form form %}
+        <p><input type="submit" value="Start Topic" class="btn btn-success"></p>
+    </form>
+{% block extra_js %}
+<script>
+    {% if not user.is_superuser %}
+    document.querySelector('#id_sticky').parentNode.parentNode.style.display = 'none';
+    {% endif %}
+</script>
+{% endblock extra_js %}
+{% endblock content %}

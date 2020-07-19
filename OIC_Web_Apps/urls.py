@@ -33,7 +33,7 @@ urlpatterns = [
     path('info/figure_skating/', views.FigureSkatingPage.as_view(),
          name='info-figure-skating'),
     path('group_message/', include('group_message.urls')),
-    # path('message_boards/', include('message_boards.urls')),
+    path('message_boards/', include('message_boards.urls')),
     path('payment/', include('payment.urls')),
     path('web_apps/thane_storck/', include('thane_storck.urls')),
     path('web_apps/', views.WebAppsPage.as_view(), name='web_apps'),

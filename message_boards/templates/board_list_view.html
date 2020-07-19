@@ -1,0 +1,48 @@
+{% extends 'base.html' %}{% load static %}
+{% block title %}<title>OIC Web Apps Message Boards</title>{% endblock title %}
+{% block css %} <link rel="stylesheet" href="{% static 'css/mb.css' %}">{% endblock css %}
+{% block content %}
+<div class="board-header rounded-top">
+    <div class="row align-items-center text-light p-3">
+        <div class="col-md-5 col-sm-6 col-12"><h5>Board</h5></div>
+        <div class="col-md-2 col-sm-6 col-6"><h5>Topics</h5></div>
+        <div class="col-md-2 col-sm-6 col-6"><h5>Posts</h5></div>
+        <div class="col-md-3 col-sm-6 col-12"><h5>Latest Post</h5></div>
+    </div>
+</div>
+{% for board in boards %}
+{# Do not show message board if user is not in that group #}
+{% if not in_group_yeti_skate and board.name == 'Yeti Skate' %}
+{% elif not in_group_thane_storck and board.name == 'Thane Storck Skate' %}
+{% elif not in_group_adult_skills and board.name == 'Adult Skills' %}
+{% elif not in_group_figure_skating and board.name == 'Figure Skating' %}
+{% elif not in_group_mike_schultz and board.name == 'Mike Schultz' %}
+{% elif not in_group_womens_hockey and board.name == 'Womens Hockey' %}
+{% else %}
+<div class="board" id="{{ board.name|cut:' ' }}">
+    <div class="row pt-3 px-3">
+        <div class="col-md-5 col-sm-6 col-12">
+            <span class="board-info"><a href="{% url 'message_boards:board-topics' slug=board.slug %}">{{ board.name }}</a></span>
+        </div>
+        <div class="col-md-2 col-sm-6 col-6 mt-sm-0 mt-3"><span class="board-info">{{ board.topics.count }}</span></div>
+        <div class="col-md-2 col-sm-6 col-6 mt-md-0 mt-3"><span class="board-info">{{ board.get_posts_count }}</span></div>
+        <div class="col-md-3 col-sm-6 col-12 mt-md-0 mt-3">
+            <span class="board-info"><small>
+            {% with board.get_last_post as post %}
+                {% if not post %}No Discussions
+                {% else %}                    
+                {{ post.created_by.username }} {{ post.created_at|date:"N j, Y" }}
+                {% endif %}
+            {% endwith %}
+            </small></span>
+        </div>
+    </div>
+    <div class="row pb-2 px-3">
+        <div class="col">
+            <span class="board-desc small">{{board.description}}</span>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+{% endblock content %}

@@ -1,0 +1,44 @@
+{% extends 'base.html' %}{% load static %}
+{% block title %}<title>OIC Web Apps {{board.name}} Message Board</title>{% endblock title %}
+{% block css %} <link rel="stylesheet" href="{% static 'css/mb.css' %}">{% endblock css %}
+{% block content %}
+<ul class="board-nav">
+    <li class="board-nav-item"><a href="{% url 'message_boards:message-boards' %}">Boards</a></li>
+    <li class="board-nav-item">{{ board.name }}</li>
+</ul>
+<div class="pb-3">
+    <a href="{% url 'message_boards:new-topic' slug=board.slug %}" class="btn btn-success">Start A New Topic</a>
+</div>
+<div class="topics-header rounded-top" style="background-color: #666666;">
+    <div class="row align-items-center text-light p-3 font-weight-bold">
+        <div class="col-md-5 col-sm-6 col-12"><h5>Topic</h5></div>
+        <div class="col-md-2 col-sm-6 col-6"><h5>Starter</h5></div>
+        <div class="col-md-2 col-sm-6 col-6"><h5>Posts</h5></div>
+        <div class="col-md-3 col-sm-6 col-12"><h5>Last Updated</h5></div>
+    </div>
+</div>
+{% for topic in topics %}
+<div class="topic">
+    <div class="row p-3">
+        <div class="col-md-5 col-sm-6 col-12">
+            <span class="topic-info"><a href="{% url 'message_boards:topic-post-list' slug=topic.board.slug pk=topic.pk %}">{{ topic.subject }}</a></span>
+        {% if topic.locked %}
+        <i class="fas fa-lock fa-xs lock mt-1"></i>
+        {% endif %}
+        {% if topic.sticky %}
+        <i class="fas fa-sticky-note fa-xs sticky-note mr-1 mt-1"></i>
+        {% endif %}
+        </div>
+        <div class="col-md-2 col-sm-6 col-6 mt-sm-0 mt-3"><span class="topic-info">{{ topic.started_by.username }}</span></div>
+        <div class="col-md-2 col-sm-6 col-6 mt-md-0 mt-sm-3 mt-3"><span class="topic-info">{{ topic.replies }}</span></div>
+        <div class="col-md-3 col-sm-6 col-12 mt-md-0 mt-3"><span class="topic-info">{{ topic.last_updated|date:"N j, Y" }}</span></div>
+    </div>
+</div>
+{% empty %}
+<div class="topic">
+    <div class="row p-4">
+        Nothing to see here!  Why not start a discussion?
+    </div>
+</div>
+{% endfor %}
+{% endblock content %}

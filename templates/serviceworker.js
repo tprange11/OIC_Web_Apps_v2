@@ -1,5 +1,5 @@
 
-var STATIC_CACHE = 'oicwebapps-v14';
+var STATIC_CACHE = 'oicwebapps-v15';
 // var DYNAMIC_CACHE = 'oicwebapps-dyn-v1';
 
 self.addEventListener('install', function(event) {
