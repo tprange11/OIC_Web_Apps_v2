@@ -113,7 +113,7 @@ class CreateYetiSkateSessionView(LoginRequiredMixin, CreateView):
         except IntegrityError:
             pass
         # If all goes well set success message and return
-        if self.object.goalie or self.request.user.is_staff and goalies_free:
+        if self.object.goalie or self.request.user.is_staff:
             messages.add_message(self.request, messages.INFO, 'You have successfully registered for the skate!')
         else:
             messages.add_message(self.request, messages.INFO, 'To complete your registration, you must view your cart and pay for your item(s)!')
