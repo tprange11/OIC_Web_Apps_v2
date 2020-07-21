@@ -122,8 +122,8 @@ class CreateFigureSkatingSessionView(LoginRequiredMixin, CreateView):
 
     def add_to_cart(self, skater):
         '''Adds Open Figure Skating session to shopping cart.'''
-        # Get price of Figure Skating program
-        price = self.program_model.objects.get(id=3).skater_price
+        # Get price of Figure Skating program, add up or down charge for that skate date session
+        price = self.program_model.objects.get(id=3).skater_price + FigureSkatingDate.objects.get(pk=self.object.session.pk).up_down_charge
         cart = self.cart_model(customer=self.request.user, item='Figure Skating', skater_name=skater,
                                event_date=self.object.session.skate_date, event_start_time=self.object.session.start_time, amount=price)
         cart.save()

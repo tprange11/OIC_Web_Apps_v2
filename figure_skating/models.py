@@ -11,6 +11,7 @@ class FigureSkatingDate(models.Model):
     start_time = models.CharField(max_length=10)
     end_time = models.CharField(max_length=10)
     available_spots = models.IntegerField(default=0)
+    up_down_charge = models.IntegerField(default=0, help_text='Enter positive number for up charge, negative number for down charge.')
 
     class Meta:
         # Default ordering skate_date descending

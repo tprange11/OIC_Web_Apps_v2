@@ -8,7 +8,7 @@ class FigureSkaterAdmin(admin.ModelAdmin):
 
 
 class FigureSkatingDateAdmin(admin.ModelAdmin):
-    list_display = ['skate_date', 'start_time', 'end_time', 'available_spots']
+    list_display = ['skate_date', 'start_time', 'end_time', 'available_spots', 'up_down_charge']
 
 
 class FigureSkatingSessionAdmin(admin.ModelAdmin):
