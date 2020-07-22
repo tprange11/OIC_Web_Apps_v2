@@ -10,7 +10,6 @@ django.setup()
 
 from django.db import IntegrityError
 from cart.models import Cart
-from open_hockey.models import OpenHockeyMember, OpenHockeySessions
 from stickandpuck.models import StickAndPuckSession
 from thane_storck.models import SkateSession
 from figure_skating.models import FigureSkatingSession
@@ -24,8 +23,6 @@ def clear_cart_and_unpaid_items():
     '''Clears bailed shopping carts and unpaid memberships, stick and puck sessions and open hockey sessions.'''
 
     Cart.objects.all().delete()
-    OpenHockeyMember.objects.filter(end_date__gt=date.today(), active=False).delete()
-    OpenHockeySessions.objects.filter(paid=False, goalie=False, date__gte=date.today()).delete()
     StickAndPuckSession.objects.filter(paid=False, session_date__gte=date.today()).delete()
     SkateSession.objects.filter(paid=False, skate_date__skate_date__gte=date.today()).delete()
     FigureSkatingSession.objects.filter(paid=False, session__skate_date__gte=date.today()).delete()
