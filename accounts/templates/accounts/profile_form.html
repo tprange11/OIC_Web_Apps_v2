@@ -13,7 +13,7 @@
 </div>
 {% endfor %}
 {% endif %}
-{% if in_group_mike_schultz %}
+{% if in_group_mike_schultz or in_group_womens_hockey %}
 <button type="button" class="btn btn-primary btn-sm mb-3" data-toggle="modal" data-target="#mySkatersModal">My
     Skaters</button>
 <!-- My Skater Modal -->
@@ -58,6 +58,40 @@
 </div>
 <!-- End My Skater Modal -->
 {% endif %}
+{% if in_group_yeti_skate %}
+<p class="mb-0">
+    <a class="btn btn-primary btn-sm mb-3" href="{% url 'accounts:purchase-credit' slug=user.username %}">Credit Balance: ${{ credit.balance }}</a>
+    {% if credit.pending != 0 %}
+    <a class="btn btn-danger btn-sm mb-3" href="{% url 'cart:shopping-cart' %}">Pending Credits: ${{ credit.pending }}</a>
+    {% endif %}
+    <button type="button" class="btn btn-info btn-sm mb-3" data-toggle="modal" data-target="#myCreditModal"><i class="fas fa-question-circle fa-lg"></i></button>
+</p>
+<!-- My Credit Modal -->
+<div class="modal fade" id="myCreditModal" tabindex="-1" role="dialog" aria-labelledby="myCreditModal"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header text-light bg-secondary">
+                <h5 class="modal-title" id="myCreditModalLongTitle">Credit Balance</h5>
+                <button type="button" class="close text-light" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Tired of entering your credit or debit card information?  Purchase Credits!</p>
+                <p>You may purchase credits to use toward skate sessions.  If you purchase credits, your skate sessions will be deducted 
+                    from your credit balance.  You may purchase credits at any time.
+                </p>
+               <p>Your current credit balance is ${{ credit.balance }}. <b>Click the Credit Balance button to purchase credits.</b></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+<!-- End My Credit Modal -->
 <p><a href="{% url 'payment:payments-list' %}" class="btn btn-primary btn-sm">View Payment History</a></p>
 <form method="POST" class="border rounded p-2">
     <h5>Email Preferences:</h5>

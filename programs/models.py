@@ -16,3 +16,18 @@ class Program(models.Model):
 
     def __str__(self):
         return f'{ self.program_name }'
+
+
+class UserCreditIncentive(models.Model):
+    '''Model that holds price point incentives for purchasing User Credits.
+    These apply to the accounts/UserCredit model.'''
+
+    # Model Fields
+    price_point = models.PositiveSmallIntegerField(help_text='The price at which the incentive kicks in.', null=False, blank=False)
+    incentive = models.PositiveSmallIntegerField(help_text='Percentage of free credits for this price point. Enter as whole number.', null=False, blank=False)
+
+    class Meta:
+        ordering = ['-price_point']
+
+    def __str__(self):
+        return f'At ${self.price_point}, {self.incentive}% will be added to credits purchased.'

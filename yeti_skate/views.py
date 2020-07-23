@@ -12,6 +12,7 @@ from accounts.models import Profile
 from programs.models import Program
 from cart.models import Cart
 from message_boards.models import Topic
+from accounts.models import UserCredit
 
 from datetime import date
 
@@ -24,15 +25,28 @@ class YetiSkateDateListView(LoginRequiredMixin, ListView):
     model = models.YetiSkateDate
     topic_model = Topic
     session_model = models.YetiSkateSession
+    credit_model = UserCredit
+    group_model = Group
+    profile_model = Profile
     context_object_name = 'skate_dates'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        # Join the Yeti Skate Group
+        self.join_yeti_skate_group()
         # Get all skaters signed up for each session to display the list of skaters for each session
         skate_sessions = self.session_model.objects.filter(skate_date__skate_date__gte=date.today())
         context['skate_sessions'] = skate_sessions
         latest_topic = Topic.objects.filter(board=2).order_by('-last_updated').first()
         context['latest_topic'] = latest_topic
+        # Create a user credit object if one does not exist
+        try:
+            credit = self.credit_model.objects.get(user=self.request.user)
+        except ObjectDoesNotExist:
+            credit = self.credit_model.objects.create(user=self.request.user, slug=self.request.user.username)
+        context['credit'] = credit
+        # messages.add_message(self.request, messages.INFO, f'You may now purchase credits to pay for skate sessions!  \
+        #     Purchase credits from <a href="/accounts/profile/{self.request.user.id}/">your profile page.', extra_tags='safe')
         return context
 
     def get_queryset(self):
@@ -61,17 +75,32 @@ class YetiSkateDateListView(LoginRequiredMixin, ListView):
                     continue
         return queryset
 
+    def join_yeti_skate_group(self, join_group='Yeti Skate'):
+        '''Adds user to Yeti Skate group "behind the scenes", for communication purposes.'''
+        try:
+            group = self.group_model.objects.get(name=join_group)
+            self.request.user.groups.add(group)
+            try:
+                # If a profile already exists, set yeti_skate_email to True
+                profile = self.profile_model.objects.get(user=self.request.user)
+                profile.yeti_skate_email = True
+                profile.save()
+            except ObjectDoesNotExist:
+                pass
+        except IntegrityError:
+            pass
+        return
 
 class CreateYetiSkateSessionView(LoginRequiredMixin, CreateView):
     '''Page that displays form for user to register for skate sessions.'''
 
     model = models.YetiSkateSession
     form_class = forms.CreateYetiSkateSessionForm
-    group_model = Group
     profile_model = Profile
     program_model = Program
     session_model = models.YetiSkateDate
     cart_model = Cart
+    credit_model = UserCredit
     template_name = 'yeti_skate_sessions_form.html'
     # success_url = '/web_apps/yeti_skate/'
     success_url = reverse_lazy('yeti_skate:yeti-skate')
@@ -92,7 +121,12 @@ class CreateYetiSkateSessionView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
 
+        # Get the user credit model instance
+        user_credit = UserCredit.objects.get(user=self.request.user)
+        credit_used = False # Used to set the message
+        
         self.object = form.save(commit=False)
+
         try:
             # If goalie spots are full, do not save object
             if self.object.goalie == True and self.model.objects.filter(goalie=True, skate_date=self.object.skate_date).count() == Program.objects.get(pk=7).max_goalies:
@@ -103,11 +137,20 @@ class CreateYetiSkateSessionView(LoginRequiredMixin, CreateView):
                 messages.add_message(self.request, messages.ERROR, 'Sorry, skater spots are full!')
                 return redirect('yeti_skate:yeti-skate')
             # If spots are not full do the following
+            # Get the program skater cost
+            cost = self.program_model.objects.get(id=7).skater_price
             if self.request.user.is_staff or self.object.goalie: # Employees and goalies skate for free
                 self.object.paid = True
+            elif user_credit.balance >= cost and user_credit.paid:
+                self.object.paid = True
+                user_credit.balance -= cost
+                # Check to see if there's a $0 balance, if so, set paid to false
+                if user_credit.balance == 0:
+                    user_credit.paid = False
+                user_credit.save()
+                credit_used = True # Used to set the message
             else:
                 self.add_to_cart()
-            self.join_yeti_skate_group()
             self.add_yeti_skate_email_to_profile()
             self.object.save()
         except IntegrityError:
@@ -115,6 +158,8 @@ class CreateYetiSkateSessionView(LoginRequiredMixin, CreateView):
         # If all goes well set success message and return
         if self.object.goalie or self.request.user.is_staff:
             messages.add_message(self.request, messages.INFO, 'You have successfully registered for the skate!')
+        elif credit_used:
+            messages.add_message(self.request, messages.INFO, f'You have successfully registered for the skate!  Your current credit balance is ${user_credit.balance}')
         else:
             messages.add_message(self.request, messages.INFO, 'To complete your registration, you must view your cart and pay for your item(s)!')
         return super().form_valid(form)
@@ -134,22 +179,6 @@ class CreateYetiSkateSessionView(LoginRequiredMixin, CreateView):
             event_date = self.object.skate_date.skate_date, event_start_time=start_time[0], amount=price)
             cart.save()
             return False
-
-    def join_yeti_skate_group(self, join_group='Yeti Skate'):
-        '''Adds user to Yeti Skate group "behind the scenes", for communication purposes.'''
-        try:
-            group = self.group_model.objects.get(name=join_group)
-            self.request.user.groups.add(group)
-            try:
-                # If a profile already exists, set yeti_skate_email to True
-                profile = self.profile_model.objects.get(user=self.request.user)
-                profile.yeti_skate_email = True
-                profile.save()
-            except ObjectDoesNotExist:
-                pass
-        except IntegrityError:
-            pass
-        return
 
     def add_yeti_skate_email_to_profile(self):
         '''If no user profile exists, create one and set yeti_skate_email to True.'''

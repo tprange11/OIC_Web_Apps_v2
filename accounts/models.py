@@ -65,3 +65,20 @@ class ChildSkater(models.Model):
     def __str__(self):
         '''Overrides string representation of class.'''
         return f"{self.first_name} {self.last_name}"
+
+
+class UserCredit(models.Model):
+    '''Model that holds user purchased credits'''
+
+    # Model Fields
+    user = models.ForeignKey(profile_user, on_delete=models.CASCADE)
+    balance = models.PositiveIntegerField(null=True, default=0)
+    pending = models.PositiveIntegerField(null=True, default=0)
+    paid = models.BooleanField(default=False)
+    slug = models.SlugField(unique=True, null=False)
+
+    class Meta:
+        unique_together = ['user', 'slug']
+
+    def __str__(self):
+        return f"{self.user.get_full_name()} credit balance: ${self.balance}"

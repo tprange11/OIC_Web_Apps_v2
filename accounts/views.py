@@ -6,7 +6,11 @@ from django.contrib import messages
 from django.db.utils import IntegrityError
 from django.core.exceptions import ObjectDoesNotExist
 from . import forms
-from accounts.models import Profile, ReleaseOfLiability, ChildSkater
+from accounts.models import Profile, ReleaseOfLiability, ChildSkater, UserCredit
+from cart.models import Cart
+from programs.models import UserCreditIncentive
+
+from datetime import date
 
 
 class SignUp(CreateView):
@@ -20,6 +24,14 @@ class UpdateProfileView(LoginRequiredMixin, UpdateView):
     model = Profile
     form_class = forms.ProfileForm
     template_name = 'accounts/profile_form.html'
+
+    def get(self, request, *args, **kwargs):
+        try:
+            UserCredit.objects.get(user=self.request.user)
+        except ObjectDoesNotExist:
+            user_credit = UserCredit(user=self.request.user, slug=self.request.user.username)
+            user_credit.save()
+        return super().get(request, *args, **kwargs)
 
     def get_queryset(self):
         # Try to create a profile object
@@ -36,6 +48,7 @@ class UpdateProfileView(LoginRequiredMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['my_skaters'] = ChildSkater.objects.all().filter(user=self.request.user)
+        context['credit'] = UserCredit.objects.get(user=self.request.user)
         return context
 
     def form_valid(self, form):
@@ -85,7 +98,7 @@ class CreateChildSkaterView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
 
 
-class DeleteChildSkaterView(DeleteView):
+class DeleteChildSkaterView(LoginRequiredMixin, DeleteView):
     '''Displays page where user can remove child or dependent skaters.'''
     model = ChildSkater
     success_url = ''
@@ -94,4 +107,66 @@ class DeleteChildSkaterView(DeleteView):
         messages.add_message(self.request, messages.SUCCESS, 'Skater has been removed from your list!')
         self.success_url = reverse('accounts:profile', kwargs={'slug': self.request.user.id})
         return super().delete(*args, **kwargs)
-    
+
+
+class UpdateUserCreditView(LoginRequiredMixin, UpdateView):
+    '''Displays page where user can purchase credits to use toward skate sessions.'''
+
+    model = UserCredit
+    incentives_model = UserCreditIncentive
+    cart_model = Cart
+    incentive_model = UserCreditIncentive
+    form_class = forms.CreateUserCreditForm
+    template_name = 'accounts/update_user_credit_form.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['incentives'] = self.incentive_model.objects.all().order_by('price_point')
+        return context
+
+    def get_initial(self):
+        initial = super().get_initial()
+        initial['pending'] = ''
+        return initial
+
+    def form_valid(self, form):
+        user_credit = self.model.objects.get(user=self.request.user)
+        form.instance.user = self.request.user
+        self.object = form.save(commit=False)
+        # pending credits are added to balance upon payment in payment/views.py
+        self.add_to_cart(self.object.pending)
+        self.apply_incentive(self.object.pending)
+        messages.add_message(self.request, messages.SUCCESS, 'Credits added to your Shopping Cart.  \
+            Please make sure you view your cart and pay for your credits!  Unpaid credits will be \
+            removed within 24 hours!')
+        self.success_url = reverse('accounts:profile', kwargs={'slug': self.request.user.id})
+        return super().form_valid(form)
+
+    def add_to_cart(self, credits):
+        '''Adds credits to shopping cart.'''
+
+        price = credits
+        item_name = 'User Credits'
+        event_date = date.today()
+        start_time = 'N/A'
+        skater_name = self.request.user.get_full_name()
+        customer = self.request.user
+
+        cart = self.cart_model(customer=customer, item=item_name, skater_name=skater_name, event_date=event_date, event_start_time=start_time, amount=price)
+        cart.save()
+        return
+
+    def apply_incentive(self, credits):
+        '''Applies credit incentive percentage to amount of credits purchased.'''
+
+        # Get user credit incentives model 
+        incentives = self.incentives_model.objects.all()
+
+        if self.object.pending < incentives.last().price_point:
+            return
+        
+        for incentive in incentives:
+            if self.object.pending >= incentive.price_point:
+                free_points = self.object.pending * ((incentive.incentive / 100) + 1)
+                self.object.pending = round(free_points)
+                return

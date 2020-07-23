@@ -14,6 +14,7 @@ from adult_skills.models import AdultSkillsSkateDate, AdultSkillsSkateSession
 from mike_schultz.models import MikeSchultzSkateDate, MikeSchultzSkateSession
 from yeti_skate.models import YetiSkateDate, YetiSkateSession
 from womens_hockey.models import WomensHockeySkateDate, WomensHockeySkateSession
+from accounts.models import UserCredit
 
 # Create your views here.
 
@@ -65,6 +66,7 @@ class RemoveItemFromCartView(LoginRequiredMixin, DeleteView):
     yeti_skate_date_model = YetiSkateDate
     wh_skate_model = WomensHockeySkateSession
     wh_skate_date_model = WomensHockeySkateDate
+    user_credit_model = UserCredit
     success_url = reverse_lazy('cart:shopping-cart')
 
     def delete(self, request, *args, **kwargs):
@@ -102,5 +104,7 @@ class RemoveItemFromCartView(LoginRequiredMixin, DeleteView):
             self.wh_skate_model.objects.filter(skater=skater_id[0], skate_date=skate_date[0]).delete()
         elif cart_item.item == 'OH Membership':
             self.oh_member_model.objects.filter(member=request.user).delete()
+        elif cart_item.item == 'User Credits':
+            self.user_credit_model.objects.filter(user=request.user).update(pending=0)
 
         return super().delete(request, *args, **kwargs)

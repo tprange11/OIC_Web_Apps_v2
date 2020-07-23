@@ -10,9 +10,9 @@ urlpatterns = [
         name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('signup/', views.SignUp.as_view(), name='signup'),
-    path('profile/<slug>', views.UpdateProfileView.as_view(), name='profile'),
+    path('profile/<slug>/', views.UpdateProfileView.as_view(), name='profile'),
     path('release_of_liability/', views.ReleaseOfLiablityView.as_view(), name='release-of-liability'),
     path('my_skaters/add/', views.CreateChildSkaterView.as_view(), name='my-skaters-add'),
-    # path('my_skaters/add/<slug>/', views.CreateChildSkaterView.as_view(), name='my-skaters-add'),
     path('my_skaters/remove/<pk>/', views.DeleteChildSkaterView.as_view(), name='my-skaters-remove'),
+    path('user_credit/purchase/<slug>/', views.UpdateUserCreditView.as_view(), name='purchase-credit'),
 ]

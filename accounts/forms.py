@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
 from django import forms
-from accounts.models import Profile, ReleaseOfLiability, ChildSkater
+from accounts.models import Profile, ReleaseOfLiability, ChildSkater, UserCredit
 
 
 class UserCreateForm(UserCreationForm):
@@ -66,4 +66,15 @@ class CreateChildSkaterForm(forms.ModelForm):
         }
         help_texts = {
             'date_of_birth': 'mm/dd/yyyy',
+        }
+
+
+class CreateUserCreditForm(forms.ModelForm):
+    '''Form used to purchase user credits.'''
+
+    class Meta:
+        model = UserCredit
+        fields = ['pending']
+        labels = {
+            'pending': ''
         }

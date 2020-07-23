@@ -17,6 +17,7 @@ from adult_skills.models import AdultSkillsSkateSession
 from mike_schultz.models import MikeSchultzSkateSession
 from yeti_skate.models import YetiSkateSession
 from womens_hockey.models import WomensHockeySkateSession
+from accounts.models import UserCredit
 
 # Create your views here.
 
@@ -69,6 +70,7 @@ def process_payment(request, **kwargs):
     mike_schultz_sessions_model = MikeSchultzSkateSession
     yeti_sessions_model = YetiSkateSession
     womens_hockey_sessions_model = WomensHockeySkateSession
+    user_credit_model = UserCredit
     today = date.today()
 
     if request.method == 'GET':
@@ -82,6 +84,7 @@ def process_payment(request, **kwargs):
         total = 0
         programs = program_model.objects.all().values_list('program_name', flat=True)
         note = {program: 0 for program in programs}
+        note['User Credits'] = 0
         for item, amount in cart_items:
             total += amount
             if item == 'OH Membership':
@@ -142,6 +145,11 @@ def process_payment(request, **kwargs):
                 mike_schultz_sessions_model.objects.filter(user=request.user).update(paid=True)
                 yeti_sessions_model.objects.filter(skater=request.user).update(paid=True)
                 womens_hockey_sessions_model.objects.filter(user=request.user).update(paid=True)
+                user_credit = user_credit_model.objects.get(user=request.user) # Get user credit model instance
+                user_credit.balance += user_credit.pending # Add pending credits to credit balance
+                user_credit.pending = 0 # Set pending credits to 0
+                user_credit.paid = True # Mark credits as paid
+                user_credit.save() # Save user credit model
             except IntegrityError:
                 pass
 

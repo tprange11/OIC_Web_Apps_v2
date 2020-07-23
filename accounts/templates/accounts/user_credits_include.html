@@ -1,0 +1,14 @@
+<!-- <div class="btn-group" role="group" aria-label="Credit Balance and Purchase"> -->
+<div class="row mb-3">
+    <div class="col-lg-3 col-md-4 col-12 mb-md-0 mb-2">
+        <button class="btn {% if credit.balance == 0 %}btn-danger{% else %}btn-success{% endif %} btn-sm">Credit Balance: ${{ credit.balance }}</button>
+    </div>
+    {% if credit.pending > 0 %}
+    <div class="col-lg-3 col-md-4 col-12 mb-md-0 mb-2">
+    <a class="btn btn-danger btn-sm" href="{% url 'cart:shopping-cart' %}">Pay for Pending Credits</a>
+    </div>
+    {% endif %}
+    <div class="col">
+        <a class="btn btn-primary btn-sm" href="{% url 'accounts:profile' slug=user.id %}">Purchase Credits</a>
+    </div>
+</div>

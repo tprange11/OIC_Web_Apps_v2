@@ -5,15 +5,16 @@
     <p>Choose a date below to register for that session of Yeti Skate. Disabled skate sessions indicate that you have registered for the skate session(s). You may remove yourself 
         from a session prior to paying.  Once you have paid for the session(s), you will be unable to remove yourself from the session(s).</p>
     <p>If you'd like to be notified when Yeti Skate dates are available for registration, update your <a href="{% url 'accounts:profile' slug=user.id %}">email preferences</a>.</p>
+    {% include 'accounts/user_credits_include.html' %}
     <div class="row mb-3">
-        <div class="col-lg-3 col-md-6 col-12 mb-md-0 mb-2">
+        <div class="col-lg-3 col-md-4 col-12 mb-md-0 mb-2">
             <a href="{% url 'group_message:group-message' group=7 %}" class="btn btn-secondary btn-sm">Send Group Message</a>
         </div>
-        <div class="col-lg-3 col-md-6 col-12 mb-md-2 mb-2">
+        <div class="col-lg-3 col-md-8 col-12 mb-md-2 mb-2">
             <a href="{% url 'message_boards:board-topics' slug='yeti-skate' %}" class="btn btn-secondary btn-sm">Start a Conversation</a>
         </div>
         <div class="col-lg-6 col-12">
-            <a href="{% url 'message_boards:topic-post-list' slug=latest_topic.board.slug pk=latest_topic.pk %}" class="btn btn-success btn-sm">Latest Post: {{latest_topic.subject}}</a>
+            <a href="{% url 'message_boards:topic-post-list' slug=latest_topic.board.slug pk=latest_topic.pk %}" class="btn btn-success btn-sm">Latest Topic: {{latest_topic.subject}}</a>
         </div>
     </div>
     {% for message in messages %}
