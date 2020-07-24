@@ -3,6 +3,7 @@ from django.views.generic import TemplateView, ListView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
+from django.core.exceptions import ObjectDoesNotExist
 import uuid, os
 from datetime import date
 from square.client import Client
@@ -145,12 +146,16 @@ def process_payment(request, **kwargs):
                 mike_schultz_sessions_model.objects.filter(user=request.user).update(paid=True)
                 yeti_sessions_model.objects.filter(skater=request.user).update(paid=True)
                 womens_hockey_sessions_model.objects.filter(user=request.user).update(paid=True)
+            except IntegrityError:
+                pass
+
+            try:
                 user_credit = user_credit_model.objects.get(user=request.user) # Get user credit model instance
                 user_credit.balance += user_credit.pending # Add pending credits to credit balance
                 user_credit.pending = 0 # Set pending credits to 0
                 user_credit.paid = True # Mark credits as paid
                 user_credit.save() # Save user credit model
-            except IntegrityError:
+            except ObjectDoesNotExist:
                 pass
 
             # Clear items from the Cart Model if the payment was successful
