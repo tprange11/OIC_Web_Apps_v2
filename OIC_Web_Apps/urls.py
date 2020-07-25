@@ -20,6 +20,10 @@ from django.views.generic import TemplateView
 
 handler404 = 'OIC_Web_Apps.views.handler404'
 
+def trigger_error(request):
+    '''Used for testing Sentry SDK'''
+    division_by_zero = 1 / 0
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.HomePage.as_view(), name='home'),
@@ -52,4 +56,5 @@ urlpatterns = [
     path('offline/', (TemplateView.as_view(template_name='offline.html',
                                            content_type='text/html')), name='offline'),
     path('web_apps/figure_skating/', include('figure_skating.urls')),
+    path('sentry_debug/', trigger_error),
 ]
