@@ -151,10 +151,11 @@ def process_payment(request, **kwargs):
 
             try:
                 user_credit = user_credit_model.objects.get(user=request.user) # Get user credit model instance
-                user_credit.balance += user_credit.pending # Add pending credits to credit balance
-                user_credit.pending = 0 # Set pending credits to 0
-                user_credit.paid = True # Mark credits as paid
-                user_credit.save() # Save user credit model
+                if user_credit.pending > 0: # If there are pending credits
+                    user_credit.balance += user_credit.pending # Add pending credits to credit balance
+                    user_credit.pending = 0 # Set pending credits to 0
+                    user_credit.paid = True # Mark credits as paid
+                    user_credit.save() # Save user credit model
             except ObjectDoesNotExist:
                 pass
 
