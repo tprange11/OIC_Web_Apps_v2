@@ -5,6 +5,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import Group
 from django.contrib import messages
 from django.db import IntegrityError
+from django.db.models import Count
 from django.core.exceptions import ObjectDoesNotExist
 
 from . import models, forms
@@ -51,7 +52,7 @@ class MikeSchultzSkateDateListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        queryset = queryset.filter(skate_date__gte=date.today()).values('pk', 'skate_date', 'start_time', 'end_time')
+        queryset = queryset.filter(skate_date__gte=date.today()).values('pk', 'skate_date', 'start_time', 'end_time').annotate(num_skaters=Count('session_skaters'))
         skater_sessions = self.session_model.objects.filter(user=self.request.user).values_list('skate_date','pk', 'paid')#.order_by('pk')
         # If user is already signed up for the skate, add key value pair to disable button
         for item in queryset:

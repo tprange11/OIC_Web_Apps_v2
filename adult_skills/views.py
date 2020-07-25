@@ -5,6 +5,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import Group
 from django.contrib import messages
 from django.db import IntegrityError
+from django.db.models import Count
 from django.core.exceptions import ObjectDoesNotExist
 
 from . import models, forms
@@ -168,7 +169,7 @@ class AdultSkillsSkateDateStaffListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        queryset = queryset.filter(skate_date__gte=date.today()).order_by('skate_date')
+        queryset = queryset.filter(skate_date__gte=date.today()).annotate(num_skaters=Count('adultskillsskatesession')).order_by('skate_date')
         return queryset
 
     def get_context_data(self, **kwargs):

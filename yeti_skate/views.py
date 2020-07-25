@@ -5,9 +5,11 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import Group
 from django.contrib import messages
 from django.db import IntegrityError
+from django.db.models import Count
 from django.core.exceptions import ObjectDoesNotExist
 
-from . import models, forms
+from .models import YetiSkateDate, YetiSkateSession
+from .forms import CreateYetiSkateSessionForm
 from accounts.models import Profile
 from programs.models import Program
 from cart.models import Cart
@@ -22,9 +24,9 @@ class YetiSkateDateListView(LoginRequiredMixin, ListView):
     '''Page that displays upcoming Yeti skates.'''
 
     template_name = 'yeti_skate_dates.html'
-    model = models.YetiSkateDate
+    model = YetiSkateDate
     topic_model = Topic
-    session_model = models.YetiSkateSession
+    session_model = YetiSkateSession
     credit_model = UserCredit
     group_model = Group
     profile_model = Profile
@@ -51,7 +53,7 @@ class YetiSkateDateListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        queryset = queryset.filter(skate_date__gte=date.today()).values('pk', 'skate_date', 'start_time', 'end_time')
+        queryset = queryset.filter(skate_date__gte=date.today()).values('pk', 'skate_date', 'start_time', 'end_time').annotate(num_skaters=Count('session_skaters'))
         skater_sessions = self.session_model.objects.filter(skater=self.request.user).values_list('skate_date','pk', 'paid')
         # print(skater_sessions)
         # If user is already signed up for the skate, add key value pair to disable button
@@ -94,11 +96,11 @@ class YetiSkateDateListView(LoginRequiredMixin, ListView):
 class CreateYetiSkateSessionView(LoginRequiredMixin, CreateView):
     '''Page that displays form for user to register for skate sessions.'''
 
-    model = models.YetiSkateSession
-    form_class = forms.CreateYetiSkateSessionForm
+    model = YetiSkateSession
+    form_class = CreateYetiSkateSessionForm
     profile_model = Profile
     program_model = Program
-    session_model = models.YetiSkateDate
+    session_model = YetiSkateDate
     cart_model = Cart
     credit_model = UserCredit
     template_name = 'yeti_skate_sessions_form.html'
@@ -196,8 +198,8 @@ class CreateYetiSkateSessionView(LoginRequiredMixin, CreateView):
 
 class DeleteYetiSkateSessionView(LoginRequiredMixin, DeleteView):
     '''Allows user to remove themself from a skate session'''
-    model = models.YetiSkateSession
-    skate_date_model = models.YetiSkateDate
+    model = YetiSkateSession
+    skate_date_model = YetiSkateDate
     success_url = reverse_lazy('yeti_skate:yeti-skate')
 
     def delete(self, *args, **kwargs):
@@ -218,8 +220,8 @@ class DeleteYetiSkateSessionView(LoginRequiredMixin, DeleteView):
 class YetiSkateDateStaffListView(LoginRequiredMixin, ListView):
     '''Displays page with list of upcoming Yeti Skate skates with buttons for viewing registered skaters.'''
 
-    model = models.YetiSkateDate
-    sessions_model = models.YetiSkateSession
+    model = YetiSkateDate
+    sessions_model = YetiSkateSession
     context_object_name = 'skate_dates'
     template_name = 'yeti_skate_sessions_list.html'
 

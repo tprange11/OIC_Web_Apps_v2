@@ -28,7 +28,7 @@
                 <li class="list-group-item" style="padding: 5px 15px;"><a href="{% url 'thane_storck:register' pk=date.pk %}" class="btn btn-warning btn-sm mb-2 mb-sm-0">
                 {{ date.skate_date }} {{date.start_time}} to {{date.end_time}}</a>
             {% endif %}
-            <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#skaterModalCenter{{forloop.counter}}">Registered Skaters</button>
+            <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#skaterModalCenter{{forloop.counter}}">Registered Skaters ({{ date.num_skaters }})</button>
             {% if date.session_pk != None and date.paid == False %}
             <form method="POST" action="{% url 'thane_storck:session-remove' pk=date.session_pk %}">
                 {% csrf_token %}
