@@ -1,14 +1,27 @@
-<!-- <div class="btn-group" role="group" aria-label="Credit Balance and Purchase"> -->
-<div class="row mb-3">
-    <div class="col-lg-3 col-md-4 col-12 mb-md-0 mb-2">
-        <button class="btn {% if credit.balance == 0 %}btn-danger{% else %}btn-success{% endif %} btn-sm">Credit Balance: ${{ credit.balance }}</button>
+<div class="row mb-4 d-flex align-content-center">
+    <div class="col-md-6 col-12 pr-md-0 pr-3 pl-3 mb-0 d-flex" style="height: 50px;">
+        <div class="{% if credit.balance == 0 %}bg-danger{% else %}bg-success{% endif %} text-white d-flex flex-fill">
+            <div class="m-auto">
+                Credit Balance: ${{ credit.balance }}
+            </div>
+        </div>
     </div>
     {% if credit.pending > 0 %}
-    <div class="col-lg-3 col-md-4 col-12 mb-md-0 mb-2">
-    <a class="btn btn-danger btn-sm" href="{% url 'cart:shopping-cart' %}">Pay for Pending Credits</a>
+    <div class="col-lg-3 col-md-6 col-12 px-md-0 pr-md-3 pr-lg-0 px-3 mb-0 p-0 d-flex" style="height: 50px;">
+        <div class="bg-secondary d-flex flex-fill align-content-center">
+            <a class="text-white m-auto" href="{% url 'cart:shopping-cart' %}">Pay for Pending Credits</a>
+        </div>
+    </div>
+    <div class="col-lg-3 col-12 pl-md-3 pl-lg-0 pr-3 pl-3 mb-0 d-flex" style="height: 50px;">
+        <div class="bg-primary d-flex flex-fill align-content-center">
+            <a class="text-white m-auto" href="{% url 'accounts:profile' slug=user.id %}">Purchase Credits</a>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-md-6 col-12 pl-md-0 pr-3 pl-3 mb-0 d-flex" style="height: 50px;">
+        <div class="bg-primary d-flex flex-fill align-content-center">
+            <a class="text-white m-auto" href="{% url 'accounts:profile' slug=user.id %}">Purchase Credits</a>
+        </div>
     </div>
     {% endif %}
-    <div class="col">
-        <a class="btn btn-primary btn-sm" href="{% url 'accounts:profile' slug=user.id %}">Purchase Credits</a>
-    </div>
 </div>

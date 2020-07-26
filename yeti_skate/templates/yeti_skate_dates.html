@@ -6,15 +6,21 @@
         from a session prior to paying.  Once you have paid for the session(s), you will be unable to remove yourself from the session(s).</p>
     <p>If you'd like to be notified when Yeti Skate dates are available for registration, update your <a href="{% url 'accounts:profile' slug=user.id %}">email preferences</a>.</p>
     {% include 'accounts/user_credits_include.html' %}
-    <div class="row mb-3">
-        <div class="col-lg-3 col-md-4 col-12 mb-md-0 mb-2">
-            <a href="{% url 'group_message:group-message' group=7 %}" class="btn btn-secondary btn-sm">Send Group Message</a>
+    <div class="row mb-4 d-flex align-content-center">
+        <div class="col-lg-3 col-md-6 col-12 pr-md-0 pr-3 pl-3 mb-0 d-flex" style="height: 50px;">
+            <div class="bg-primary d-flex flex-fill align-content-center">
+                <a href="{% url 'group_message:group-message' group=7 %}" class="text-white m-auto">Send Group Message</a>
+            </div>
         </div>
-        <div class="col-lg-3 col-md-8 col-12 mb-md-2 mb-2">
-            <a href="{% url 'message_boards:board-topics' slug='yeti-skate' %}" class="btn btn-secondary btn-sm">Start a Conversation</a>
+        <div class="col-lg-3 col-md-6 col-12 px-md-0 pr-lg-0 pr-md-3 px-3 mb-0 p-0 d-flex" style="height: 50px;">
+            <div class="bg-secondary d-flex flex-fill align-content-center">
+                <a href="{% url 'message_boards:board-topics' slug='yeti-skate' %}" class="text-white m-auto">Start a Conversation</a>
+            </div>
         </div>
-        <div class="col-lg-6 col-12">
-            <a href="{% url 'message_boards:topic-post-list' slug=latest_topic.board.slug pk=latest_topic.pk %}" class="btn btn-success btn-sm">Latest Topic: {{latest_topic.subject}}</a>
+        <div class="col-lg-6 col-12 px-3 pl-md-3 pl-lg-0 mb-0 d-flex" style="height: 50px;">
+            <div class="bg-success d-flex flex-fill text-center">
+                <a href="{% url 'message_boards:topic-post-list' slug=latest_topic.board.slug pk=latest_topic.pk %}" class="text-white m-auto">Latest Topic: {{latest_topic.subject}}</a>
+            </div>
         </div>
     </div>
     {% for message in messages %}
