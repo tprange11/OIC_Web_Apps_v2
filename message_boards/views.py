@@ -3,8 +3,7 @@ from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count
-
-from datetime import datetime
+from django.utils import timezone
 
 from .models import Board, Topic, Post
 from .forms import CreateBoardTopicForm, CreateBoardTopicPostReplyForm, PostUpdateForm
@@ -60,7 +59,7 @@ class BoardTopicCreateView(LoginRequiredMixin, CreateView):
             message=form.cleaned_data.get('message'),
             topic=topic,
             created_by=user,
-            updated_at=datetime.now()
+            updated_at=timezone.now()
         )
         try:
             pass
@@ -106,13 +105,13 @@ class BoardTopicPostReplyCreateView(LoginRequiredMixin, CreateView):
         pk = self.kwargs['pk']
         slug = self.kwargs['slug']
         topic = get_object_or_404(Topic, pk=pk)
-        topic.last_updated = datetime.now()
+        topic.last_updated = timezone.now()
         topic.save()
         user = self.request.user
         post = form.save(commit=False)
         post.topic = topic
         post.created_by = user
-        post.updated_at = datetime.now()
+        post.updated_at = timezone.now()
         post = form.save()
         self.success_url = reverse_lazy('message_boards:topic-post-list', kwargs={'slug': slug, 'pk': pk})
         return super().form_valid(form)
@@ -134,9 +133,9 @@ class PostUpdateView(LoginRequiredMixin, UpdateView):
     def form_valid(self, form):
         topic = Topic.objects.get(pk=self.kwargs['topic_pk'])
         post = form.save(commit=False)
-        post.updated_at = datetime.now()
+        post.updated_at = timezone.now()
         # Update Topic last_updated
-        topic.last_updated = datetime.now()
+        topic.last_updated = timezone.now()
         topic.save()
         self.success_url = reverse_lazy('message_boards:topic-post-list', kwargs={'slug': self.kwargs['slug'], 'pk': self.kwargs['topic_pk']})
         return super().form_valid(form)
