@@ -142,7 +142,7 @@ class CreateSkateSessionView(LoginRequiredMixin, CreateView):
         try:
             self.profile_model.objects.get(user=self.request.user)
             return
-        # If no profile exists, add one and set open_hockey_email to True
+        # If no profile exists, add one and set thank_storck_email to True
         except ObjectDoesNotExist:
             profile = self.profile_model(user=self.request.user, slug=self.request.user.id, thane_storck_email=True)
             profile.save()
