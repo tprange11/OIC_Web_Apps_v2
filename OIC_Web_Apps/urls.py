@@ -19,6 +19,7 @@ from . import views
 from django.views.generic import TemplateView
 
 handler404 = 'OIC_Web_Apps.views.handler404'
+handler500 = 'OIC_Web_Apps.views.handler500'
 
 def trigger_error(request):
     '''Used for testing Sentry SDK'''
@@ -57,4 +58,5 @@ urlpatterns = [
                                            content_type='text/html')), name='offline'),
     path('web_apps/figure_skating/', include('figure_skating.urls')),
     path('sentry_debug/', trigger_error),
+    path('500/', views.handler500),
 ]
