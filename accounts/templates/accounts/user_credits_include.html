@@ -1,14 +1,17 @@
 <div class="row mb-4 d-flex align-content-center">
     <div class="col-md-6 col-12 pr-md-0 pr-3 pl-3 mb-0 d-flex" style="height: 50px;">
-        <div class="{% if credit.balance == 0 %}bg-danger{% else %}bg-success{% endif %} text-white d-flex flex-fill">
+        <div class="{% if credit.balance == 0 %}bg-danger{% elif 20 > credit.balance > 0 %}bg-warning text-dark font-weight-bold{% else %}bg-success text-white{% endif %} text-white d-flex flex-fill">
             <div class="m-auto">
-                Credit Balance: ${{ credit.balance }}
+                Credit Balance: ${{ credit.balance }} 
+                {% if credit.balance == 0 %}
+                <button type="button" class="btn btn-danger btn-sm" data-toggle="modal" data-target="#myCreditModal"><i class="fas fa-question-circle fa-lg"></i></button>
+                {% endif %}
             </div>
         </div>
     </div>
     {% if credit.pending > 0 %}
     <div class="col-lg-3 col-md-6 col-12 px-md-0 pr-md-3 pr-lg-0 px-3 mb-0 p-0 d-flex" style="height: 50px;">
-        <div class="bg-secondary d-flex flex-fill align-content-center">
+        <div class="bg-dark d-flex flex-fill align-content-center">
             <a class="text-white m-auto" href="{% url 'cart:shopping-cart' %}">Pay for Pending Credits</a>
         </div>
     </div>

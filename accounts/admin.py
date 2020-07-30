@@ -34,6 +34,7 @@ class UserCreditAdmin(admin.ModelAdmin):
     fields = ['user', 'slug', 'balance', 'pending', 'paid']
     list_display = ['user_name', 'balance', 'pending', 'paid']
     readonly_fields = ['user', 'slug']
+    search_fields = ['user__first_name', 'user__last_name']
 
     def user_name(self, obj):
         return f"{obj.user.get_full_name()}"

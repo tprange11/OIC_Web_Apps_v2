@@ -9,7 +9,7 @@ from django.db.models import Count
 from django.core.exceptions import ObjectDoesNotExist
 
 from . import models, forms
-from accounts.models import Profile
+from accounts.models import Profile, UserCredit
 from programs.models import Program
 from cart.models import Cart
 
@@ -24,7 +24,23 @@ class AdultSkillsSkateDateListView(LoginRequiredMixin, ListView):
     model = models.AdultSkillsSkateDate
     session_model = models.AdultSkillsSkateSession
     program_model = Program
+    profile_model = Profile
+    credit_model = UserCredit
+    group_model = Group
     context_object_name = 'skate_dates'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        self.join_adult_skills_group()
+        
+        # Create a user credit object if one does not exist
+        try:
+            credit = self.credit_model.objects.get(user=self.request.user)
+        except ObjectDoesNotExist:
+            credit = self.credit_model.objects.create(user=self.request.user, slug=self.request.user.username)
+        context['credit'] = credit
+
+        return context
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -51,17 +67,37 @@ class AdultSkillsSkateDateListView(LoginRequiredMixin, ListView):
                         continue
         return queryset
 
+    def join_adult_skills_group(self, join_group='Adult Skills'):
+        '''Adds user to Adult Skills group "behind the scenes", for communication purposes.'''
+
+        try:
+            group = self.group_model.objects.get(name=join_group)
+            self.request.user.groups.add(group)
+        except IntegrityError:
+            pass
+
+        try:
+            # If a profile already exists, set adult_skills_email to True
+            profile = self.profile_model.objects.get(user=self.request.user)
+            profile.adult_skills_email = True
+            profile.save()
+        except ObjectDoesNotExist:
+            pass
+
+        return
+
 
 class CreateAdultSkillsSkateSessionView(LoginRequiredMixin, CreateView):
     '''Page that displays form for user to register for skate sessions.'''
 
     model = models.AdultSkillsSkateSession
     form_class = forms.CreateAdultSkillsSkateSessionForm
-    group_model = Group
+    # group_model = Group
     profile_model = Profile
     program_model = Program
     session_model = models.AdultSkillsSkateDate
     cart_model = Cart
+    credit_model = UserCredit
     template_name = 'adult_skills_skate_sessions_form.html'
     success_url = '/web_apps/adult_skills/'
 
@@ -74,7 +110,11 @@ class CreateAdultSkillsSkateSessionView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
 
+        user_credit = self.credit_model.objects.get(user=self.request.user) # User credit model
+        credit_used = False # Used to set the success message
+
         self.object = form.save(commit=False)
+        
         try:
             # If goalie spots are full, do not save object
             if self.object.goalie == True and self.model.objects.filter(goalie=True, skate_date=self.object.skate_date).count() == Program.objects.get(pk=5).max_goalies:
@@ -84,44 +124,57 @@ class CreateAdultSkillsSkateSessionView(LoginRequiredMixin, CreateView):
             elif self.object.goalie == False and self.model.objects.filter(goalie=False, skate_date=self.object.skate_date).count() == Program.objects.get(pk=5).max_skaters:
                 messages.add_message(self.request, messages.ERROR, 'Sorry, skater spots are full!')
                 return redirect('adult_skills:adult-skills')
+
             # If spots are not full do the following
-            self.add_to_cart()
-            self.join_adult_skills_group()
+            skater_cost = self.program_model.objects.get(id=5).skater_price
+            goalie_cost = self.program_model.objects.get(id=5).goalie_price
+
+            # Set the appropriate price
+            if self.object.goalie:
+                price = goalie_cost
+            else:
+                price = skater_cost
+            
+            # If the user credit balance is 0, set paid = False
+            if user_credit.balance == 0:
+                # User is paying with credit card, add item to cart
+                user_credit.paid = False
+
+            # If the user has enough credits, deduct credits and set session as paid
+            if user_credit.balance >= price:
+                self.object.paid = True
+                user_credit.balance -= price
+                credit_used = True
+            # If the user doesn't have enough credits
+            else:
+                if price == 0:
+                    self.object.paid = True
+                else:
+                    self.add_to_cart(price)
+            
+            # Save the user credit model
+            user_credit.save()
             self.add_adult_skills_email_to_profile()
             self.object.save()
         except IntegrityError:
             pass
+
         # If all goes well set success message and return
-        messages.add_message(self.request, messages.INFO, 'To complete your registration, you must view your cart and pay for your session(s)!')
+        if price == 0:
+            messages.add_message(self.request, messages.INFO, 'You have successfully registered for the skate!')
+        elif credit_used:
+            messages.add_message(self.request, messages.INFO, f'You have successfully registered for the skate! ${price} in credit has been deducted from your balance.')
+        else:
+            messages.add_message(self.request, messages.INFO, 'To complete your registration, you must view your cart and pay for your session(s)!')
         return super().form_valid(form)
 
-    def add_to_cart(self):
+    def add_to_cart(self, price):
         '''Adds Adult Skills session to shopping cart.'''
-        # Get price of Adult Skills program
-        if self.object.goalie:
-            price = self.program_model.objects.get(id=5).goalie_price
-        else:
-            price = self.program_model.objects.get(id=5).skater_price
+
         start_time = self.session_model.objects.filter(skate_date=self.object.skate_date.skate_date).values_list('start_time', flat=True)
         cart = self.cart_model(customer=self.request.user, item='Adult Skills', skater_name=self.request.user.get_full_name(), 
             event_date=self.object.skate_date.skate_date, event_start_time=start_time[0], amount=price)
         cart.save()
-
-    def join_adult_skills_group(self, join_group='Adult Skills'):
-        '''Adds user to Adult Skills group "behind the scenes", for communication purposes.'''
-        try:
-            group = self.group_model.objects.get(name=join_group)
-            self.request.user.groups.add(group)
-            try:
-                # If a profile already exists, set adult_skills_email to True
-                profile = self.profile_model.objects.get(user=self.request.user)
-                profile.adult_skills_email = True
-                profile.save()
-            except ObjectDoesNotExist:
-                pass
-        except IntegrityError:
-            pass
-        return
 
     def add_adult_skills_email_to_profile(self):
         '''If no user profile exists, create one and set adult_skills_email to True.'''

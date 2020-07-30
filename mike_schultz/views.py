@@ -9,7 +9,7 @@ from django.db.models import Count
 from django.core.exceptions import ObjectDoesNotExist
 
 from . import models, forms
-from accounts.models import Profile, ChildSkater
+from accounts.models import Profile, ChildSkater, UserCredit
 from programs.models import Program
 from cart.models import Cart
 
@@ -25,21 +25,24 @@ class MikeSchultzSkateDateListView(LoginRequiredMixin, ListView):
     session_model = models.MikeSchultzSkateSession
     group_model = Group
     profile_model = Profile
+    credit_model = UserCredit
     context_object_name = 'skate_dates'
 
     def get(self, request, *args, **kwargs):
         '''Adds user to Mike Schultz group "behind the scenes", for communication purposes.'''
+        
         try:
             group = self.group_model.objects.get(name='Mike Schultz')
             self.request.user.groups.add(group)
-            try:
-                # If a profile already exists, set mike_schultz_email to True
-                profile = self.profile_model.objects.get(user=self.request.user)
-                profile.mike_schultz_email = True
-                profile.save()
-            except ObjectDoesNotExist:
-                pass
         except IntegrityError:
+            pass
+        
+        try:
+            # If a profile already exists, set mike_schultz_email to True
+            profile = self.profile_model.objects.get(user=self.request.user)
+            profile.mike_schultz_email = True
+            profile.save()
+        except ObjectDoesNotExist:
             pass
         return super().get(request, *args, **kwargs)
 
@@ -48,31 +51,18 @@ class MikeSchultzSkateDateListView(LoginRequiredMixin, ListView):
         # Get all skaters signed up for each session to display the list of skaters for each session
         skate_sessions = self.session_model.objects.filter(skate_date__skate_date__gte=date.today())
         context['skate_sessions'] = skate_sessions
+        # Create a user credit object if one does not exist
+        try:
+            credit = self.credit_model.objects.get(user=self.request.user)
+        except ObjectDoesNotExist:
+            credit = self.credit_model.objects.create(user=self.request.user, slug=self.request.user.username)
+        context['credit'] = credit
         return context
 
     def get_queryset(self):
         queryset = super().get_queryset()
         queryset = queryset.filter(skate_date__gte=date.today()).values('pk', 'skate_date', 'start_time', 'end_time').annotate(num_skaters=Count('session_skaters'))
-        skater_sessions = self.session_model.objects.filter(user=self.request.user).values_list('skate_date','pk', 'paid')#.order_by('pk')
-        # If user is already signed up for the skate, add key value pair to disable button
-        for item in queryset:
-            for session in skater_sessions:
-                # If the session date and skate date match add session_pk and paid to queryset
-                if item['pk'] == session[0] and session[2] == True:
-                    # item['disabled'] = True
-                    item['session_pk'] = session[1]
-                    item['paid'] = session[2]
-                    break
-                elif item['pk'] == session[0] and session[2] == False:
-                    # item['disabled'] = True
-                    item['session_pk'] = session[1]
-                    item['paid'] = session[2]
-                    break
-                else:
-                    # item['disabled'] = False
-                    item['session_pk'] = None
-                    item['paid'] = False
-                    continue
+        skater_sessions = self.session_model.objects.filter(user=self.request.user).values_list('skate_date','pk', 'paid')
         return queryset
 
 
@@ -86,6 +76,7 @@ class CreateMikeSchultzSkateSessionView(LoginRequiredMixin, CreateView):
     program_model = Program
     session_model = models.MikeSchultzSkateDate
     cart_model = Cart
+    credit_model = UserCredit
     template_name = 'mike_schultz_skate_sessions_form.html'
     success_url = '/web_apps/mike_schultz/'
 
@@ -110,7 +101,11 @@ class CreateMikeSchultzSkateSessionView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
 
+        user_credit = self.credit_model.objects.get(user=self.request.user) # User credit model
+        credit_used = False # Used to set the success message
+
         self.object = form.save(commit=False)
+
         try:
             # If goalie spots are full, do not save object
             if self.object.goalie == True and self.model.objects.filter(goalie=True, skate_date=self.object.skate_date).count() == Program.objects.get(pk=6).max_goalies:
@@ -120,50 +115,56 @@ class CreateMikeSchultzSkateSessionView(LoginRequiredMixin, CreateView):
             elif self.object.goalie == False and self.model.objects.filter(goalie=False, skate_date=self.object.skate_date).count() == Program.objects.get(pk=6).max_skaters:
                 messages.add_message(self.request, messages.ERROR, 'Sorry, skater spots are full!')
                 return redirect('mike_schultz:mike-schultz')
+
             # If spots are not full do the following
-            goalies_free = self.add_to_cart()
-            # self.join_mike_schultz_group()
+            skater_cost = self.program_model.objects.get(id=6).skater_price
+            goalie_cost = self.program_model.objects.get(id=6).goalie_price
+
+            # Set the appropriate price
+            if self.object.goalie:
+                price = goalie_cost
+            else:
+                price = skater_cost
+
+            if user_credit.balance == 0:
+                # If user credit has been depleted, make sure user credit paid is set to False
+                user_credit.paid = False
+                
+            # If the user has enough credits, deduct credits and set session as paid
+            if user_credit.balance >= price:
+                self.object.paid = True
+                user_credit.balance -= price
+                credit_used = True
+            # If the user doesn't have enough credits
+            else:
+                if price == 0:
+                    self.object.paid = True
+                else:
+                    self.add_to_cart(price)
+
+            # Save the user credit model
+            user_credit.save()
             self.add_mike_schultz_email_to_profile()
             self.object.save()
         except IntegrityError:
             pass
         # If all goes well set success message and return
-        if self.object.goalie and goalies_free:
+        if price == 0:
             messages.add_message(self.request, messages.INFO, 'You have successfully registered for the skate!')
+        elif credit_used:
+            messages.add_message(self.request, messages.INFO, f'You have successfully registered for the skate!  ${price} in credit has been deducted from your balance.')
         else:
             messages.add_message(self.request, messages.INFO, 'To complete your registration, you must view your cart and pay for your item(s)!')
         return super().form_valid(form)
 
-    def add_to_cart(self):
+    def add_to_cart(self, price):
         '''Adds Mike Schultz session to shopping cart.'''
-        # Get price of Mike Schultz program
-        if self.object.goalie:
-            price = self.program_model.objects.get(id=6).goalie_price
-            if price == 0:
-                return True
-        else:
-            price = self.program_model.objects.get(id=6).skater_price
+
         start_time = self.session_model.objects.filter(skate_date=self.object.skate_date.skate_date).values_list('start_time', flat=True)
         cart = self.cart_model(customer=self.request.user, item='Mike Schultz', skater_name=self.object.skater, 
             event_date=self.object.skate_date.skate_date, event_start_time=start_time[0], amount=price)
         cart.save()
         return False
-
-    # def join_mike_schultz_group(self, join_group='Mike Schultz'):
-    #     '''Adds user to Mike Schultz group "behind the scenes", for communication purposes.'''
-    #     try:
-    #         group = self.group_model.objects.get(name=join_group)
-    #         self.request.user.groups.add(group)
-    #         try:
-    #             # If a profile already exists, set mike_schultz_email to True
-    #             profile = self.profile_model.objects.get(user=self.request.user)
-    #             profile.mike_schultz_email = True
-    #             profile.save()
-    #         except ObjectDoesNotExist:
-    #             pass
-    #     except IntegrityError:
-    #         pass
-    #     return
 
     def add_mike_schultz_email_to_profile(self):
         '''If no user profile exists, create one and set mike_schultz_email to True.'''

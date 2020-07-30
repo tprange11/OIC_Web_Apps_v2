@@ -9,45 +9,41 @@
   click the Registered Skaters button, then the Remove Skater button below the skater you want to remove.</p>
 <p>If you'd like to be notified when Womens Hockey skate dates are available for registration, update your
   <a href="{% url 'accounts:profile' slug=user.id %}">email preferences</a>.</p>
-<div class="alert alert-info" role="alert">
+  {% for message in messages %}
+  {% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}
+  <div class="alert alert-danger alert-dismissible alert-link" role="alert">
+    <button class="close" type="button" data-dismiss="alert" aria-label="close">&#215;</button>
+    {{ message }}
+  </div>
+  {% else %}
+  <div class="alert alert-info alert-dismissible alert-link" role="alert">
+    <button class="close" type="button" data-dismiss="alert" aria-label="close">&#215;</button>
+    {{ message }}
+  </div>
+  {% endif %}
+  {% empty %}
+  {% endfor %}
+  <div class="alert alert-info" role="alert">
   <div class="row">
     <div class="col-lg-4 col-12 mb-lg-0 mb-2">
       <a href="{% url 'accounts:profile' slug=user.id %}" class="btn btn-info btn-sm d-block text-nowrap">Manage skaters
         in your profile</a>
     </div>
     <div class="col-lg-8 col-12">
-      <span class="font-weight-bold small text-center d-block">You must first add yourself and your dependent skaters before registering for a
+      <span class="font-weight-bold small text-center d-block">You must first add yourself and/or your dependent skaters before registering for a
         skate session!</span>
     </div>
   </div>
 </div>
-{% for message in messages %}
-{% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}
-<div class="alert alert-danger alert-dismissible alert-link" role="alert">
-  <button class="close" type="button" data-dismiss="alert" aria-label="close">&#215;</button>
-  {{ message }}
-</div>
-{% else %}
-<div class="alert alert-info alert-dismissible alert-link" role="alert">
-  <button class="close" type="button" data-dismiss="alert" aria-label="close">&#215;</button>
-  {{ message }}
-</div>
-{% endif %}
-{% empty %}
-{% endfor %}
+{% include 'accounts/user_credits_include.html' %}
+{% include 'accounts/user_credits_modal_include.html' %}
 <ul class="list-group" style="display: inline-block; margin-bottom: 10px;">
   {% for date in skate_dates %}
-  {% if date.disabled %}
-  <li class="list-group-item" style="padding: 5px 15px;"><a href="{% url 'womens_hockey:register' pk=date.pk %}"
-      class="btn btn-warning btn-sm mb-2 mb-sm-0 disabled">
-      {{ date.skate_date }} {{date.start_time}} to {{date.end_time}}</a>
-    {% else %}
   <li class="list-group-item" style="padding: 5px 15px;"><a href="{% url 'womens_hockey:register' pk=date.pk %}"
       class="btn btn-warning btn-sm mb-2 mb-sm-0">
       {{ date.skate_date }} {{date.start_time}} to {{date.end_time}}</a>
-    {% endif %}
     <button type="button" class="btn btn-primary btn-sm" data-toggle="modal"
-      data-target="#skaterModalCenter{{forloop.counter}}">Registered Skaters</button>
+      data-target="#skaterModalCenter{{forloop.counter}}">Registered Skaters <span class="number-of-skaters">{{ date.num_skaters }}</span></button>
   </li>
   <div class="modal fade" id="skaterModalCenter{{forloop.counter}}" tabindex="-1" role="dialog"
     aria-labelledby="skaterModalCenterTitle" aria-hidden="true">
@@ -66,10 +62,9 @@
             {% if skater.skate_date.pk == date.pk %}<li class="list-group-item">Skater Name:
               {{skater.skater.first_name}} {{skater.skater.last_name}}
               {% if skater.goalie %}<b>(Goalie)</b>{% endif %}
-              {% if date.session_pk != None and date.paid == False and user == skater.user %}
+              {% if skater.skate_date.pk == date.pk and skater.paid == False and user == skater.user %}
               <form method="POST" action="{% url 'womens_hockey:session-remove' pk=skater.pk %}">
                 {% csrf_token %}
-                <input type="hidden" name="pk" value="{{date.session_pk}}">
                 <input type="submit" value="Remove Skater" class="btn btn-danger btn-sm mt-2">
               </form>
               {% endif %}</li>

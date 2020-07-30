@@ -104,3 +104,11 @@ td, th{
     display: none;
 }
 
+.number-of-skaters {
+    display: inline-block;
+    background-color: #0053ac;
+    color: white;
+    width: 21px;
+    /* font-weight: bold; */
+    border-radius: 5px;
+}

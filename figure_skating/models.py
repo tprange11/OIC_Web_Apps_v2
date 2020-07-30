@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.auth import get_user_model
 User = get_user_model()
 
+from datetime import date, timedelta
+
 
 class FigureSkatingDate(models.Model):
     '''Model holds dates for Open Figure Skating.'''
@@ -53,6 +55,11 @@ class FigureSkatingSession(models.Model):
 
     def __str__(self):
         return f"{self.skater} {self.session} {self.paid}"
+
+    @property
+    def can_remove_from_session(self):
+        '''The user can remove a skater from a session up until one day before the skate.'''
+        return date.today() < self.session.skate_date - timedelta(days=2)
 
     class Meta:
         # Prevent duplicate session entries

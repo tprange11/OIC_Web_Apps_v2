@@ -19,6 +19,8 @@
     {% endif %}
     {% empty %}
     {% endfor %}
+    {% include 'accounts/user_credits_include.html' %}
+    {% include 'accounts/user_credits_modal_include.html' %}
     <ul class="list-group" style="display: inline-block; margin-bottom: 10px;">
         {% for date in skate_dates %}
             {% if date.disabled %}

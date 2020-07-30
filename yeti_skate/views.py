@@ -10,11 +10,10 @@ from django.core.exceptions import ObjectDoesNotExist
 
 from .models import YetiSkateDate, YetiSkateSession
 from .forms import CreateYetiSkateSessionForm
-from accounts.models import Profile
+from accounts.models import Profile, UserCredit
 from programs.models import Program
 from cart.models import Cart
 from message_boards.models import Topic
-from accounts.models import UserCredit
 
 from datetime import date
 
@@ -47,8 +46,7 @@ class YetiSkateDateListView(LoginRequiredMixin, ListView):
         except ObjectDoesNotExist:
             credit = self.credit_model.objects.create(user=self.request.user, slug=self.request.user.username)
         context['credit'] = credit
-        # messages.add_message(self.request, messages.INFO, f'You may now purchase credits to pay for skate sessions!  \
-        #     Purchase credits from <a href="/accounts/profile/{self.request.user.id}/">your profile page.', extra_tags='safe')
+
         return context
 
     def get_queryset(self):
@@ -79,18 +77,21 @@ class YetiSkateDateListView(LoginRequiredMixin, ListView):
 
     def join_yeti_skate_group(self, join_group='Yeti Skate'):
         '''Adds user to Yeti Skate group "behind the scenes", for communication purposes.'''
+        
         try:
             group = self.group_model.objects.get(name=join_group)
             self.request.user.groups.add(group)
-            try:
-                # If a profile already exists, set yeti_skate_email to True
-                profile = self.profile_model.objects.get(user=self.request.user)
-                profile.yeti_skate_email = True
-                profile.save()
-            except ObjectDoesNotExist:
-                pass
         except IntegrityError:
             pass
+
+        try:
+            # If a profile already exists, set yeti_skate_email to True
+            profile = self.profile_model.objects.get(user=self.request.user)
+            profile.yeti_skate_email = True
+            profile.save()
+        except ObjectDoesNotExist:
+            pass
+
         return
 
 class CreateYetiSkateSessionView(LoginRequiredMixin, CreateView):
@@ -161,7 +162,7 @@ class CreateYetiSkateSessionView(LoginRequiredMixin, CreateView):
         if self.object.goalie or self.request.user.is_staff:
             messages.add_message(self.request, messages.INFO, 'You have successfully registered for the skate!')
         elif credit_used:
-            messages.add_message(self.request, messages.INFO, f'You have successfully registered for the skate!  Your current credit balance is ${user_credit.balance}')
+            messages.add_message(self.request, messages.INFO, f'You have successfully registered for the skate! ${cost} in credit has been deducted from your balance.')
         else:
             messages.add_message(self.request, messages.INFO, 'To complete your registration, you must view your cart and pay for your item(s)!')
         return super().form_valid(form)

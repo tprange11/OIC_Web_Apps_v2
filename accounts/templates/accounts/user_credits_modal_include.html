@@ -1,0 +1,28 @@
+<!-- My Credit Modal -->
+<div class="modal fade" id="myCreditModal" tabindex="-1" role="dialog" aria-labelledby="myCreditModal"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header text-light bg-success">
+                <h5 class="modal-title" id="myCreditModalLongTitle">User Credits</h5>
+                <button type="button" class="close text-light" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Tired of entering your credit or debit card information?  Purchase Credits!</p>
+                <p>You may purchase credits to use toward skate sessions.  If you purchase credits, your skate sessions will be deducted 
+                    from your credit balance.  You may purchase credits at any time.</p>
+                <p>Purchasing credits is optional. If you don't use credits, the process will remain the same.  Just pay for skate sessions 
+                    at the time you register.</p>
+                {% if '/profile/' not in request.path %}
+                <a class="btn btn-success btn-sm mb-3" href="{% url 'accounts:purchase-credit' slug=user.username %}">Purchase Credits</a>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success btn-sm" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- End My Credit Modal -->

@@ -17,18 +17,21 @@
     {% endif %}
 {% endfor %}
 {% endif %}
+{% if in_group_figure_skating %}
+{% include 'accounts/user_credits_include.html' %}
+{% include 'accounts/user_credits_modal_include.html' %}
+{% endif %}
 <ul class="list-group" style="display: inline-block; margin-bottom: 10px;">
     <li class="list-group-item d-flex justify-content-between"><!-- Button trigger myskater modal -->
-    <button type="button" class="btn btn-warning btn-sm" data-toggle="modal" data-target="#myskaters">
+    <button type="button" class="btn btn-warning" data-toggle="modal" data-target="#myskaters">
         My Skaters</button>
-    <a class="btn btn-success btn-sm" href="{% url 'figure_skating:add-skater' %}">Add Skater</a></li>
+    <a class="btn btn-success" href="{% url 'figure_skating:add-skater' %}">Add Skater</a></li>
     <li class="list-group-item"><!-- Button trigger mysessions modal -->
-        <button type="button" class="btn btn-warning btn-sm" data-toggle="modal" data-target="#mysessions">
+        <button type="button" class="btn btn-warning" data-toggle="modal" data-target="#mysessions">
         My Sessions</button></li>
     <li class="list-group-item"><!-- Button trigger upcomingsessions modal -->
-        <button type="button" class="btn btn-warning btn-sm" data-toggle="modal" data-target="#upcomingsessions">
+        <button type="button" class="btn btn-warning" data-toggle="modal" data-target="#upcomingsessions">
         Upcoming Figure Skating Sessions</button></li>
-    <!-- <li class="list-group-item"><a href="{% url 'figure_skating:session-register'%}" class="btn btn-success btn-sm">Sign Up Skater(s)</a></li> -->
 </ul>
 <br>
 <!-- myskaters modal -->
@@ -87,16 +90,21 @@
                     <span class="font-weight-bold text-success">Paid</span>
                 {% else %}
                     <span class="font-weight-bold text-danger">Unpaid</span>
-                    <form method="POST" action="{% url 'figure_skating:session-remove' pk=session.pk %}">
-                    {% csrf_token %}
-                    <input type="submit" value="Remove Skater from Session" class="btn btn-danger btn-sm mt-2">
-                    </form>
                 {% endif %}
-                    </li>
+                {% if session.can_remove_from_session or not session.paid %}
+                  <form method="POST" action="{% url 'figure_skating:session-remove' pk=session.pk %}">
+                  {% csrf_token %}
+                  <input type="submit" value="Remove Skater from Session*" class="btn btn-danger btn-sm mt-2">
+                  </form>
+                {% endif %}
+                </li>
             {% empty %}
             <li class="list-group-item">No skaters registered for any sessions!</li>
             {% endfor %}
             </ul>
+            <span class="small font-weight-bold">*You may remove a skater from a paid session up to 2 days prior to the session. Credits for the session will be refunded
+              to your credit balance.
+            </span>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>

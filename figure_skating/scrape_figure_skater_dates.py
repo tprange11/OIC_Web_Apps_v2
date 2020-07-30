@@ -127,12 +127,14 @@ def add_skate_dates(sessions):
 if __name__ == "__main__":
 
     the_date = date.today()
+    start_date = the_date + timedelta(days=4)
     # the_date = "2019-09-14"
 
     # Every day scrape the next seven days for Figure Skating dates
-    for x in range(35):
-        scrape_date = date.isoformat(the_date)
-        scrape_oic_schedule(scrape_date)
+    for x in range(11):
+        if the_date > start_date:
+            scrape_date = date.isoformat(the_date)
+            scrape_oic_schedule(scrape_date)
         the_date += timedelta(days=1)
 
     add_skate_dates(skate_dates)

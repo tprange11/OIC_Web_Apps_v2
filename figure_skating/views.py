@@ -12,7 +12,7 @@ from .models import FigureSkatingDate, FigureSkater, FigureSkatingSession
 from .forms import CreateFigureSkaterForm, CreateFigureSkatingSessionForm
 from programs.models import Program
 from cart.models import Cart
-from accounts.models import Profile
+from accounts.models import Profile, UserCredit
 from datetime import date
 
 
@@ -24,6 +24,7 @@ class FigureSkatingView(LoginRequiredMixin, TemplateView):
     skater_model = FigureSkater
     session_model = FigureSkatingSession
     program_model = Program
+    credit_model = UserCredit
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -37,6 +38,13 @@ class FigureSkatingView(LoginRequiredMixin, TemplateView):
         context['my_skaters'] = skaters
         max_skaters = self.program_model.objects.get(pk=3).max_skaters
         context['max_skaters'] = max_skaters
+        # Get user credit model or create one if none exists
+        try:
+            credit = self.credit_model.objects.get(user=self.request.user)
+        except ObjectDoesNotExist:
+            credit = self.credit_model.objects.create(user=self.request.user, slug=self.request.user.username)
+        context['credit'] = credit
+
         return context
 
 
@@ -82,6 +90,7 @@ class CreateFigureSkatingSessionView(LoginRequiredMixin, CreateView):
     cart_model = Cart
     group_model = Group
     profile_model = Profile
+    credit_model = UserCredit
     template_name = 'create_figure_skating_session_form.html'
     success_url = reverse_lazy('figure_skating:figure-skating')
     form_class = CreateFigureSkatingSessionForm
@@ -100,6 +109,11 @@ class CreateFigureSkatingSessionView(LoginRequiredMixin, CreateView):
             return {}
 
     def form_valid(self, form):
+
+        # Get the user credit model instance
+        user_credit = self.credit_model.objects.get(user=self.request.user)
+        credit_used = False # Used to set the message
+
         form.instance.guardian = self.request.user
         self.object = form.save(commit=False)
         try:
@@ -112,18 +126,35 @@ class CreateFigureSkatingSessionView(LoginRequiredMixin, CreateView):
         except:
             pass
         # Do the following and then save the Figure Skating Session
-        self.add_to_cart(form.instance.skater)
+        # Get price of Figure Skating program, add up or down charge for that skate date session
+        cost = self.program_model.objects.get(id=3).skater_price + FigureSkatingDate.objects.get(pk=self.object.session.pk).up_down_charge
+
+        if user_credit.balance >= cost:
+            self.object.paid = True
+            user_credit.balance -= cost
+            # Check to see if there's a $0 balance, if so, set paid to false
+            if user_credit.balance == 0:
+                user_credit.paid = False
+            user_credit.save()
+            credit_used = True
+        else:
+            self.add_to_cart(form.instance.skater, cost)
+
         self.join_figure_skating_group()
         self.add_figure_skating_email_to_profile()
         self.object.save()
-        messages.add_message(self.request, messages.SUCCESS,
-                             'Skater has been added to the session(s).\nYou must view your cart and pay for your session(s) to complete registration!')
+        if credit_used:
+            messages.add_message(self.request, messages.SUCCESS,
+                                 f'Skater has been added to the session. ${cost} in credits have been deducted from your balance.')
+        else:
+            messages.add_message(self.request, messages.SUCCESS,
+                                 'Skater has been added to the session. You must view your cart and pay for your session(s) to complete registration!')
+
         return super().form_valid(form)
 
-    def add_to_cart(self, skater):
+    def add_to_cart(self, skater, price):
         '''Adds Open Figure Skating session to shopping cart.'''
-        # Get price of Figure Skating program, add up or down charge for that skate date session
-        price = self.program_model.objects.get(id=3).skater_price + FigureSkatingDate.objects.get(pk=self.object.session.pk).up_down_charge
+
         cart = self.cart_model(customer=self.request.user, item='Figure Skating', skater_name=skater,
                                event_date=self.object.session.skate_date, event_start_time=self.object.session.start_time, amount=price)
         cart.save()
@@ -156,24 +187,40 @@ class DeleteFigureSkatingSessionView(LoginRequiredMixin, DeleteView):
     model = FigureSkatingSession
     skate_date_model = FigureSkatingDate
     skater_model = FigureSkater
+    credit_model = UserCredit
+    program_model = Program
     success_url = reverse_lazy('figure_skating:figure-skating')
 
     def delete(self, *args, **kwargs):
         '''Things that need doing once a session is removed.'''
 
-        # Clear session from the cart
-        skate_date = self.model.objects.filter(
+        credit_refund = False # Used to set the message.
+
+        if self.model.objects.get(pk=kwargs['pk']).paid:
+            # skate_date = 
+            credits_to_refund = self.program_model.objects.get(id=3).skater_price + self.model.objects.get(pk=kwargs['pk']).session.up_down_charge
+            user_credit = self.credit_model.objects.get(user=self.request.user)
+            user_credit.balance += credits_to_refund
+            user_credit.save()
+            credit_refund = True
+        else:
+            # Clear session from the cart
+            skate_date = self.model.objects.filter(
             id=kwargs['pk']).values_list('session__skate_date', flat=True)
-        skate_time = self.model.objects.filter(
-            id=kwargs['pk']).values_list('session__start_time', flat=True)
-        skater_id = self.model.objects.filter(
-            id=kwargs['pk']).values_list('skater', flat=True)
-        skater = self.skater_model.objects.get(id=skater_id[0])
-        cart_item = Cart.objects.filter(item=Program.objects.all().get(
-            id=3).program_name, event_date=skate_date[0], event_start_time=skate_time[0], skater_name=skater).delete()
+            skate_time = self.model.objects.filter(
+                id=kwargs['pk']).values_list('session__start_time', flat=True)
+            skater_id = self.model.objects.filter(
+                id=kwargs['pk']).values_list('skater', flat=True)
+            skater = self.skater_model.objects.get(id=skater_id[0])
+            cart_item = Cart.objects.filter(item=Program.objects.all().get(
+                id=3).program_name, event_date=skate_date[0], event_start_time=skate_time[0], skater_name=skater).delete()
 
         # Set success message and return
-        messages.add_message(self.request, messages.SUCCESS,
+        if credit_refund:
+            messages.add_message(self.request, messages.SUCCESS,
+                             f'Skater has been removed from the figure skating session!  ${credits_to_refund} in credit was added to your balance.')
+        else:
+            messages.add_message(self.request, messages.SUCCESS,
                              'Skater has been removed from the figure skating session!')
         return super().delete(*args, **kwargs)
 
