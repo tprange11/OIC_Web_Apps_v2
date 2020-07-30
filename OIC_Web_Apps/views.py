@@ -1,5 +1,6 @@
 from django.views.generic import TemplateView
 from django.shortcuts import render_to_response
+from django.contrib.auth.mixins import LoginRequiredMixin
 # from open_hockey.models import OpenHockeyMemberType
 from programs.models import Program
 
@@ -11,12 +12,12 @@ class OpenHockeyPage(TemplateView):
     template_name = 'info_open_hockey.html'
     # model = OpenHockeyMemberType
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        # member_types = self.model.objects.all()
-        # context['memberships'] = member_types
-        context['program_details'] = Program.objects.get(id=1)
-        return context
+    # def get_context_data(self, **kwargs):
+    #     context = super().get_context_data(**kwargs)
+    #     member_types = self.model.objects.all()
+    #     context['memberships'] = member_types
+    #     context['program_details'] = Program.objects.get(id=1)
+    #     return context
 
 
 class StickAndPuckPage(TemplateView):
@@ -37,7 +38,7 @@ class FigureSkatingPage(TemplateView):
         return context
 
 
-class WebAppsPage(TemplateView):
+class WebAppsPage(LoginRequiredMixin, TemplateView):
     template_name = 'web_apps.html'
 
 

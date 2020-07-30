@@ -110,8 +110,13 @@ class CreateFigureSkatingSessionView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
 
-        # Get the user credit model instance
-        user_credit = self.credit_model.objects.get(user=self.request.user)
+        # Get the user credit model instance, or create if it does not exist
+        try:
+            user_credit = self.credit_model.objects.get(user=self.request.user)
+        except ObjectDoesNotExist:
+            user_credit = self.credit_model.objects.create(user=self.request.user, slug=self.request.user.username)
+            user_credit.save()
+
         credit_used = False # Used to set the message
 
         form.instance.guardian = self.request.user
