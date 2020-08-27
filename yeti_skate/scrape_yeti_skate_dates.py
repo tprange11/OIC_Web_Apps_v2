@@ -74,7 +74,7 @@ def scrape_oic_schedule(date):
                 break
 
 def add_skate_dates(sessions):
-    '''Adds Yeti Skate dates and times AdultSkillsSkateDates model.'''
+    '''Adds Yeti Skate dates and times to the YetiSkateDate model.'''
     model = YetiSkateDate
 
     for session in sessions:
@@ -134,7 +134,7 @@ if __name__ == "__main__":
     if the_date.weekday() == 6:
         for x in range(6):
             scrape_date = date.isoformat(the_date)
-            if the_date.weekday() == 1 or the_date.weekday() == 4:
+            if the_date.weekday() == 0 or the_date.weekday() == 1 or the_date.weekday() == 4:
                 scrape_oic_schedule(scrape_date)
 
             the_date += timedelta(days=1)
