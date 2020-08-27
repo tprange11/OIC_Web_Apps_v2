@@ -79,7 +79,7 @@ def add_skate_dates(sessions):
     new_dates = ''
     for session in sessions:
         try:
-            data = model(skate_date=session[0], start_time=session[1], end_time=session[2], available_spots=3)
+            data = model(skate_date=session[0], start_time=session[1], end_time=session[2], available_spots=15)
             data.save()
             new_dates = True
         except IntegrityError:
@@ -88,56 +88,56 @@ def add_skate_dates(sessions):
     # print(new_dates)
     return new_dates
 
-# def send_skate_dates_email():
-#     '''Sends email to Users letting them know when Thane Storck skate dates are added.'''
-#     recipients = Profile.objects.filter(figure_skating_email=True).select_related('user')
+def send_skate_dates_email():
+    '''Sends email to Users letting them know when Figure skating dates are added.'''
+    recipients = Profile.objects.filter(figure_skating_email=True).select_related('user')
 
-#     for recipient in recipients:
-#         to_email = [recipient.user.email]
-#         from_email = 'no-reply@mg.oicwebapps.com'
-#         subject = 'New Thane Storck Skate Date Added'
+    for recipient in recipients:
+        to_email = [recipient.user.email]
+        from_email = 'no-reply@mg.oicwebapps.com'
+        subject = 'New Figure Skating Dates Added'
 
-#         # Build the plain text message
-#         text_message = f'Hi {recipient.user.first_name},\n\n'
-#         text_message += f'New Thane Storck skate dates are now available online. Sign up at the url below.\n\n'
-#         text_message += f'https://www.oicwebapps.com/web_apps/figure_skating/\n\n'
-#         text_message += f'If you no longer wish to receive these emails, log in to your account,\n'
-#         text_message += f'click on your username and change the email settings in your profile.\n\n'
-#         text_message += f'Thank you for using OICWebApps.com!\n\n'
+        # Build the plain text message
+        text_message = f'Hi {recipient.user.first_name},\n\n'
+        text_message += f'New Figure Skating dates are now available online. Sign up at the url below.\n\n'
+        text_message += f'https://www.oicwebapps.com/web_apps/figure_skating/\n\n'
+        text_message += f'If you no longer wish to receive these emails, log in to your account,\n'
+        text_message += f'click on your username and change the email settings in your profile.\n\n'
+        text_message += f'Thank you for using OICWebApps.com!\n\n'
 
-#         # Build the html message
-#         html_message = render_to_string(
-#             'figure_skating_skate_dates_email.html',
-#             {
-#                 'recipient_name': recipient.user.first_name,
-#             }
-#         )
+        # Build the html message
+        html_message = render_to_string(
+            'figure_skating_dates_email.html',
+            {
+                'recipient_name': recipient.user.first_name,
+            }
+        )
 
-#         # Send email to each recipient separately
-#         try:
-#             mail = EmailMultiAlternatives(
-#                 subject, text_message, from_email, to_email
-#             )
-#             mail.attach_alternative(html_message, 'text/html')
-#             mail.send()
-#         except:
-#             return
+        # Send email to each recipient separately
+        try:
+            mail = EmailMultiAlternatives(
+                subject, text_message, from_email, to_email
+            )
+            mail.attach_alternative(html_message, 'text/html')
+            mail.send()
+        except:
+            return
 
 
 if __name__ == "__main__":
 
     the_date = date.today()
-    start_date = the_date + timedelta(days=1)
+    # start_date = the_date + timedelta(days=1)
     # the_date = "2019-09-14"
 
     # Every day scrape the next seven days for Figure Skating dates
-    for x in range(22):
-        if the_date > start_date:
-            scrape_date = date.isoformat(the_date)
-            scrape_oic_schedule(scrape_date)
+    # if the_date.weekday() == 3:
+    for x in range(34):
+        scrape_date = date.isoformat(the_date)
+        scrape_oic_schedule(scrape_date)
         the_date += timedelta(days=1)
 
     add_skate_dates(skate_dates)
 
     # if len(skate_dates) != 0:
-    #     send_email = add_skate_dates(skate_dates)
+    #     send_skate_dates_email()
