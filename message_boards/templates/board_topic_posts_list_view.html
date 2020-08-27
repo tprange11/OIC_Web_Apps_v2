@@ -11,8 +11,8 @@
 {% for post in posts %}
 <div class="post rounded my-2">
     <div class="row p-2">
-        <div class="col-md-3 col-12">{{ post.created_by }} <span class="post-count small">Posts: {{ post.created_by.posts.count }}</span></div>
-        <div class="col-md-9 col-12 mt-md-0 mt-2"><span class="last-updated small">Last Updated: {{ post.updated_at }}</span></div>
+        <div class="col-md-4 col-12">{{ post.created_by }} <span class="post-count small">Posts: {{ post.created_by.posts.count }}</span></div>
+        <div class="col-md-8 col-12 mt-md-0 mt-2"><span class="last-updated small">Last Updated: {{ post.updated_at }}</span></div>
     </div>
     <div class="row p-2">
         <div class="col message">

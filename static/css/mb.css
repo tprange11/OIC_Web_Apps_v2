@@ -163,6 +163,7 @@
 .post-count,
 .last-updated,
 #edit-post {
+    display: inline-block;
     background-color: var(--primary-color);
     color: chartreuse;
     border-radius: 5px;

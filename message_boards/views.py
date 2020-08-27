@@ -61,10 +61,6 @@ class BoardTopicCreateView(LoginRequiredMixin, CreateView):
             created_by=user,
             updated_at=timezone.now()
         )
-        try:
-            pass
-        except:
-            pass
         self.success_url = reverse_lazy('message_boards:topic-post-list', kwargs={'slug': slug, 'pk': topic.pk})
         return super().form_valid(form)
 
