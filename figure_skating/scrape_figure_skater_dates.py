@@ -130,14 +130,14 @@ if __name__ == "__main__":
     # start_date = the_date + timedelta(days=1)
     # the_date = "2019-09-14"
 
-    # Every day scrape the next seven days for Figure Skating dates
-    # if the_date.weekday() == 3:
-    for x in range(34):
-        scrape_date = date.isoformat(the_date)
-        scrape_oic_schedule(scrape_date)
-        the_date += timedelta(days=1)
+    # Every Friday scrape the next 12 days for Figure Skating dates
+    if the_date.weekday() == 4:
+        for x in range(12):
+            scrape_date = date.isoformat(the_date)
+            scrape_oic_schedule(scrape_date)
+            the_date += timedelta(days=1)
 
     add_skate_dates(skate_dates)
 
-    # if len(skate_dates) != 0:
-    #     send_skate_dates_email()
+    if len(skate_dates) != 0:
+        send_skate_dates_email()
