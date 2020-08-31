@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
-{% block title %}<title>Upcoming Yeti Skate Sessions</title>{% endblock title %}
+{% block title %}<title>Upcoming Bald Eagles Sessions</title>{% endblock title %}
 {% block content %}
-    <h4>Upcoming Yeti Skate Sessions</h4>
+    <h4>Upcoming Bald Eagles Sessions</h4>
     <p>Choose a date below to see who has registered and paid for the skate.</p>
     <ul class="list-group" style="display: inline-block; margin-bottom: 10px;">
         {% for date in skate_dates %}
@@ -30,7 +30,7 @@
                 </div>
             </div>
         {% empty %}
-        <li class="list-group-item" style="padding: 5px 15px;">There are no Yeti Skate sessions available to print.</li>
+        <li class="list-group-item" style="padding: 5px 15px;">There are no Bald Eagles sessions available to print.</li>
         {% endfor %}
     </ul>
 {% endblock content %}
