@@ -72,6 +72,9 @@
                             {% if in_group_yeti_skate %}
                             <a class="dropdown-item" href="{% url 'yeti_skate:yeti-skate' %}">Yeti Skate</a>
                             {% endif %}
+                            {% if in_group_bald_eagles %}
+                            <a class="dropdown-item" href="{% url 'bald_eagles:bald-eagles' %}">Bald Eagles</a>
+                            {% endif %}
                             <a class="dropdown-item" href="{% url 'stickandpuck:stick-and-puck' %}">Stick and Puck</a>
                             <a class="dropdown-item" href="{% url 'figure_skating:figure-skating' %}">Figure Skating</a>
                             {% if in_group_mike_schultz %}
@@ -82,6 +85,9 @@
                             {% endif %}
                             {% if in_group_womens_hockey %}
                             <a class="dropdown-item" href="{% url 'womens_hockey:womens-hockey' %}">Women's Hockey</a>
+                            {% endif %}
+                            {% if in_group_lady_hawks %}
+                            <a class="dropdown-item" href="{% url 'lady_hawks:lady-hawks' %}">Lady Hawks</a>
                             {% endif %}
                             {% if user.is_staff %}
                             <a class="dropdown-item" href="{% url 'schedule:choose-rink' %}">Rink Schedule</a>
@@ -138,6 +144,10 @@
                                 <a class="dropdown-item" href="{% url 'mike_schultz:mike-schultz-sessions' %}">Mike
                                     Schultz Sessions</a>
                                 <a class="dropdown-item" href="{% url 'yeti_skate:yeti-skate-sessions' %}">Yeti Skate
+                                    Sessions</a>
+                                <a class="dropdown-item" href="{% url 'bald_eagles:bald-eagles-skate-sessions' %}">Bald Eagles
+                                    Sessions</a>
+                                <a class="dropdown-item" href="{% url 'lady_hawks:lady-hawks-sessions' %}">Lady Hawks
                                     Sessions</a>
                                 <a class="dropdown-item"
                                     href="{% url 'figure_skating:figure-skating-sessions' %}">Figure Skating

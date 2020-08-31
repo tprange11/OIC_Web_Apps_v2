@@ -13,7 +13,7 @@
 </div>
 {% endfor %}
 {% endif %}
-{% if in_group_mike_schultz or in_group_womens_hockey %}
+{% if in_group_mike_schultz or in_group_womens_hockey or in_group_lady_hawks %}
 <button type="button" class="btn btn-primary btn-sm mb-3" data-toggle="modal" data-target="#mySkatersModal">My
     Skaters</button>
 <!-- My Skater Modal -->
@@ -58,7 +58,7 @@
 </div>
 <!-- End My Skater Modal -->
 {% endif %}
-{% if in_group_yeti_skate or in_group_adult_skills or in_group_mike_schultz or in_group_womens_hockey or in_group_figure_skating %}
+{% if in_group_yeti_skate or in_group_adult_skills or in_group_mike_schultz or in_group_womens_hockey or in_group_figure_skating or in_group_bald_eagles or in_group_lady_hawks or in_group_thane_storck %}
 <p class="mb-0">
     <button class="btn btn-primary btn-sm mb-3" href="{% url 'accounts:purchase-credit' slug=user.username %}">Credit Balance: ${{ credit.balance }}</button>
     <button type="button" class="btn btn-info btn-sm mb-3" data-toggle="modal" data-target="#myCreditModal"><i class="fas fa-question-circle fa-lg"></i></button>
@@ -95,6 +95,12 @@
     {% endif %}
     {% if not in_group_figure_skating %}
     document.querySelector('#id_figure_skating_email').parentNode.parentNode.style.display = 'none';
+    {% endif %}
+    {% if not in_group_bald_eagles %}
+    document.querySelector('#id_bald_eagles_email').parentNode.parentNode.style.display = 'none';
+    {% endif %}
+    {% if not in_group_lady_hawks %}
+    document.querySelector('#id_lady_hawks_email').parentNode.parentNode.style.display = 'none';
     {% endif %}
 </script>
 {% endblock content %}

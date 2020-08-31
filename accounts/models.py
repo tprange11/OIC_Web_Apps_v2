@@ -26,6 +26,8 @@ class Profile(models.Model):
     mike_schultz_email = models.BooleanField(default=False)
     yeti_skate_email = models.BooleanField(default=False)
     womens_hockey_email = models.BooleanField(default=False)
+    bald_eagles_email = models.BooleanField(default=False)
+    lady_hawks_email = models.BooleanField(default=False)
     slug = models.SlugField(unique=True, null=False)
 
     def get_absolute_url(self):

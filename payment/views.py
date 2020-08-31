@@ -18,6 +18,8 @@ from adult_skills.models import AdultSkillsSkateSession
 from mike_schultz.models import MikeSchultzSkateSession
 from yeti_skate.models import YetiSkateSession
 from womens_hockey.models import WomensHockeySkateSession
+from bald_eagles.models import BaldEaglesSession
+from lady_hawks.models import LadyHawksSkateSession
 from accounts.models import UserCredit
 
 # Create your views here.
@@ -71,6 +73,8 @@ def process_payment(request, **kwargs):
     mike_schultz_sessions_model = MikeSchultzSkateSession
     yeti_sessions_model = YetiSkateSession
     womens_hockey_sessions_model = WomensHockeySkateSession
+    bald_eagles_sessions_model = BaldEaglesSession
+    lady_hawks_sessions_model = LadyHawksSkateSession
     user_credit_model = UserCredit
     today = date.today()
 
@@ -103,14 +107,8 @@ def process_payment(request, **kwargs):
         # Assemble the body for the create_payment() api function
         idempotency_key = str(uuid.uuid1())
         amount = {'amount': total, 'currency': 'USD'}
-        # Create the note depending on what the user is paying for....
-        # if note['Open Hockey'] != 0 and note['Stick and Puck'] != 0:
-        #     note = f"Open Hockey ${note['Open Hockey']}, Stick and Puck ${note['Stick and Puck']}"
-        # elif note['Open Hockey'] == 0:
-        #     note = f"Stick and Puck ${note['Stick and Puck']}"
-        # else:
-        #     note = f"Open Hockey ${note['Open Hockey']}"
 
+        # Create the note depending on what the user is paying for....
         payment_note = ''
         for k, v in note.items():
             if v != 0:
@@ -146,6 +144,8 @@ def process_payment(request, **kwargs):
                 mike_schultz_sessions_model.objects.filter(user=request.user).update(paid=True)
                 yeti_sessions_model.objects.filter(skater=request.user).update(paid=True)
                 womens_hockey_sessions_model.objects.filter(user=request.user).update(paid=True)
+                bald_eagles_sessions_model.objects.filter(skater=request.user).update(paid=True)
+                lady_hawks_sessions_model.objects.filter(user=request.user).update(paid=True)
             except IntegrityError:
                 pass
 

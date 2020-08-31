@@ -14,6 +14,8 @@ from adult_skills.models import AdultSkillsSkateDate, AdultSkillsSkateSession
 from mike_schultz.models import MikeSchultzSkateDate, MikeSchultzSkateSession
 from yeti_skate.models import YetiSkateDate, YetiSkateSession
 from womens_hockey.models import WomensHockeySkateDate, WomensHockeySkateSession
+from bald_eagles.models import BaldEaglesSkateDate, BaldEaglesSession
+from lady_hawks.models import LadyHawksSkateDate, LadyHawksSkateSession
 from accounts.models import UserCredit
 
 # Create your views here.
@@ -66,6 +68,11 @@ class RemoveItemFromCartView(LoginRequiredMixin, DeleteView):
     yeti_skate_date_model = YetiSkateDate
     wh_skate_model = WomensHockeySkateSession
     wh_skate_date_model = WomensHockeySkateDate
+    be_skate_model = BaldEaglesSession
+    be_skate_date_model = BaldEaglesSkateDate
+    lh_skate_model = LadyHawksSkateSession
+    lh_skate_date_model = LadyHawksSkateDate
+
     user_credit_model = UserCredit
     success_url = reverse_lazy('cart:shopping-cart')
 
@@ -87,7 +94,7 @@ class RemoveItemFromCartView(LoginRequiredMixin, DeleteView):
         elif cart_item.item == Program.objects.all().get(id=6).program_name: #'Mike Schultz':
             skate_date = self.ms_skate_date_model.objects.filter(skate_date=cart_item.event_date)
             skater_name = cart_item.skater_name.split(' ')
-            skater_id = ChildSkater.objects.filter(first_name=skater_name[0], last_name=skater_name[1])
+            skater_id = ChildSkater.objects.filter(first_name=skater_name[0], last_name=skater_name[1], user=self.request.user)
             self.ms_model.objects.filter(skater=skater_id[0], skate_date=skate_date[0]).delete()
         elif cart_item.item == Program.objects.all().get(id=7).program_name: # Yeti Skate
             skate_date = self.yeti_skate_date_model.objects.filter(skate_date=cart_item.event_date)
@@ -100,10 +107,18 @@ class RemoveItemFromCartView(LoginRequiredMixin, DeleteView):
         elif cart_item.item == Program.objects.all().get(id=8).program_name: #'Womens Hockey':
             skate_date = self.wh_skate_date_model.objects.filter(skate_date=cart_item.event_date)
             skater_name = cart_item.skater_name.split(' ')
-            skater_id = ChildSkater.objects.filter(first_name=skater_name[0], last_name=skater_name[1])
+            skater_id = ChildSkater.objects.filter(first_name=skater_name[0], last_name=skater_name[1], user=self.request.user)
             self.wh_skate_model.objects.filter(skater=skater_id[0], skate_date=skate_date[0]).delete()
-        elif cart_item.item == 'OH Membership':
-            self.oh_member_model.objects.filter(member=request.user).delete()
+        elif cart_item.item == Program.objects.all().get(id=9).program_name: # Bald Eagles
+            skate_date = self.be_skate_date_model.objects.filter(skate_date=cart_item.event_date)
+            self.be_skate_model.objects.filter(skater=request.user, session_date=skate_date[0]).delete()
+        elif cart_item.item == Program.objects.all().get(id=10).program_name: #'Lady Hawks':
+            skate_date = self.lh_skate_date_model.objects.filter(skate_date=cart_item.event_date)
+            skater_name = cart_item.skater_name.split(' ')
+            skater_id = ChildSkater.objects.filter(first_name=skater_name[0], last_name=skater_name[1], user=self.request.user)
+            self.lh_skate_model.objects.filter(skater=skater_id[0], skate_date=skate_date[0]).delete()
+        # elif cart_item.item == 'OH Membership':
+        #     self.oh_member_model.objects.filter(member=request.user).delete()
         elif cart_item.item == 'User Credits':
             self.user_credit_model.objects.filter(user=request.user).update(pending=0)
 
