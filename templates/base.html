@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 {% load static %}
-<html lang="en">
+<html lang="en" class="vh-100">
 
 <head>
     <meta charset="UTF-8">
@@ -127,6 +127,11 @@
                             </div>
                         </li>
                         {% endif %}
+                        {% if not user.is_staff %}
+                        <li class="nav-item">
+                            <a class="nav-link" rel="noopener noreferrer" href="{% url 'contact:contact-form' %}">Contact</a>
+                        </li>
+                        {% endif %}
                         {% if user.is_superuser %}
                         <li class="nav-item">
                             <a class="nav-link" target="_blank" rel="noopener noreferrer" href="/admin">Admin</a>
@@ -188,9 +193,15 @@
         </div>
     </div>
     {% block footer %}
+    <!-- Footer -->
     <div class="container footer mt-3">
-        <p>Created by Brian Christensen for the Ozaukee Ice Center</p>
+        <div class="row">
+            <div class="col text-center">
+                <p>Created by Brian Christensen for the Ozaukee Ice Center</p>
+            </div>
+        </div>
     </div>
+    <!-- End Footer -->
     {% endblock footer %}
     <script src="{% static 'js/promise.js' %}"></script>
     <script src="{% static 'js/fetch.js' %}"></script>

@@ -1,4 +1,4 @@
-from django.shortcuts import render, reverse
+from django.shortcuts import reverse
 from django.views.generic import FormView
 from django.contrib.auth.models import Group
 from django.contrib.auth.mixins import LoginRequiredMixin

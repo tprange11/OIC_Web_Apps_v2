@@ -51,6 +51,7 @@ urlpatterns = [
     path('web_apps/womens_hockey/', include('womens_hockey.urls')),
     path('web_apps/bald_eagles/', include('bald_eagles.urls')),
     path('web_apps/lady_hawks/', include('lady_hawks.urls')),
+    path('web_apps/contact/', include('contact.urls')),
     path('web_apps/schedule/', include('schedule.urls')),
     path('serviceworker.js', (TemplateView.as_view(
         template_name='serviceworker.js',

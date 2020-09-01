@@ -58,7 +58,6 @@
 </div>
 <!-- End My Skater Modal -->
 {% endif %}
-{% if in_group_yeti_skate or in_group_adult_skills or in_group_mike_schultz or in_group_womens_hockey or in_group_figure_skating or in_group_bald_eagles or in_group_lady_hawks or in_group_thane_storck %}
 <p class="mb-0">
     <button class="btn btn-primary btn-sm mb-3" href="{% url 'accounts:purchase-credit' slug=user.username %}">Credit Balance: ${{ credit.balance }}</button>
     <button type="button" class="btn btn-info btn-sm mb-3" data-toggle="modal" data-target="#myCreditModal"><i class="fas fa-question-circle fa-lg"></i></button>
@@ -69,7 +68,6 @@
     {% endif %}
 </p>
 {% include 'accounts/user_credits_modal_include.html' %}
-{% endif %}
 <p><a href="{% url 'payment:payments-list' %}" class="btn btn-primary btn-sm">View Payment History</a></p>
 <form method="POST" class="border rounded p-2">
     <h5>Email Preferences:</h5>
