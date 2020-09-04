@@ -85,7 +85,7 @@ def add_skate_dates(sessions):
         except IntegrityError:
             new_dates = False
             continue
-    # print(new_dates)
+
     return new_dates
 
 def send_skate_dates_email():
@@ -129,6 +129,7 @@ if __name__ == "__main__":
     the_date = date.today()
     # start_date = the_date + timedelta(days=1)
     # the_date = "2019-09-14"
+    send_email = False
 
     # Every Friday scrape the next 12 days for Figure Skating dates
     if the_date.weekday() == 4:
@@ -137,7 +138,8 @@ if __name__ == "__main__":
             scrape_oic_schedule(scrape_date)
             the_date += timedelta(days=1)
 
-    add_skate_dates(skate_dates)
-
     if len(skate_dates) != 0:
+        send_email = add_skate_dates(skate_dates)
+
+    if send_email:
         send_skate_dates_email()
