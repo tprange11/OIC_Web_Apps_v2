@@ -19,6 +19,9 @@ class YetiSkateDate(models.Model):
     def __str__(self):
         return f"{self.skate_date}"
 
+    def skates_a_go(skate_date):
+        return YetiSkateSession.objects.filter(skate_date=skate_date, goalie=False).count() >= 5
+
 
 class YetiSkateSession(models.Model):
     '''Model that stores skate session data.'''

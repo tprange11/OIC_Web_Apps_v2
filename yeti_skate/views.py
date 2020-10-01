@@ -56,6 +56,7 @@ class YetiSkateDateListView(LoginRequiredMixin, ListView):
         # print(skater_sessions)
         # If user is already signed up for the skate, add key value pair to disable button
         for item in queryset:
+            item['skates_a_go'] = self.model.skates_a_go(skate_date=item['pk'])
             for session in skater_sessions:
                 # If the session date and skate date match and paid is True, add disabled = True to queryset
                 if item['pk'] == session[0] and session[2] == True:
