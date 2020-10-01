@@ -107,10 +107,10 @@ def scrape_schedule(request):
     scrape_oic_schedule(scrape_date)
     ### UNCOMMENT DURING HOCKEY SEASON ###
     # Scrape OYHA teams daily
-    try:
-        scrape_oyha_teams(scrape_date)
-    except Exception as e:
-        print(f"{e}, scrape_oyha_teams()")
+    # try:
+    #     scrape_oyha_teams(scrape_date)
+    # except Exception as e:
+    #     print(f"{e}, scrape_oyha_teams()")
 
     # If it is Friday, scrape OWHL teams
     # if date.weekday(date.today()) == 4:
