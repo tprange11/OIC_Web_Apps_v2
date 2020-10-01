@@ -145,6 +145,7 @@ def scrape_owhl_teams(the_date):
     dates = soup.find_all(class_="activityGroupName")
 
     # Loop through and find today's date then find the next table with the days events
+    table = None
     for each in dates:
         if today_string in each.get_text():
             table = each.find_next("table")
@@ -227,10 +228,10 @@ if __name__ == "__main__":
     scrape_oic_schedule(scrape_date)
     ### UNCOMMENT DURING HOCKEY SEASON ###
     # Scrape OYHA teams daily
-    try:
-        scrape_oyha_teams(scrape_date)
-    except Exception as e:
-        print(f"{e}, scrape_oyha_teams()")
+    # try:
+    #     scrape_oyha_teams(scrape_date)
+    # except Exception as e:
+    #     print(f"{e}, scrape_oyha_teams()")
 
     # If it is Friday, scrape OWHL teams
     # if date.weekday(date.today()) == 4:
