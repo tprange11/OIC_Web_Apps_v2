@@ -56,7 +56,7 @@ class YetiSkateDateListView(LoginRequiredMixin, ListView):
         # print(skater_sessions)
         # If user is already signed up for the skate, add key value pair to disable button
         for item in queryset:
-            item['skates_a_go'] = self.model.skates_a_go(skate_date=item['pk'])
+            item['registered_skaters'] = self.model.registered_skaters(skate_date=item['pk'])
             for session in skater_sessions:
                 # If the session date and skate date match and paid is True, add disabled = True to queryset
                 if item['pk'] == session[0] and session[2] == True:
@@ -128,7 +128,8 @@ class CreateYetiSkateSessionView(LoginRequiredMixin, CreateView):
         # Get the user credit model instance
         user_credit = UserCredit.objects.get(user=self.request.user)
         credit_used = False # Used to set the message
-        
+        # Get the program skater cost
+        cost = self.program_model.objects.get(id=7).skater_price        
         self.object = form.save(commit=False)
 
         try:
@@ -141,8 +142,7 @@ class CreateYetiSkateSessionView(LoginRequiredMixin, CreateView):
                 messages.add_message(self.request, messages.ERROR, 'Sorry, skater spots are full!')
                 return redirect('yeti_skate:yeti-skate')
             # If spots are not full do the following
-            # Get the program skater cost
-            cost = self.program_model.objects.get(id=7).skater_price
+            
             if self.request.user.is_staff or self.object.goalie: # Employees and goalies skate for free
                 self.object.paid = True
             elif user_credit.balance >= cost and user_credit.paid:

@@ -2,6 +2,7 @@ from django.db import models, IntegrityError
 from django.contrib.auth import get_user_model
 User = get_user_model()
 
+
 class YetiSkateDate(models.Model):
     '''Model holds dates for the Yeti Skate.'''
 
@@ -19,8 +20,11 @@ class YetiSkateDate(models.Model):
     def __str__(self):
         return f"{self.skate_date}"
 
-    def skates_a_go(skate_date):
-        return YetiSkateSession.objects.filter(skate_date=skate_date, goalie=False).count() >= 5
+    def registered_skaters(skate_date):
+        '''Returns the number of skaters and goalies registered for a skate date.'''
+        num_goalies = YetiSkateSession.objects.filter(skate_date=skate_date, goalie=True).count()
+        num_skaters = YetiSkateSession.objects.filter(skate_date=skate_date, goalie=False).count()
+        return {'num_skaters': num_skaters, 'num_goalies': num_goalies}
 
 
 class YetiSkateSession(models.Model):
