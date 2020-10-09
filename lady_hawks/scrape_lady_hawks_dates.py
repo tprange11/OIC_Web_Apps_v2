@@ -76,6 +76,7 @@ def scrape_oic_schedule(date):
 def add_skate_dates(sessions):
     '''Adds Lady Hawks skate dates and times AdultSkillsSkateDates model.'''
     model = LadyHawksSkateDate
+    new_dates = False
 
     for session in sessions:
         try:
