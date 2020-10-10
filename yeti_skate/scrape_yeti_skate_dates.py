@@ -76,6 +76,7 @@ def scrape_oic_schedule(date):
 def add_skate_dates(sessions):
     '''Adds Yeti Skate dates and times to the YetiSkateDate model.'''
     model = YetiSkateDate
+    new_dates = False
 
     for session in sessions:
         try:
@@ -83,7 +84,6 @@ def add_skate_dates(sessions):
             data.save()
             new_dates = True
         except IntegrityError:
-            new_dates = False
             continue
     # print(new_dates)
     return new_dates
@@ -134,7 +134,7 @@ if __name__ == "__main__":
     if the_date.weekday() == 6:
         for x in range(6):
             scrape_date = date.isoformat(the_date)
-            if the_date.weekday() == 0 or the_date.weekday() == 1 or the_date.weekday() == 4:
+            if the_date.weekday() == 2 or the_date.weekday() == 4:
                 scrape_oic_schedule(scrape_date)
 
             the_date += timedelta(days=1)
