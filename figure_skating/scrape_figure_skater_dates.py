@@ -56,10 +56,13 @@ def scrape_oic_schedule(date):
     browser["ctl00$ContentPlaceHolder1$cboFacility"] = 'All items checked'
 
     response = browser.submit_selected()
-    # print(response.text)
+    html = response.text.replace('</br>', '')
     browser.close()
 
-    soup = BeautifulSoup(response.text, 'html.parser')
+    soup = BeautifulSoup(html, 'html.parser')
+    for br in soup.find_all('br'):
+        br.replace_with('')
+
     try:
         rows = soup.find(class_="clear listTable").find_all('tr')
     except AttributeError:
@@ -71,7 +74,6 @@ def scrape_oic_schedule(date):
         if len(cols) > 2:
             if cols[4].get_text().strip() == "Open Figure Skating":
                 skate_dates.append([date, cols[0].get_text().strip(), cols[1].get_text().strip()])
-                # break
 
 def add_skate_dates(sessions):
     '''Adds Figure Skating skate dates and times SkateDates model.'''
@@ -127,19 +129,21 @@ def send_skate_dates_email():
 if __name__ == "__main__":
 
     the_date = date.today()
-    # start_date = the_date + timedelta(days=1)
-    # the_date = "2019-09-14"
+    # the_date = date.today() + timedelta(days=16)
     send_email = False
 
     # Every Friday scrape the next 12 days for Figure Skating dates
-    if the_date.weekday() == 4:
-        for x in range(12):
+    # if the_date.weekday() == 4:
+    for x in range(47):
+        if the_date.weekday() == 4 or the_date.weekday() == 5:
+            # print(the_date)
             scrape_date = date.isoformat(the_date)
             scrape_oic_schedule(scrape_date)
-            the_date += timedelta(days=1)
+        the_date += timedelta(days=1)
 
     if len(skate_dates) != 0:
-        send_email = add_skate_dates(skate_dates)
+        # send_email = add_skate_dates(skate_dates)
+        add_skate_dates(skate_dates)
 
-    if send_email:
-        send_skate_dates_email()
+    # if send_email:
+    #     send_skate_dates_email()
