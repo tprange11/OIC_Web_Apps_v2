@@ -107,24 +107,24 @@ def scrape_schedule(request):
     scrape_oic_schedule(scrape_date)
     ### UNCOMMENT DURING HOCKEY SEASON ###
     # Scrape OYHA teams daily
-    # try:
-    #     scrape_oyha_teams(scrape_date)
-    # except Exception as e:
-    #     print(f"{e}, scrape_oyha_teams()")
+    try:
+        scrape_oyha_teams(scrape_date)
+    except Exception as e:
+        print(f"{e}, scrape_oyha_teams()")
 
     # If it is Friday, scrape OWHL teams
-    # if date.weekday(date.today()) == 4:
-    #     try:
-    #         scrape_owhl_teams(scrape_date)
-    #     except Exception as e:
-    #         print(f"{e}, scrape_owhl_teams()")
+    if date.weekday(date.today()) == 4:
+        try:
+            scrape_owhl_teams(scrape_date)
+        except Exception as e:
+            print(f"{e}, scrape_owhl_teams()")
 
     # If it is Sunday, scrape OCHL teams
-    # if date.weekday(date.today()) == 6:
-    #     try:
-    #         scrape_ochl_teams()
-    #     except Exception as e:
-    #         print(f"{e}, scrape_ochl_teams()")
+    if date.weekday(date.today()) == 6:
+        try:
+            scrape_ochl_teams()
+        except Exception as e:
+            print(f"{e}, scrape_ochl_teams()")
 
     if len(team_events) != 0:
         for item in team_events:
