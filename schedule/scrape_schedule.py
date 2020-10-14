@@ -62,10 +62,10 @@ def scrape_oic_schedule(date):
     browser["ctl00$ContentPlaceHolder1$cboFacility"] = '7 items checked'
 
     response = browser.submit_selected()
-    # print(response.text)
+    html = response.text.replace('</br>', '')
     browser.close()
 
-    soup = BeautifulSoup(response.text, 'html.parser')
+    soup = BeautifulSoup(html, 'html.parser')
     try:
         rows = soup.find(class_="clear listTable").find_all('tr')
     except AttributeError:
@@ -136,7 +136,7 @@ def scrape_owhl_teams(the_date):
     today_split = the_date.split("-")
     today_string = f"{months[today_split[1]]} {today_split[2].lstrip('0')}, {today_split[0]}"
 
-    url = "https://ozaukeeicecenter.maxgalaxy.net/LeagueScheduleList.aspx?ID=4"
+    url = "https://ozaukeeicecenter.maxgalaxy.net/LeagueScheduleList.aspx?ID=17"
     response = requests.get(url)
 
     # Request the web page
@@ -165,7 +165,7 @@ def scrape_owhl_teams(the_date):
 def scrape_ochl_teams():
     '''Scrapes OCHL Schedule website for teams.'''
 
-    url = "https://www.ozaukeeicecenter.org/schedule/day/league_instance/102447?subseason=633604"
+    url = "https://www.ozaukeeicecenter.org/schedule/day/league_instance/128332?subseason=714101"
     response = requests.get(url)
 
     soup = BeautifulSoup(response.text, "html.parser")
@@ -218,6 +218,10 @@ def scrape_oyha_teams(the_date):
         else:
             team_events.append([cols[0].get_text().strip(), cols[6].get_text().strip(), cols[4].get_text().strip(), cols[3].get_text().strip()])
 
+    for event in team_events:
+        if event[1] == '':
+            event[1] = 'OYHA'
+
 
 if __name__ == "__main__":
     
@@ -228,24 +232,24 @@ if __name__ == "__main__":
     scrape_oic_schedule(scrape_date)
     ### UNCOMMENT DURING HOCKEY SEASON ###
     # Scrape OYHA teams daily
-    # try:
-    #     scrape_oyha_teams(scrape_date)
-    # except Exception as e:
-    #     print(f"{e}, scrape_oyha_teams()")
+    try:
+        scrape_oyha_teams(scrape_date)
+    except Exception as e:
+        print(f"{e}, scrape_oyha_teams()")
 
     # If it is Friday, scrape OWHL teams
-    # if date.weekday(date.today()) == 4:
-    #     try:
-    #         scrape_owhl_teams(scrape_date)
-    #     except Exception as e:
-    #         print(f"{e}, scrape_owhl_teams()")
+    if date.weekday(date.today()) == 4:
+        try:
+            scrape_owhl_teams(scrape_date)
+        except Exception as e:
+            print(f"{e}, scrape_owhl_teams()")
 
     # If it is Sunday, scrape OCHL teams
-    # if date.weekday(date.today()) == 6:
-    #     try:
-    #         scrape_ochl_teams()
-    #     except Exception as e:
-    #         print(f"{e}, scrape_ochl_teams()")
+    if date.weekday(date.today()) == 6:
+        try:
+            scrape_ochl_teams()
+        except Exception as e:
+            print(f"{e}, scrape_ochl_teams()")
 
     if len(team_events) != 0:
         for item in team_events:
