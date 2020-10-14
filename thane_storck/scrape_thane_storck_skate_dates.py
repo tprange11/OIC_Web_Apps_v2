@@ -55,10 +55,10 @@ def scrape_oic_schedule(date):
     browser["ctl00$ContentPlaceHolder1$cboFacility"] = 'All items checked'
 
     response = browser.submit_selected()
-    # print(response.text)
+    html = response.text.replace('</br>', '')
     browser.close()
 
-    soup = BeautifulSoup(response.text, 'html.parser')
+    soup = BeautifulSoup(html, 'html.parser')
     try:
         rows = soup.find(class_="clear listTable").find_all('tr')
     except AttributeError:
@@ -130,12 +130,12 @@ if __name__ == "__main__":
     send_email = False
 
     # Every Monday scrape the next four weeks for Saturday Thane Storck skate dates
-    if the_date.weekday() == 0:
-        for x in range(28):
-            scrape_date = date.isoformat(the_date)
-            if the_date.weekday() == 5:
-                scrape_oic_schedule(scrape_date)
-            the_date += timedelta(days=1)
+    # if the_date.weekday() == 0:
+    for x in range(28):
+        scrape_date = date.isoformat(the_date)
+        if the_date.weekday() == 5:
+            scrape_oic_schedule(scrape_date)
+        the_date += timedelta(days=1)
 
     if len(skate_dates) != 0:
         send_email = add_skate_dates(skate_dates)
