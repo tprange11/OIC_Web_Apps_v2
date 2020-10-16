@@ -62,7 +62,7 @@ def scrape_oic_schedule(date):
     browser["ctl00$ContentPlaceHolder1$cboFacility"] = '7 items checked'
 
     response = browser.submit_selected()
-    html = response.text.replace('</br>', '')
+    html = response.text.replace('</br>', '').replace('<br>', '')
     browser.close()
 
     soup = BeautifulSoup(html, 'html.parser')
@@ -180,7 +180,7 @@ def scrape_ochl_teams():
     # Get the data from the pertinent table cells: home, visitor, rink, start time
     for row in rows:
         cols = row.find_all("td")
-        team_events.append([cols[5].find("span").get_text().strip(" CST"), cols[2].find("a").get_text(), cols[0].find("a").get_text(), cols[4].find("div").get_text().strip()])
+        team_events.append([cols[5].find("span").get_text().strip(" CDT"), cols[2].find("a").get_text(), cols[0].find("a").get_text(), cols[4].find("div").get_text().strip()])
 
 
 def scrape_oyha_teams(the_date):

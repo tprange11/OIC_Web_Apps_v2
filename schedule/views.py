@@ -34,6 +34,10 @@ class RinkScheduleListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['rink'] = self.kwargs['rink'] # Send rink back to page for display purposes
+        north_start_times = []
+        south_start_times = []
+        north_end_times = []
+        south_end_times = []
 
         # Return event start times as context
         start_times = self.model.objects.values('start_time').filter(start_time__gte=datetime.now()).order_by('start_time')
@@ -125,6 +129,7 @@ def scrape_schedule(request):
             scrape_ochl_teams()
         except Exception as e:
             print(f"{e}, scrape_ochl_teams()")
+    ### UNCOMMENT DURING HOCKEY SEASON ###
 
     if len(team_events) != 0:
         for item in team_events:

@@ -55,7 +55,7 @@ def scrape_oic_schedule(date):
     browser["ctl00$ContentPlaceHolder1$cboFacility"] = 'All items checked'
 
     response = browser.submit_selected()
-    html = response.text.replace('</br>', '')
+    html = response.text.replace('</br>', '').replace('<br>', '')
     browser.close()
 
     soup = BeautifulSoup(html, 'html.parser')
