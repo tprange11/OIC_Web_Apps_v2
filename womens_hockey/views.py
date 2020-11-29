@@ -37,13 +37,15 @@ class WomensHockeySkateDateListView(LoginRequiredMixin, ListView):
             pass
 
         try:
+            # If a profile already exists, do nothing
+            profile = self.profile_model.objects.get(
+                user=self.request.user)
+        except ObjectDoesNotExist:
             # If a profile already exists, set womens_hockey_email to True
             profile = self.profile_model.objects.get(
                 user=self.request.user)
             profile.womens_hockey_email = True
             profile.save()
-        except ObjectDoesNotExist:
-            pass
 
         return super().get(request, *args, **kwargs)
 
@@ -182,13 +184,12 @@ class CreateWomensHockeySkateSessionView(LoginRequiredMixin, CreateView):
         # If a profile already exists, do nothing
         try:
             self.profile_model.objects.get(user=self.request.user)
-            return
         # If no profile exists, add one and set open_hockey_email to True
         except ObjectDoesNotExist:
             profile = self.profile_model(
                 user=self.request.user, slug=self.request.user.id, womens_hockey_email=True)
             profile.save()
-            return
+        return
 
 
 class DeleteWomensHockeySkateSessionView(LoginRequiredMixin, DeleteView):

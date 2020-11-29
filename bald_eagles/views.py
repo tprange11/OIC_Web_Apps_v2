@@ -82,12 +82,13 @@ class BaldEaglesSkateDateListView(LoginRequiredMixin, ListView):
             pass
 
         try:
-            # If a profile already exists, set bald_eagles_email to True
+            # If a profile already exists, do nothing
+            profile = self.profile_model.objects.get(user=self.request.user)
+        except ObjectDoesNotExist:
+            # If no profile, create one and set bald_eagles_email to True
             profile = self.profile_model.objects.get(user=self.request.user)
             profile.bald_eagles_email = True
             profile.save()
-        except ObjectDoesNotExist:
-            pass
 
         return
 

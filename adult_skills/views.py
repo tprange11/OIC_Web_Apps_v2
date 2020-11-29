@@ -77,12 +77,13 @@ class AdultSkillsSkateDateListView(LoginRequiredMixin, ListView):
             pass
 
         try:
+            # If a profile already exists, do nothing
+            profile = self.profile_model.objects.get(user=self.request.user)
+        except ObjectDoesNotExist:
             # If a profile already exists, set adult_skills_email to True
             profile = self.profile_model.objects.get(user=self.request.user)
             profile.adult_skills_email = True
             profile.save()
-        except ObjectDoesNotExist:
-            pass
 
         return
 
@@ -183,7 +184,7 @@ class CreateAdultSkillsSkateSessionView(LoginRequiredMixin, CreateView):
         try:
             self.profile_model.objects.get(user=self.request.user)
             return
-        # If no profile exists, add one and set adult_skills_email to True
+        # If no profile exists, create one and set adult_skills_email to True
         except ObjectDoesNotExist:
             profile = self.profile_model(user=self.request.user, slug=self.request.user.id, adult_skills_email=True)
             profile.save()

@@ -37,12 +37,13 @@ class LadyHawksSkateDateListView(LoginRequiredMixin, ListView):
             pass
         
         try:
-            # If a profile already exists, set lady_hawks_email to True
+            # If a profile already exists, do nothing
+            profile = self.profile_model.objects.get(user=self.request.user)
+        except ObjectDoesNotExist:
+            # If no profile exists, create one and set lady_hawks_email to True
             profile = self.profile_model.objects.get(user=self.request.user)
             profile.lady_hawks_email = True
             profile.save()
-        except ObjectDoesNotExist:
-            pass
         return super().get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):

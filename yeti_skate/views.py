@@ -86,12 +86,13 @@ class YetiSkateDateListView(LoginRequiredMixin, ListView):
             pass
 
         try:
-            # If a profile already exists, set yeti_skate_email to True
+            # If a profile already exists, do nothing
+            profile = self.profile_model.objects.get(user=self.request.user)
+        except ObjectDoesNotExist:
+            # If no profile exists, create one and set yeti_skate_email to True
             profile = self.profile_model.objects.get(user=self.request.user)
             profile.yeti_skate_email = True
             profile.save()
-        except ObjectDoesNotExist:
-            pass
 
         return
 
