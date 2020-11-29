@@ -6,11 +6,11 @@ from .models import Profile, ReleaseOfLiability, ChildSkater, UserCredit
 class ProfileAdmin(admin.ModelAdmin):
     list_display = ['user_name']
     list_filter = ['open_hockey_email', 'stick_and_puck_email', 'figure_skating_email', 'thane_storck_email', 
-                    'adult_skills_email', 'mike_schultz_email', 'yeti_skate_email', 'womens_hockey_email', 'bald_eagles_email', 
-                    'lady_hawks_email']
-    readonly_fields = ['slug', 'user', 'open_hockey_email', 'stick_and_puck_email', 'figure_skating_email', 'thane_storck_email', 
-                    'adult_skills_email', 'mike_schultz_email', 'yeti_skate_email', 'womens_hockey_email', 'bald_eagles_email', 
-                    'lady_hawks_email']
+                    'adult_skills_email', 'mike_schultz_email', 'yeti_skate_email', 'womens_hockey_email',
+                    'bald_eagles_email', 'lady_hawks_email', 'chs_alumni_email']
+    readonly_fields = ['slug', 'user', 'open_hockey_email', 'stick_and_puck_email', 'figure_skating_email',
+                    'thane_storck_email', 'adult_skills_email', 'mike_schultz_email', 'yeti_skate_email', 
+                    'womens_hockey_email', 'bald_eagles_email', 'lady_hawks_email', 'chs_alumni_email']
 
     def user_name(self, obj):
         return f"{obj.user.get_full_name()}"

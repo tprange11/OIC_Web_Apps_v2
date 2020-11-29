@@ -59,12 +59,16 @@
 <!-- End My Skater Modal -->
 {% endif %}
 <p class="mb-0">
-    <button class="btn btn-primary btn-sm mb-3" href="{% url 'accounts:purchase-credit' slug=user.username %}">Credit Balance: ${{ credit.balance }}</button>
-    <button type="button" class="btn btn-info btn-sm mb-3" data-toggle="modal" data-target="#myCreditModal"><i class="fas fa-question-circle fa-lg"></i></button>
+    <button class="btn btn-primary btn-sm mb-3" href="{% url 'accounts:purchase-credit' slug=user.username %}">Credit
+        Balance: ${{ credit.balance }}</button>
+    <button type="button" class="btn btn-info btn-sm mb-3" data-toggle="modal" data-target="#myCreditModal"><i
+            class="fas fa-question-circle fa-lg"></i></button>
     {% if credit.pending != 0 %}
-    <a class="btn btn-danger btn-sm mb-3" href="{% url 'cart:shopping-cart' %}">Pay for Pending Credits: ${{ credit.pending }}</a>
+    <a class="btn btn-danger btn-sm mb-3" href="{% url 'cart:shopping-cart' %}">Pay for Pending Credits:
+        ${{ credit.pending }}</a>
     {% else %}
-    <a class="btn btn-success btn-sm mb-3" href="{% url 'accounts:purchase-credit' slug=user.username %}">Purchase Credits</a>
+    <a class="btn btn-success btn-sm mb-3" href="{% url 'accounts:purchase-credit' slug=user.username %}">Purchase
+        Credits</a>
     {% endif %}
 </p>
 {% include 'accounts/user_credits_modal_include.html' %}
@@ -99,6 +103,9 @@
     {% endif %}
     {% if not in_group_lady_hawks %}
     document.querySelector('#id_lady_hawks_email').parentNode.parentNode.style.display = 'none';
+    {% endif %}
+    {% if not in_group_chs_alumni %}
+    document.querySelector('#id_chs_alumni_email').parentNode.parentNode.style.display = 'none';
     {% endif %}
 </script>
 {% endblock content %}

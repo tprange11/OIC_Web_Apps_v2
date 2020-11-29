@@ -20,6 +20,7 @@ from yeti_skate.models import YetiSkateSession
 from womens_hockey.models import WomensHockeySkateSession
 from bald_eagles.models import BaldEaglesSession
 from lady_hawks.models import LadyHawksSkateSession
+from chs_alumni.models import CHSAlumniSession
 from accounts.models import UserCredit
 
 # Create your views here.
@@ -61,6 +62,7 @@ class PaymentListView(LoginRequiredMixin, ListView):
 def process_payment(request, **kwargs):
     '''Processes the payment and returns an error or success page.'''
 
+    context = None #Initialize context
     template_name = 'sq-payment-result.html'
     cart_model = Cart
     program_model = Program
@@ -75,6 +77,7 @@ def process_payment(request, **kwargs):
     womens_hockey_sessions_model = WomensHockeySkateSession
     bald_eagles_sessions_model = BaldEaglesSession
     lady_hawks_sessions_model = LadyHawksSkateSession
+    chs_alumni_sessions_model = CHSAlumniSession
     user_credit_model = UserCredit
     today = date.today()
 
@@ -92,10 +95,10 @@ def process_payment(request, **kwargs):
         note['User Credits'] = 0
         for item, amount in cart_items:
             total += amount
-            if item == 'OH Membership':
-                note['Open Hockey'] += amount
-            else:
-                note[item] += amount
+            # if item == 'OH Membership':
+            #     note['Open Hockey'] += amount
+            # else:
+            note[item] += amount
         total *= 100 #convert to pennies for square
 
         client = Client(
@@ -146,6 +149,7 @@ def process_payment(request, **kwargs):
                 womens_hockey_sessions_model.objects.filter(user=request.user).update(paid=True)
                 bald_eagles_sessions_model.objects.filter(skater=request.user).update(paid=True)
                 lady_hawks_sessions_model.objects.filter(user=request.user).update(paid=True)
+                chs_alumni_sessions_model.objects.filter(skater=request.user).update(paid=True)
             except IntegrityError:
                 pass
 
@@ -160,8 +164,7 @@ def process_payment(request, **kwargs):
                 pass
 
             # Clear items from the Cart Model if the payment was successful
-            customer_cart = Cart.objects.filter(customer=request.user).delete()
-
+            Cart.objects.filter(customer=request.user).delete()
         elif api_response.is_error():
             # Save the error in PaymentError model for debugging.
             model = models.PaymentError

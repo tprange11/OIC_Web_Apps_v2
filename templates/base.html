@@ -90,6 +90,9 @@
                             {% if in_group_lady_hawks %}
                             <a class="dropdown-item" href="{% url 'lady_hawks:lady-hawks' %}">Lady Hawks</a>
                             {% endif %}
+                            {% if in_group_chs_alumni %}
+                            <a class="dropdown-item" href="{% url 'chs_alumni:chs-alumni' %}">CHS Alumni</a>
+                            {% endif %}
                             {% if user.is_staff %}
                             <a class="dropdown-item" href="{% url 'schedule:choose-rink' %}">Rink Schedule</a>
                             {% endif %}
@@ -130,7 +133,8 @@
                         {% endif %}
                         {% if not user.is_staff %}
                         <li class="nav-item">
-                            <a class="nav-link" rel="noopener noreferrer" href="{% url 'contact:contact-form' %}">Contact</a>
+                            <a class="nav-link" rel="noopener noreferrer"
+                                href="{% url 'contact:contact-form' %}">Contact</a>
                         </li>
                         {% endif %}
                         {% if user.is_superuser %}
@@ -151,19 +155,21 @@
                                     Schultz Sessions</a>
                                 <a class="dropdown-item" href="{% url 'yeti_skate:yeti-skate-sessions' %}">Yeti Skate
                                     Sessions</a>
-                                <a class="dropdown-item" href="{% url 'bald_eagles:bald-eagles-skate-sessions' %}">Bald Eagles
-                                    Sessions</a>
+                                <a class="dropdown-item" href="{% url 'bald_eagles:bald-eagles-skate-sessions' %}">Bald
+                                    Eagles Sessions</a>
                                 <a class="dropdown-item" href="{% url 'lady_hawks:lady-hawks-sessions' %}">Lady Hawks
                                     Sessions</a>
                                 <a class="dropdown-item"
                                     href="{% url 'figure_skating:figure-skating-sessions' %}">Figure Skating
                                     Sessions</a>
-                                <a class="dropdown-item" href="{% url 'stickandpuck:print-list' %}">Print Stick and
-                                    Puck</a>
+                                <a class="dropdown-item" href="{% url 'stickandpuck:print-list' %}">Stick and
+                                    Puck Sessions</a>
                                 <a class="dropdown-item" href="{% url 'thane_storck:thane-skate-sessions' %}">Thane
                                     Skate Sessions</a>
                                 <a class="dropdown-item" href="{% url 'womens_hockey:womens-hockey-sessions' %}">Women's
                                     Hockey Sessions</a>
+                                <a class="dropdown-item" href="{% url 'chs_alumni:skate-sessions' %}">CHS Alumni
+                                    Sessions</a>
                                 <a class="dropdown-item" href="{% url 'schedule:choose-rink' %}">Rink Schedule</a>
                             </div>
                         </li>

@@ -19,6 +19,7 @@ from yeti_skate.models import YetiSkateSession
 from womens_hockey.models import WomensHockeySkateSession
 from bald_eagles.models import BaldEaglesSession
 from lady_hawks.models import LadyHawksSkateSession
+from chs_alumni.models import CHSAlumniSession
 from accounts.models import UserCredit
 
 from datetime import date
@@ -36,6 +37,7 @@ def clear_cart_and_unpaid_items():
     WomensHockeySkateSession.objects.filter(paid=False, skate_date__skate_date__gte=date.today()).delete()
     BaldEaglesSession.objects.filter(paid=False, session_date__skate_date__gte=date.today()).delete()
     LadyHawksSkateSession.objects.filter(paid=False, skate_date__skate_date__gte=date.today()).delete()
+    CHSAlumniSession.objects.filter(paid=False, date__skate_date__gte=date.today()).delete()
     UserCredit.objects.filter(pending__gt=0).update(pending=0)
     return
 

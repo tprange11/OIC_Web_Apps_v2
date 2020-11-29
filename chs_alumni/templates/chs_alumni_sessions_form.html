@@ -1,0 +1,11 @@
+{% extends 'base.html' %}{% load bootstrap4 %}
+{% block title %}<title>CHS Alumni Skate Session Register</title>{% endblock title %}
+{% block content %}
+<h5>Register for {{skate_info.skate_date}} {{skate_info.start_time|time:'g:i A'}} to
+    {{skate_info.end_time|time:'g:i A'}} Skate</h5>
+<form method="POST" action="{% url 'chs_alumni:register' %}">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+    <p><input type="submit" value="Register" class="btn btn-success btn-sm"></p>
+</form>
+{% endblock content %}

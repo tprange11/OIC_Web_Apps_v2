@@ -16,6 +16,7 @@ from yeti_skate.models import YetiSkateDate, YetiSkateSession
 from womens_hockey.models import WomensHockeySkateDate, WomensHockeySkateSession
 from bald_eagles.models import BaldEaglesSkateDate, BaldEaglesSession
 from lady_hawks.models import LadyHawksSkateDate, LadyHawksSkateSession
+from chs_alumni.models import CHSAlumniDate, CHSAlumniSession
 from accounts.models import UserCredit
 
 # Create your views here.
@@ -72,6 +73,8 @@ class RemoveItemFromCartView(LoginRequiredMixin, DeleteView):
     be_skate_date_model = BaldEaglesSkateDate
     lh_skate_model = LadyHawksSkateSession
     lh_skate_date_model = LadyHawksSkateDate
+    chs_skate_model = CHSAlumniSession
+    chs_skate_date_model = CHSAlumniDate
 
     user_credit_model = UserCredit
     success_url = reverse_lazy('cart:shopping-cart')
@@ -117,6 +120,9 @@ class RemoveItemFromCartView(LoginRequiredMixin, DeleteView):
             skater_name = cart_item.skater_name.split(' ')
             skater_id = ChildSkater.objects.filter(first_name=skater_name[0], last_name=skater_name[1], user=self.request.user)
             self.lh_skate_model.objects.filter(skater=skater_id[0], skate_date=skate_date[0]).delete()
+        elif cart_item.item == Program.objects.all().get(id=11).program_name: # CHS Alumni
+            skate_date = self.chs_skate_date_model.objects.filter(skate_date=cart_item.event_date)
+            self.chs_skate_model.objects.filter(skater=request.user, date=skate_date[0]).delete()
         # elif cart_item.item == 'OH Membership':
         #     self.oh_member_model.objects.filter(member=request.user).delete()
         elif cart_item.item == 'User Credits':
