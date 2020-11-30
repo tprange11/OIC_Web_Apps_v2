@@ -62,8 +62,7 @@ class CHSAlumniSkateDateListView(LoginRequiredMixin, ListView):
             
         except ObjectDoesNotExist:
             # If no profile exists, create one and set chs_alumni_email to True
-            profile = self.profile_model.objects.create(user=self.request.user)
-            profile.chs_alumni_email = True
+            profile = self.profile_model(user=self.request.user, chs_alumni_email=True, slug=self.request.user.id)
             profile.save()
         return
 
@@ -100,8 +99,7 @@ class CreateCHSAlumniSessionView(LoginRequiredMixin, CreateView):
         # Get the user credit model instance
         user_credit = UserCredit.objects.get(user=self.request.user)
         credit_used = False # Used to set the message
-        # Get the program skater cost
-        cost = self.program_model.objects.get(id=11).skater_price        
+        price = 0
         self.object = form.save(commit=False)
 
         try:
@@ -113,31 +111,33 @@ class CreateCHSAlumniSessionView(LoginRequiredMixin, CreateView):
             elif self.object.goalie == False and self.model.objects.filter(goalie=False, date=self.object.date).count() == Program.objects.get(pk=11).max_skaters:
                 messages.add_message(self.request, messages.ERROR, 'Sorry, skater spots are full!')
                 return redirect('chs_alumni:chs-alumni')
+
+            # Get the price of the skate
+            if self.object.goalie:
+                price = self.program_model.objects.get(id=11).goalie_price
+                if price == 0:
+                    self.object.paid = True
+            else:
+                price = self.program_model.objects.get(id=11).skater_price
+
             # If spots are not full do the following
-            
-            if user_credit.balance >= cost and user_credit.paid:
+            if user_credit.balance >= price and user_credit.paid:
                 self.object.paid = True
-                user_credit.balance -= cost
+                user_credit.balance -= price
                 # Check to see if there's a $0 balance, if so, set paid to false
                 if user_credit.balance == 0:
                     user_credit.paid = False
                 user_credit.save()
                 credit_used = True # Used to set the message
             else:
-                # Get price of CHS Alummni program
-                if self.object.goalie:
-                    price = self.program_model.objects.get(id=11).goalie_price
-                    if price == 0:
-                        self.object.paid = True
-                else:
-                    price = self.program_model.objects.get(id=11).skater_price
                 self.add_to_cart(price)
                 self.object.save()
         except IntegrityError:
             pass
+        
         # If all goes well set success message and return
         if credit_used:
-            messages.add_message(self.request, messages.INFO, f'You have successfully registered for the skate! ${cost} in credit has been deducted from your balance.')
+            messages.add_message(self.request, messages.INFO, f'You have successfully registered for the skate! ${price} in credit has been deducted from your balance.')
         else:
             messages.add_message(self.request, messages.INFO, 'To complete your registration, you must view your cart and pay for your item(s)!')
         return super().form_valid(form)

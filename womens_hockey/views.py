@@ -42,9 +42,7 @@ class WomensHockeySkateDateListView(LoginRequiredMixin, ListView):
                 user=self.request.user)
         except ObjectDoesNotExist:
             # If a profile already exists, set womens_hockey_email to True
-            profile = self.profile_model.objects.get(
-                user=self.request.user)
-            profile.womens_hockey_email = True
+            profile = self.profile_model(user=self.request.user, womens_hockey_email=True, slug=self.request.user.id)
             profile.save()
 
         return super().get(request, *args, **kwargs)
@@ -111,6 +109,7 @@ class CreateWomensHockeySkateSessionView(LoginRequiredMixin, CreateView):
 
         user_credit = self.credit_model.objects.get(user=self.request.user) # User credit model
         credit_used = False # Used to set the success message
+        price = 0
 
         self.object = form.save(commit=False)
 
@@ -153,7 +152,7 @@ class CreateWomensHockeySkateSessionView(LoginRequiredMixin, CreateView):
             
             # Save the user credit model
             user_credit.save()
-            self.add_womens_hockey_email_to_profile()
+            # self.add_womens_hockey_email_to_profile()
             self.object.save()
         except IntegrityError:
             pass
@@ -178,18 +177,18 @@ class CreateWomensHockeySkateSessionView(LoginRequiredMixin, CreateView):
         cart.save()
         return False
 
-    def add_womens_hockey_email_to_profile(self):
-        '''If no user profile exists, create one and set womens_hockey_email to True.'''
+    # def add_womens_hockey_email_to_profile(self):
+    #     '''If no user profile exists, create one and set womens_hockey_email to True.'''
 
-        # If a profile already exists, do nothing
-        try:
-            self.profile_model.objects.get(user=self.request.user)
-        # If no profile exists, add one and set open_hockey_email to True
-        except ObjectDoesNotExist:
-            profile = self.profile_model(
-                user=self.request.user, slug=self.request.user.id, womens_hockey_email=True)
-            profile.save()
-        return
+    #     # If a profile already exists, do nothing
+    #     try:
+    #         self.profile_model.objects.get(user=self.request.user)
+    #     # If no profile exists, add one and set open_hockey_email to True
+    #     except ObjectDoesNotExist:
+    #         profile = self.profile_model(
+    #             user=self.request.user, slug=self.request.user.id, womens_hockey_email=True)
+    #         profile.save()
+    #     return
 
 
 class DeleteWomensHockeySkateSessionView(LoginRequiredMixin, DeleteView):

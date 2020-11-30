@@ -86,8 +86,7 @@ class BaldEaglesSkateDateListView(LoginRequiredMixin, ListView):
             profile = self.profile_model.objects.get(user=self.request.user)
         except ObjectDoesNotExist:
             # If no profile, create one and set bald_eagles_email to True
-            profile = self.profile_model.objects.get(user=self.request.user)
-            profile.bald_eagles_email = True
+            profile = self.profile_model(user=self.request.user, bald_eagles_email=True, slug=self.request.user.id)
             profile.save()
 
         return
@@ -124,6 +123,7 @@ class CreateBaldEaglesSessionView(LoginRequiredMixin, CreateView):
         # Get the user credit model instance
         user_credit = UserCredit.objects.get(user=self.request.user)
         credit_used = False # Used to set the message
+        cost = 0
         
         self.object = form.save(commit=False)
 
@@ -157,7 +157,7 @@ class CreateBaldEaglesSessionView(LoginRequiredMixin, CreateView):
                 credit_used = True # Used to set the message
             else:
                 self.add_to_cart(cost)
-            self.add_bald_eagles_email_to_profile()
+            # self.add_bald_eagles_email_to_profile()
             self.object.save()
         except IntegrityError:
             pass
@@ -181,18 +181,18 @@ class CreateBaldEaglesSessionView(LoginRequiredMixin, CreateView):
         cart.save()
         return False
 
-    def add_bald_eagles_email_to_profile(self):
-        '''If no user profile exists, create one and set bald_eagles_email to True.'''
+    # def add_bald_eagles_email_to_profile(self):
+    #     '''If no user profile exists, create one and set bald_eagles_email to True.'''
         
-        # If a profile already exists, do nothing
-        try:
-            self.profile_model.objects.get(user=self.request.user)
-            return
-        # If no profile exists, add one and set bald_eagles_email to True
-        except ObjectDoesNotExist:
-            profile = self.profile_model(user=self.request.user, slug=self.request.user.id, bald_eagles_email=True)
-            profile.save()
-            return
+    #     # If a profile already exists, do nothing
+    #     try:
+    #         self.profile_model.objects.get(user=self.request.user)
+    #         return
+    #     # If no profile exists, add one and set bald_eagles_email to True
+    #     except ObjectDoesNotExist:
+    #         profile = self.profile_model(user=self.request.user, slug=self.request.user.id, bald_eagles_email=True)
+    #         profile.save()
+    #         return
 
 
 class DeleteBaldEaglesSessionView(LoginRequiredMixin, DeleteView):

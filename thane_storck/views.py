@@ -102,6 +102,7 @@ class CreateSkateSessionView(LoginRequiredMixin, CreateView):
         # Get the user credit model instance
         user_credit = UserCredit.objects.get(user=self.request.user)
         credit_used = False # Used to set the message
+        cost = 0
 
         self.object = form.save(commit=False)
         try:

@@ -80,9 +80,8 @@ class AdultSkillsSkateDateListView(LoginRequiredMixin, ListView):
             # If a profile already exists, do nothing
             profile = self.profile_model.objects.get(user=self.request.user)
         except ObjectDoesNotExist:
-            # If a profile already exists, set adult_skills_email to True
-            profile = self.profile_model.objects.get(user=self.request.user)
-            profile.adult_skills_email = True
+            # If a profile does not exist, create one and set adult_skills_email to True
+            profile = self.profile_model(user=self.request.user, adult_skills_email=True, slug=self.request.user.id)
             profile.save()
 
         return
@@ -113,6 +112,7 @@ class CreateAdultSkillsSkateSessionView(LoginRequiredMixin, CreateView):
 
         user_credit = self.credit_model.objects.get(user=self.request.user) # User credit model
         credit_used = False # Used to set the success message
+        price = 0
 
         self.object = form.save(commit=False)
         
@@ -155,7 +155,7 @@ class CreateAdultSkillsSkateSessionView(LoginRequiredMixin, CreateView):
             
             # Save the user credit model
             user_credit.save()
-            self.add_adult_skills_email_to_profile()
+            # self.add_adult_skills_email_to_profile()
             self.object.save()
         except IntegrityError:
             pass
@@ -177,18 +177,18 @@ class CreateAdultSkillsSkateSessionView(LoginRequiredMixin, CreateView):
             event_date=self.object.skate_date.skate_date, event_start_time=start_time[0], amount=price)
         cart.save()
 
-    def add_adult_skills_email_to_profile(self):
-        '''If no user profile exists, create one and set adult_skills_email to True.'''
+    # def add_adult_skills_email_to_profile(self):
+    #     '''If no user profile exists, create one and set adult_skills_email to True.'''
         
-        # If a profile already exists, do nothing
-        try:
-            self.profile_model.objects.get(user=self.request.user)
-            return
-        # If no profile exists, create one and set adult_skills_email to True
-        except ObjectDoesNotExist:
-            profile = self.profile_model(user=self.request.user, slug=self.request.user.id, adult_skills_email=True)
-            profile.save()
-            return
+    #     # If a profile already exists, do nothing
+    #     try:
+    #         self.profile_model.objects.get(user=self.request.user)
+    #         return
+    #     # If no profile exists, create one and set adult_skills_email to True
+    #     except ObjectDoesNotExist:
+    #         profile = self.profile_model(user=self.request.user, slug=self.request.user.id, adult_skills_email=True)
+    #         profile.save()
+    #         return
 
 
 class DeleteAdultSkillsSkateSessionView(LoginRequiredMixin, DeleteView):

@@ -90,8 +90,7 @@ class YetiSkateDateListView(LoginRequiredMixin, ListView):
             profile = self.profile_model.objects.get(user=self.request.user)
         except ObjectDoesNotExist:
             # If no profile exists, create one and set yeti_skate_email to True
-            profile = self.profile_model.objects.get(user=self.request.user)
-            profile.yeti_skate_email = True
+            profile = self.profile_model(user=self.request.user, yeti_skate_email=True, slug=self.request.user.id)
             profile.save()
 
         return
@@ -156,7 +155,7 @@ class CreateYetiSkateSessionView(LoginRequiredMixin, CreateView):
                 credit_used = True # Used to set the message
             else:
                 self.add_to_cart()
-            self.add_yeti_skate_email_to_profile()
+            # self.add_yeti_skate_email_to_profile()
             self.object.save()
         except IntegrityError:
             pass
@@ -185,18 +184,18 @@ class CreateYetiSkateSessionView(LoginRequiredMixin, CreateView):
             cart.save()
             return False
 
-    def add_yeti_skate_email_to_profile(self):
-        '''If no user profile exists, create one and set yeti_skate_email to True.'''
+    # def add_yeti_skate_email_to_profile(self):
+    #     '''If no user profile exists, create one and set yeti_skate_email to True.'''
         
-        # If a profile already exists, do nothing
-        try:
-            self.profile_model.objects.get(user=self.request.user)
-            return
-        # If no profile exists, add one and set open_hockey_email to True
-        except ObjectDoesNotExist:
-            profile = self.profile_model(user=self.request.user, slug=self.request.user.id, yeti_skate_email=True)
-            profile.save()
-            return
+    #     # If a profile already exists, do nothing
+    #     try:
+    #         self.profile_model.objects.get(user=self.request.user)
+    #         return
+    #     # If no profile exists, add one and set open_hockey_email to True
+    #     except ObjectDoesNotExist:
+    #         profile = self.profile_model(user=self.request.user, slug=self.request.user.id, yeti_skate_email=True)
+    #         profile.save()
+    #         return
 
 
 class DeleteYetiSkateSessionView(LoginRequiredMixin, DeleteView):
