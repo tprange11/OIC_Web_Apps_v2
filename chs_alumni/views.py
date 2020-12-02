@@ -59,7 +59,8 @@ class CHSAlumniSkateDateListView(LoginRequiredMixin, ListView):
         try:
             # If a profile already exists, do nothing
             profile = self.profile_model.objects.get(user=self.request.user)
-            
+        except IntegrityError:
+            pass
         except ObjectDoesNotExist:
             # If no profile exists, create one and set chs_alumni_email to True
             profile = self.profile_model(user=self.request.user, chs_alumni_email=True, slug=self.request.user.id)
