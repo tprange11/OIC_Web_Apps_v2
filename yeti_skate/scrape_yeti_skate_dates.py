@@ -134,7 +134,7 @@ if __name__ == "__main__":
     if the_date.weekday() == 6:
         for x in range(6):
             scrape_date = date.isoformat(the_date)
-            if the_date.weekday() == 1 or the_date.weekday() == 4:
+            if the_date.weekday() == 1 or the_date.weekday() == 3 or the_date.weekday() == 4:
                 scrape_oic_schedule(scrape_date)
 
             the_date += timedelta(days=1)
