@@ -26,6 +26,8 @@ months = {"01": "January", "02": "February", "03": "March", "04": "April", "05":
 oic_schedule = []  # list that will hold the day's events
 schedule_notes = [] # list that will hold notes if any
 team_events = [] # list that will hold OYHA, OCHL and OWHL teams to merge with oic_schedule[]
+north_locker_rooms = [[1, 3], [2, 4]]  # Locker room numbers in North
+south_locker_rooms = [[6, 9], [5, 8], 7]  # Locker room numbers in South
 
 def scrape_oic_schedule(date):
     '''Scrapes Ozaukee Ice Center schedule website the days events.'''
@@ -80,8 +82,8 @@ def scrape_oic_schedule(date):
             continue
         else:
             if len(cols) > 2:
-                oic_schedule.append([date, cols[0].get_text().strip(), cols[1].get_text().strip(), cols[3].get_text().strip(), cols[4].get_text().strip()])
-                schedule_notes.append("")
+                oic_schedule.append([date, cols[0].get_text().strip(), cols[1].get_text().strip(), cols[3].get_text().strip(), cols[4].get_text().strip(), cols[5].get_text().strip()])
+                # schedule_notes.append("")
             # elif len(cols) == 2:
                 # schedule_notes[x-1] = cols[1].get_text().strip()
         # print(schedule_notes)
@@ -112,23 +114,6 @@ def scrape_oic_schedule(date):
                 oic_schedule[x].append(schedule_notes[x].strip("Schedule Notes: "))
             else:
                 oic_schedule[x].append(schedule_notes[x])
-
-
-def add_schedule_to_model(schedule):
-    '''Adds OIC daily schedule to RinkSchedule model.'''
-    model = RinkSchedule
-
-    # First, clear yesterday's schedule from the model
-    RinkSchedule.objects.all().delete()
-
-    for item in schedule:
-        try:
-            data = model(schedule_date=item[0], start_time=datetime.strptime(item[1], '%I:%M %p'), end_time=datetime.strptime(item[2], '%I:%M %p'), rink=item[3], event=item[4], notes=item[5])
-            data.save()
-        except IntegrityError:
-            continue
-    return
-
 
 def scrape_owhl_teams(the_date):
     '''Scrapes OIC Rink League Schedule website for OWHL teams.'''
@@ -222,6 +207,70 @@ def scrape_oyha_teams(the_date):
         if event[1] == '':
             event[1] = 'OYHA'
 
+def add_locker_rooms_to_schedule():
+    '''Add locker room assignments to oic_schedule list'''
+
+    south_lr_flag = 0
+    north_lr_flag = 0
+    x = 0  # index of rink list for appending locker room numbers
+    no_locker_room = ("Public Skate", "Learn to Skate", "Open Figure Skating", "Kettle Moraine Figure Skating Club")
+    need_game_locker_rooms = ("Cedarburg Hockey", "Homestead Hockey", "Lakeshore Lightning",
+                              "Concordia ACHA", "Concordia University Men", "Concordia University Women")
+
+    for (_, _, _, rink, customer, event_type) in oic_schedule:
+        if 'Practice' in event_type or customer in no_locker_room:
+            oic_schedule[x].append("")
+            oic_schedule[x].append("")
+            x += 1
+            continue
+        elif 'North' in rink:
+            if 'Game' in event_type:
+                oic_schedule[x].append("") # Home team doesn't need a locker room
+                oic_schedule[x].append(north_locker_rooms[north_lr_flag][0])
+            else:
+                oic_schedule[x].append(north_locker_rooms[north_lr_flag][1])
+                oic_schedule[x].append(north_locker_rooms[north_lr_flag][0])
+            if north_lr_flag == 0:
+                north_lr_flag = 1
+            else:
+                north_lr_flag = 0
+        elif 'South' in rink:
+            if 'Game' in event_type:
+                oic_schedule[x].append("") # Home team doesn't need a locker room
+                oic_schedule[x].append(south_locker_rooms[south_lr_flag][0])
+            else:
+                oic_schedule[x].append(south_locker_rooms[south_lr_flag][1])
+                oic_schedule[x].append(south_locker_rooms[south_lr_flag][0])
+            if south_lr_flag == 0:
+                south_lr_flag = 1
+            else:
+                south_lr_flag = 0
+        x += 1
+
+
+def add_schedule_to_model(schedule):
+    '''Adds OIC daily schedule to RinkSchedule model.'''
+    model = RinkSchedule
+
+    # First, clear yesterday's schedule from the model
+    RinkSchedule.objects.all().delete()
+
+    for item in schedule:
+        try:
+            data = model(
+                schedule_date=item[0], 
+                start_time=datetime.strptime(item[1], '%I:%M %p'), 
+                end_time=datetime.strptime(item[2], '%I:%M %p'), 
+                rink=item[3], 
+                event=item[4],
+                home_locker_room=item[6],
+                visitor_locker_room=item[7],
+                notes=""
+                )
+            data.save()
+        except IntegrityError:
+            continue
+    return
 
 if __name__ == "__main__":
     
@@ -267,4 +316,7 @@ if __name__ == "__main__":
     #         item[2] = "11:59 PM"
 
     # Insert data into Django model
+    add_locker_rooms_to_schedule()
     add_schedule_to_model(oic_schedule)
+    # for item in oic_schedule:
+    #     print(item)

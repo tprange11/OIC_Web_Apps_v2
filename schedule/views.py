@@ -2,10 +2,14 @@ from django.shortcuts import redirect
 from django.views.generic import ListView, TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
-from . import models, scrape_schedule
+from . import models
 from datetime import datetime, date
-import os
-from .scrape_schedule import scrape_oic_schedule, scrape_ochl_teams, scrape_owhl_teams, scrape_oyha_teams, add_schedule_to_model, team_events, oic_schedule
+from .scrape_schedule import scrape_oic_schedule, scrape_ochl_teams, \
+    scrape_owhl_teams, scrape_oyha_teams, add_locker_rooms_to_schedule, \
+    add_schedule_to_model, team_events, oic_schedule
+
+from rest_framework.generics import ListAPIView
+from .serializers import RinkScheduleSerializer
 
 # Create your views here.
 
@@ -146,7 +150,15 @@ def scrape_schedule(request):
     #         item[2] = "11:59 PM"
 
     # Insert data into Django model
+    add_locker_rooms_to_schedule()
     add_schedule_to_model(oic_schedule)
 
     messages.add_message(request, messages.SUCCESS, 'Rink Resurface Schedule has been updated.')
     return redirect('schedule:choose-rink')
+
+
+class RinkScheduleListAPIView(ListAPIView):
+    '''Retrieve rink schedule.'''
+
+    serializer_class = RinkScheduleSerializer
+    queryset = models.RinkSchedule.objects.all()

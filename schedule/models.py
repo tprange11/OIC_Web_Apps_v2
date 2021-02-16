@@ -9,6 +9,8 @@ class RinkSchedule(models.Model):
     end_time = models.TimeField()
     rink = models.CharField(max_length=15)
     event = models.CharField(max_length=50)
+    home_locker_room = models.CharField(max_length=50, null=True, blank=True)
+    visitor_locker_room = models.CharField(max_length=50, null=True, blank=True)
     notes = models.CharField(max_length=50, blank=True)
 
     class meta:
