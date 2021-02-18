@@ -54,6 +54,7 @@ urlpatterns = [
     path('web_apps/chs_alumni/', include('chs_alumni.urls')),
     path('web_apps/contact/', include('contact.urls')),
     path('web_apps/schedule/', include('schedule.urls')),
+    path('web_apps/programs/', include('programs.urls')),
     path('serviceworker.js', (TemplateView.as_view(
         template_name='serviceworker.js',
         content_type='application/javascript'

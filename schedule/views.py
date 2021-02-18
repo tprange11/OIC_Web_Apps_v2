@@ -158,7 +158,7 @@ def scrape_schedule(request):
 
 
 class RinkScheduleListAPIView(ListAPIView):
-    '''Retrieve rink schedule.'''
+    '''Return rink schedule.'''
 
     serializer_class = RinkScheduleSerializer
     queryset = models.RinkSchedule.objects.all()

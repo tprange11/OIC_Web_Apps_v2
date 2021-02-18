@@ -6,6 +6,20 @@ class Program(models.Model):
 
     # Model Fields
     program_name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(
+        null=True, 
+        blank=True, 
+        max_length=400,
+        help_text='Max 400 characters'
+    )
+    message = models.CharField(
+        max_length=200, 
+        blank=True, 
+        null=True, 
+        help_text='Used for special messages, will be displayed as bold in colored info box.'
+        )
+    days_and_times = models.CharField(max_length=100, default='Check OICWebApps for days/times')
+    private = models.BooleanField(default=False, help_text='If checked, this program will not be shown to the public.')
     max_skaters = models.IntegerField(blank=True, null=True, default=22)
     max_goalies = models.IntegerField(blank=True, null=True)
     skater_price = models.IntegerField(blank=True, null=True)

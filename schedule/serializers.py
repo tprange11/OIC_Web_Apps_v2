@@ -1,8 +1,13 @@
 from rest_framework import serializers
 from .models import RinkSchedule
 
+# from datetime import datetime, date
+
 
 class RinkScheduleSerializer(serializers.ModelSerializer):
+
+    start_time = serializers.TimeField(format='%I:%M %p')
+    end_time = serializers.TimeField(format='%I:%M %p')
 
     class Meta:
         model = RinkSchedule
