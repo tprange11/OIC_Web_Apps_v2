@@ -224,18 +224,18 @@ def add_locker_rooms_to_schedule():
             x += 1
             continue
         elif 'North' in rink:
-            if 'Game' in event_type:
-                oic_schedule[x].append("") # Home team doesn't need a locker room
-                oic_schedule[x].append(north_locker_rooms[north_lr_flag][0])
-            else:
-                oic_schedule[x].append(north_locker_rooms[north_lr_flag][1])
-                oic_schedule[x].append(north_locker_rooms[north_lr_flag][0])
+            # if 'Game' in event_type:
+            #     oic_schedule[x].append("") # Home team doesn't need a locker room
+            #     oic_schedule[x].append(north_locker_rooms[north_lr_flag][0])
+            # else:
+            oic_schedule[x].append(north_locker_rooms[north_lr_flag][1])
+            oic_schedule[x].append(north_locker_rooms[north_lr_flag][0])
             if north_lr_flag == 0:
                 north_lr_flag = 1
             else:
                 north_lr_flag = 0
         elif 'South' in rink:
-            if 'Game' in event_type:
+            if 'Game' in event_type and customer in need_game_locker_rooms:
                 oic_schedule[x].append("") # Home team doesn't need a locker room
                 oic_schedule[x].append(south_locker_rooms[south_lr_flag][0])
             else:
