@@ -216,6 +216,16 @@ def add_locker_rooms_to_schedule():
     no_locker_room = ("Public Skate", "Learn to Skate", "Open Figure Skating", "Kettle Moraine Figure Skating Club")
     need_game_locker_rooms = ("Cedarburg Hockey", "Homestead Hockey", "Lakeshore Lightning",
                               "Concordia ACHA", "Concordia University Men", "Concordia University Women")
+    short_name = {
+        "Concordia University Men": "CUW Men",
+        "Concordia University Women": "CUW Women",
+        "Kettle Moraine Figure Skating Club": "KM Figure Skating Club",
+    }
+
+    # Replace long customer name with short name
+    for item in oic_schedule:
+        if item[4] in short_name:
+            item[4] = short_name[item[4]]
 
     for (_, _, _, rink, customer, event_type) in oic_schedule:
         if 'Practice' in event_type or customer in no_locker_room:
