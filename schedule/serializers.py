@@ -15,4 +15,4 @@ class RinkScheduleSerializer(serializers.ModelSerializer):
         fields = ['id', 'schedule_date', 'start_time', 'end_time', 'countdown_time', 'rink', 'event', 'home_locker_room', 'visitor_locker_room']
 
     def get_countdown_time(self, obj):
-        return date.isoformat(datetime.now())+" "+obj.end_time.strftime('%H:%M:%S')
+        return date.isoformat(datetime.now())+" "+obj.start_time.strftime('%H:%M:%S')
