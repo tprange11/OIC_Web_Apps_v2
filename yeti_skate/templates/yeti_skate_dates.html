@@ -1,95 +1,113 @@
 {% extends 'base.html' %}{% load bootstrap4 %}
 {% block title %}<title>Upcoming Yeti Skate Sessions</title>{% endblock title %}
 {% block content %}
-    <h4>Upcoming Yeti Skate Sessions</h4>
-    <p>Choose a date below to register for that session of Yeti Skate. Disabled skate sessions indicate that you have registered for the skate session(s). You may remove yourself 
-        from a session prior to paying.  Once you have paid for the session(s), you will be unable to remove yourself from the session(s).</p>
-    <p>If you'd like to be notified when Yeti Skate dates are available for registration, update your <a href="{% url 'accounts:profile' slug=user.id %}">email preferences</a>.</p>
-    <p>Skate's on! <span class="text-success text-nowrap" style="font-size: 1.2rem;"><i class="far fa-thumbs-up"></i></span>
-        Skate's off! <span class="text-danger text-nowrap" style="font-size: 1.2rem;"><i class="far fa-thumbs-down"></i></span></p>
-    {% for message in messages %}
-    {% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}
-    <div class="alert alert-danger alert-dismissible alert-link" role="alert">
-        <button class="close" type="button" data-dismiss="alert" aria-label="close">&#215;</button>
-            {{ message }}
-    </div>
-    {% else %}
-    <div class="alert alert-info alert-dismissible alert-link" role="alert">
-        <button class="close" type="button" data-dismiss="alert" aria-label="close">&#215;</button>
-            {{ message }}
-    </div>
-    {% endif %}
-    {% empty %}
-    {% endfor %}
-    {% include 'accounts/user_credits_include.html' %}
-    {% include 'accounts/user_credits_modal_include.html' %}
-    <div class="row mb-4 d-flex align-content-center">
-        <div class="col-lg-3 col-md-6 col-12 pr-md-0 pr-3 pl-3 mb-0 d-flex" style="height: 50px;">
-            <div class="bg-primary d-flex flex-fill align-content-center">
-                <a href="{% url 'group_message:group-message' group=7 %}" class="text-white m-auto">Send Group Message</a>
-            </div>
-        </div>
-        <div class="col-lg-3 col-md-6 col-12 px-md-0 pr-lg-0 pr-md-3 px-3 mb-0 p-0 d-flex" style="height: 50px;">
-            <div class="bg-secondary d-flex flex-fill align-content-center">
-                <a href="{% url 'message_boards:board-topics' slug='yeti-skate' %}" class="text-white m-auto">Start a Conversation</a>
-            </div>
-        </div>
-        <div class="col-lg-6 col-12 px-3 pl-md-3 pl-lg-0 mb-0 d-flex" style="height: 50px;">
-            <div class="bg-success d-flex flex-fill text-center">
-                <a href="{% url 'message_boards:topic-post-list' slug=latest_topic.board.slug pk=latest_topic.pk %}" class="text-white m-auto">Latest Topic: {{latest_topic.subject}}</a>
-            </div>
+<h4>Upcoming Yeti Skate Sessions</h4>
+<p>Choose a date below to register for that session of Yeti Skate. Disabled skate sessions indicate that you have
+    registered for the skate session(s). You may remove yourself
+    from a session prior to paying. Once you have paid for the session(s), you will be unable to remove yourself from
+    the session(s).</p>
+<p>If you'd like to be notified when Yeti Skate dates are available for registration, update your <a
+        href="{% url 'accounts:profile' slug=user.id %}">email preferences</a>.</p>
+<p><button type="button" class="btn btn-info btn-lrg" data-toggle="modal" data-target="#brianGoneModal"><b>Pre-Skate
+            Open Instructions</b></button></p>
+<p>Skate's on! <span class="text-success text-nowrap" style="font-size: 1.2rem;"><i class="far fa-thumbs-up"></i></span>
+    Skate's off! <span class="text-danger text-nowrap" style="font-size: 1.2rem;"><i
+            class="far fa-thumbs-down"></i></span></p>
+{% for message in messages %}
+{% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}
+<div class="alert alert-danger alert-dismissible alert-link" role="alert">
+    <button class="close" type="button" data-dismiss="alert" aria-label="close">&#215;</button>
+    {{ message }}
+</div>
+{% else %}
+<div class="alert alert-info alert-dismissible alert-link" role="alert">
+    <button class="close" type="button" data-dismiss="alert" aria-label="close">&#215;</button>
+    {{ message }}
+</div>
+{% endif %}
+{% empty %}
+{% endfor %}
+{% include 'accounts/user_credits_include.html' %}
+{% include 'accounts/user_credits_modal_include.html' %}
+{% include 'brian_gone_modal.html' %}
+<div class="row mb-4 d-flex align-content-center">
+    <div class="col-lg-3 col-md-6 col-12 pr-md-0 pr-3 pl-3 mb-0 d-flex" style="height: 50px;">
+        <div class="bg-primary d-flex flex-fill align-content-center">
+            <a href="{% url 'group_message:group-message' group=7 %}" class="text-white m-auto">Send Group Message</a>
         </div>
     </div>
-    <ul class="list-group mb-3 d-inline-block">
-        {% for date in skate_dates %}
-            {% if date.disabled %}
-                <li class="list-group-item" style="padding: 5px 15px;"><a href="{% url 'yeti_skate:register' pk=date.pk %}" class="btn btn-warning btn-sm mb-2 mb-sm-0 disabled">
-                    {{ date.skate_date }} {{date.start_time}} to {{date.end_time}}</a>
-            {% else %}
-                <li class="list-group-item" style="padding: 5px 15px;"><a href="{% url 'yeti_skate:register' pk=date.pk %}" class="btn btn-warning btn-sm mb-2 mb-sm-0">
-                {{ date.skate_date }} {{date.start_time}} to {{date.end_time}}</a>
-            {% endif %}
-            <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#skaterModalCenter{{forloop.counter}}">Skaters <span class="number-of-skaters">{{ date.registered_skaters.num_skaters }}</span> Goalies <span class="number-of-skaters">{{date.registered_skaters.num_goalies}}</span></button>
-            {% if date.registered_skaters.num_skaters >= 10 %}
-                <span class="text-success text-nowrap" style="font-size: 1.2rem;"><i class="far fa-thumbs-up"></i></span>
-            {% else %}
-                <span class="text-danger text-nowrap" style="font-size: 1.2rem;"><i class="far fa-thumbs-down"></i></span>
-            {% endif %}
-            {% if date.session_pk != None and date.paid == False %}
-            <form method="POST" action="{% url 'yeti_skate:session-remove' pk=date.session_pk %}">
-                {% csrf_token %}
-                <input type="hidden" name="pk" value="{{date.session_pk}}">
-                <input type="submit" value="Remove Me From This Skate" class="btn btn-danger btn-sm mt-2">
-            </form>
-            {% endif %}</li>
-            <div class="modal fade" id="skaterModalCenter{{forloop.counter}}" tabindex="-1" role="dialog" aria-labelledby="skaterModalCenterTitle" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered" role="document">
-                <div class="modal-content">
-                    <div class="modal-header text-light bg-secondary">
-                    <h5 class="modal-title" id="skaterModalLongTitle{{forloop.counter}}">{{date.skate_date}} Registered Skaters</h5>
+    <div class="col-lg-3 col-md-6 col-12 px-md-0 pr-lg-0 pr-md-3 px-3 mb-0 p-0 d-flex" style="height: 50px;">
+        <div class="bg-secondary d-flex flex-fill align-content-center">
+            <a href="{% url 'message_boards:board-topics' slug='yeti-skate' %}" class="text-white m-auto">Start a
+                Conversation</a>
+        </div>
+    </div>
+    <div class="col-lg-6 col-12 px-3 pl-md-3 pl-lg-0 mb-0 d-flex" style="height: 50px;">
+        <div class="bg-success d-flex flex-fill text-center">
+            <a href="{% url 'message_boards:topic-post-list' slug=latest_topic.board.slug pk=latest_topic.pk %}"
+                class="text-white m-auto">Latest Topic: {{latest_topic.subject}}</a>
+        </div>
+    </div>
+</div>
+<ul class="list-group mb-3 d-inline-block">
+    {% for date in skate_dates %}
+    {% if date.disabled %}
+    <li class="list-group-item" style="padding: 5px 15px;"><a href="{% url 'yeti_skate:register' pk=date.pk %}"
+            class="btn btn-warning btn-sm mb-2 mb-sm-0 disabled">
+            {{ date.skate_date }} {{date.start_time}} to {{date.end_time}}</a>
+        {% else %}
+    <li class="list-group-item" style="padding: 5px 15px;"><a href="{% url 'yeti_skate:register' pk=date.pk %}"
+            class="btn btn-warning btn-sm mb-2 mb-sm-0">
+            {{ date.skate_date }} {{date.start_time}} to {{date.end_time}}</a>
+        {% endif %}
+        <button type="button" class="btn btn-primary btn-sm" data-toggle="modal"
+            data-target="#skaterModalCenter{{forloop.counter}}">Skaters <span class="number-of-skaters">{{
+                date.registered_skaters.num_skaters }}</span> Goalies <span
+                class="number-of-skaters">{{date.registered_skaters.num_goalies}}</span></button>
+        {% if date.registered_skaters.num_skaters >= 10 %}
+        <span class="text-success text-nowrap" style="font-size: 1.2rem;"><i class="far fa-thumbs-up"></i></span>
+        {% else %}
+        <span class="text-danger text-nowrap" style="font-size: 1.2rem;"><i class="far fa-thumbs-down"></i></span>
+        {% endif %}
+        {% if date.session_pk != None and date.paid == False %}
+        <form method="POST" action="{% url 'yeti_skate:session-remove' pk=date.session_pk %}">
+            {% csrf_token %}
+            <input type="hidden" name="pk" value="{{date.session_pk}}">
+            <input type="submit" value="Remove Me From This Skate" class="btn btn-danger btn-sm mt-2">
+        </form>
+        {% endif %}
+    </li>
+    <div class="modal fade" id="skaterModalCenter{{forloop.counter}}" tabindex="-1" role="dialog"
+        aria-labelledby="skaterModalCenterTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header text-light bg-secondary">
+                    <h5 class="modal-title" id="skaterModalLongTitle{{forloop.counter}}">{{date.skate_date}} Registered
+                        Skaters</h5>
                     <button type="button" class="close text-light" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
-                    </div>
-                    <div class="modal-body">
-                        <ul class="list-group">
-                            {% for skater in skate_sessions %}
-                            {% if skater.skate_date.pk == date.pk %}<li class="list-group-item">Skater Name: {{skater.skater.first_name}} {{skater.skater.last_name}}
-                                {% if skater.goalie %}<b>(Goalie)</b>{% endif %}
-                                {% if user.is_superuser %}
-                                {% if skater.paid %}<b>(Paid)</b>{% else %}<b>(Not Paid)</b>{% endif %}
-                                {% endif %}
-                            </li>{% endif %}{% endfor %}
-                        </ul>
-                    </div>
-                    <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                    </div>
                 </div>
+                <div class="modal-body">
+                    <ul class="list-group">
+                        {% for skater in skate_sessions %}
+                        {% if skater.skate_date.pk == date.pk %}<li class="list-group-item">Skater Name:
+                            {{skater.skater.first_name}} {{skater.skater.last_name}}
+                            {% if skater.goalie %}<b>(Goalie)</b>{% endif %}
+                            {% if user.is_superuser %}
+                            {% if skater.paid %}<b>(Paid)</b>{% else %}<b>(Not Paid)</b>{% endif %}
+                            {% endif %}
+                        </li>{% endif %}{% endfor %}
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                 </div>
             </div>
-        {% empty %}
-        <li class="list-group-item" style="padding: 5px 15px;">Sorry, no skates are available at this time.</li>
-        {% endfor %}
-    </ul>
+        </div>
+    </div>
+    {% empty %}
+    <li class="list-group-item" style="padding: 5px 15px;">Sorry, no skates are available at this time.</li>
+    {% endfor %}
+</ul>
 {% endblock content %}

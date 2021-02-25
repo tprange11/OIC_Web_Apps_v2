@@ -1,0 +1,50 @@
+<!-- Brian Gone Modal -->
+{% load static %}
+<div class="modal fade" id="brianGoneModal" tabindex="-1" role="dialog" aria-labelledby="brianGoneModal"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header text-light bg-info">
+                <h5 class="modal-title text-dark" id="brianGoneModalLongTitle">Pre-Skate Open Instructions</h5>
+                <button type="button" class="close text-light" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <h4>North Rink</h4>
+                <p>
+                    Rink lights are located in the north rink compressor room, accessed through the north rink zamboni
+                    room door.
+                    Go through the door, turn left, go through double doors on left. Room lights will turn on. Rink
+                    lights are located by the
+                    door to the hallway. Turn on all rink lights and hallway light. There is an electrical
+                    panel marked "scoreboard", open it and flip breaker #4 to turn on the scoreboard. Then put nets out
+                    and close zamboni doors, left door first.
+                    If the scoreboard does not have the clock up, just hold the power button on
+                    the scoreboard controller in the scorers box
+                    till the scoreboard turns off. It will come back on with the clock showing.
+                </p>
+                <img src="{% static 'images/north_rink.jpg' %}" width="100%">
+                <p></p>
+                <h4>South Rink</h4>
+                <p>
+                    Rink lights are located in the south rink zamboni room. Go through the south rink zam room door and
+                    turn left, rink lights
+                    are marked "50%", push them both up. Turn on locker room hall switch. Then go in
+                    south rink compressor
+                    room door on the left and turn left. The electrical panel has the scoreboard breakers, #26 & #28, just
+                    flip the breakers to turn on the scoreboards. Put nets out and close zamboni doors, left door first.
+                    If the scoreboard does not have the clock up, just hold the power button on
+                    the scoreboard controller in the scorers box
+                    till the scoreboards turn off. They will come back on with the clock showing.
+                </p>
+                <img src="{% static 'images/south_rink.jpg' %}" width="100%">
+                <p></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-info btn-sm" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- End Brian Gone Modal -->
