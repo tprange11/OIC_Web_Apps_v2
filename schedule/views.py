@@ -3,7 +3,7 @@ from django.views.generic import ListView, TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from . import models
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from .scrape_schedule import scrape_oic_schedule, scrape_ochl_teams, \
     scrape_owhl_teams, scrape_oyha_teams, add_locker_rooms_to_schedule, \
     add_schedule_to_model, team_events, oic_schedule
@@ -23,14 +23,16 @@ class RinkScheduleListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self, **kwargs):
         # queryset = super().get_queryset().filter()
-        queryset = super().get_queryset().filter(end_time__gte=datetime.now()).order_by('end_time')
+        todays_date = date.isoformat(datetime.today())
+        print(todays_date)
+        queryset = super().get_queryset().filter(schedule_date=todays_date, end_time__gte=datetime.now()).order_by('end_time')
         if self.kwargs['rink'] == 'north':
             return queryset.filter(rink__contains='North')
         elif self.kwargs['rink'] == 'south':
             return queryset.filter(rink__contains='South')
         elif self.kwargs['rink'] == 'separate':
-            queryset = {'north': super().get_queryset().filter(rink__contains='North', end_time__gte=datetime.now()).order_by('end_time'),
-                                'south': super().get_queryset().filter(rink__contains='South', end_time__gte=datetime.now()).order_by('end_time')}
+            queryset = {'north': super().get_queryset().filter(rink__contains='North', schedule_date=todays_date, end_time__gte=datetime.now()).order_by('end_time'),
+                        'south': super().get_queryset().filter(rink__contains='South', schedule_date=todays_date, end_time__gte=datetime.now()).order_by('end_time')}
             return queryset
         else:
             return queryset.exclude(rink__contains='Meeting/Party Room')
@@ -110,48 +112,60 @@ def scrape_schedule(request):
     
     the_date = date.today()
     # the_date = "2019-10-26"
-
     scrape_date = date.isoformat(the_date)
-    scrape_oic_schedule(scrape_date)
-    ### UNCOMMENT DURING HOCKEY SEASON ###
-    # Scrape OYHA teams daily
-    try:
-        scrape_oyha_teams(scrape_date)
-    except Exception as e:
-        print(f"{e}, scrape_oyha_teams()")
+    data_removed = False # used to check if the database table has been cleared once
 
-    # If it is Friday, scrape OWHL teams
-    if date.weekday(date.today()) == 4:
-        try:
-            scrape_owhl_teams(scrape_date)
-        except Exception as e:
-            print(f"{e}, scrape_owhl_teams()")
 
-    # If it is Sunday, scrape OCHL teams
-    if date.weekday(date.today()) == 6:
-        try:
-            scrape_ochl_teams()
-        except Exception as e:
-            print(f"{e}, scrape_ochl_teams()")
-    ### UNCOMMENT DURING HOCKEY SEASON ###
+    def swap_team_names():
+        ''' Replace schedule event with team names if they match times'''
+        if len(team_events) != 0:
+            for item in team_events:
+                for oic in oic_schedule:
+                    if item[0] == oic[1] and item[3] == oic[3]:
+                        if item[2] == "":
+                            oic[4] = f"{item[1]}"
+                        else:
+                            oic[4] = f"{item[1]} vs {item[2]}"
 
-    if len(team_events) != 0:
-        for item in team_events:
-            for oic in oic_schedule:
-                if item[0] == oic[1] and item[3] == oic[3]:
-                    if item[2] == "":
-                        oic[4] = f"{item[1]}"
-                    else:
-                        oic[4] = f"{item[1]} vs {item[2]}"
+    # If it's not Saturday or Sunday, scrape oic schedule
+    if date.weekday(date.today()) != 5 and date.weekday(date.today()) !=6:
+        scrape_oic_schedule(scrape_date)
 
-    # If anything ends at midnight, change to 11:59 PM
-    # for item in oic_schedule:
-    #     if item[2] == "12:00 AM":
-    #         item[2] = "11:59 PM"
+        # If it is Friday these additional things need to be done
+        if date.weekday(date.today()) == 4:
+            # Scrape OWHL teams
+            try:
+                scrape_owhl_teams(scrape_date)
+            except Exception as e:
+                print(f"{e}, scrape_owhl_teams()")
+        swap_team_names()
+        add_locker_rooms_to_schedule()
+        add_schedule_to_model(oic_schedule, data_removed)
+        data_removed = True
+        oic_schedule.clear()
+        team_events.clear()
 
-    # Insert data into Django model
-    add_locker_rooms_to_schedule()
-    add_schedule_to_model(oic_schedule)
+        if date.weekday(date.today()) == 4:
+            saturday = date.isoformat(date.today() + timedelta(days=1))
+            scrape_oic_schedule(saturday)
+            swap_team_names()
+            add_locker_rooms_to_schedule()
+            add_schedule_to_model(oic_schedule, data_removed)
+            oic_schedule.clear()
+            team_events.clear()
+
+            sunday = date.isoformat(date.today() + timedelta(days=2))
+            # oic_schedule.clear()
+            scrape_oic_schedule(sunday)
+            try:
+                scrape_ochl_teams()
+            except Exception as e:
+                print(f"{e}, scrape_ochl_teams()")
+            swap_team_names()
+            add_locker_rooms_to_schedule()
+            add_schedule_to_model(oic_schedule, data_removed)
+            oic_schedule.clear()
+            team_events.clear()
 
     messages.add_message(request, messages.SUCCESS, 'Rink Resurface Schedule has been updated.')
     return redirect('schedule:choose-rink')
@@ -161,4 +175,5 @@ class RinkScheduleListAPIView(ListAPIView):
     '''Return rink schedule.'''
 
     serializer_class = RinkScheduleSerializer
-    queryset = models.RinkSchedule.objects.all()
+    todays_date = date.isoformat(datetime.today())
+    queryset = models.RinkSchedule.objects.filter(schedule_date=todays_date)
