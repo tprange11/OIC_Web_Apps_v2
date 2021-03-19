@@ -24,8 +24,8 @@ class RinkScheduleListView(LoginRequiredMixin, ListView):
     def get_queryset(self, **kwargs):
         # queryset = super().get_queryset().filter()
         todays_date = date.isoformat(datetime.today())
-        print(todays_date)
-        queryset = super().get_queryset().filter(schedule_date=todays_date, end_time__gte=datetime.now()).order_by('end_time')
+        # print(todays_date)
+        queryset = super().get_queryset().filter(schedule_date=todays_date).filter(end_time__gte=datetime.now()).order_by('end_time')
         if self.kwargs['rink'] == 'north':
             return queryset.filter(rink__contains='North')
         elif self.kwargs['rink'] == 'south':
@@ -44,9 +44,10 @@ class RinkScheduleListView(LoginRequiredMixin, ListView):
         south_start_times = []
         north_end_times = []
         south_end_times = []
+        todays_date = date.isoformat(datetime.today())
 
         # Return event start times as context
-        start_times = self.model.objects.values('start_time').filter(start_time__gte=datetime.now()).order_by('start_time')
+        start_times = self.model.objects.values('start_time').filter(schedule_date=todays_date, start_time__gte=datetime.now()).order_by('start_time')
         if self.kwargs['rink'] == 'north':
             start_times = start_times.filter(rink__contains='North')
         elif self.kwargs['rink'] == 'south':
@@ -58,7 +59,7 @@ class RinkScheduleListView(LoginRequiredMixin, ListView):
             start_times = start_times.exclude(rink__contains='Meeting/Party Room')
 
         # Return event end times as context
-        end_times = self.model.objects.values('end_time').filter(end_time__gte=datetime.now()).order_by('end_time')
+        end_times = self.model.objects.values('end_time').filter(schedule_date=todays_date, end_time__gte=datetime.now()).order_by('end_time')
         if self.kwargs['rink'] == 'north':
             end_times = end_times.filter(rink__contains='North')
         elif self.kwargs['rink'] == 'south':
