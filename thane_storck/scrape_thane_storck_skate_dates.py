@@ -132,9 +132,9 @@ if __name__ == "__main__":
 
     # Every Monday scrape the next four weeks for Saturday Thane Storck skate dates
     # if the_date.weekday() == 0:
-    for x in range(28):
+    for x in range(15):
         scrape_date = date.isoformat(the_date)
-        if the_date.weekday() == 5:
+        if the_date.weekday() == 6:
             scrape_oic_schedule(scrape_date)
         the_date += timedelta(days=1)
 
