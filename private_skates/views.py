@@ -45,8 +45,8 @@ class PrivateSkateDatesListView(LoginRequiredMixin, ListView):
         try:
             group = self.group_model.objects.get(name=kwargs['slug'])
             self.request.user.groups.add(group)
-        except IntegrityError:
-            pass
+        except Group.DoesNotExist:
+            messages.add_message(self.request, messages.ERROR, 'The URL you provided is incorrect.  Please verify the URL and try again!')
 
         try:
             # If a profile already exists, do nothing
@@ -88,7 +88,6 @@ class PrivateSkateSessionCreateView(LoginRequiredMixin, CreateView):
     cart_model = Cart
     form_class = forms.PrivateSkateSessionForm
     template_name = 'private_skate_session_form.html'
-    # success_url = 'private_skates:private-skates'
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -147,13 +146,16 @@ class PrivateSkateSessionCreateView(LoginRequiredMixin, CreateView):
                 user_credit.save()
                 credit_used = True
             else:
-                self.add_to_cart(price)
+                if price != 0:
+                    self.add_to_cart(price)
             self.object.save()
         except:
             pass
 
         # If all goes well, set success message and return
-        if credit_used:
+        if price == 0:
+            messages.add_message(self.request, messages.INFO, 'You have successfully registered for the skate!')
+        elif credit_used:
             messages.add_message(self.request, messages.INFO, f'You have successfully registered for the skate! ${price} in credit has been deducted from your balance.')
         else:
             messages.add_message(self.request, messages.INFO, 'To complete your registration, you must view your cart and pay for your item(s)!')
