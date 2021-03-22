@@ -63,7 +63,7 @@ class ChildSkater(models.Model):
 
     class Meta:
         # Prevent duplicate skaters
-        unique_together = ['user', 'first_name', 'last_name', 'date_of_birth']
+        unique_together = ['user', 'first_name', 'last_name']
 
     def __str__(self):
         '''Overrides string representation of class.'''

@@ -132,7 +132,7 @@ class CreateCHSAlumniSessionView(LoginRequiredMixin, CreateView):
                 credit_used = True # Used to set the message
             else:
                 self.add_to_cart(price)
-                self.object.save()
+            self.object.save()
         except IntegrityError:
             pass
         

@@ -93,6 +93,7 @@
                             {% if in_group_chs_alumni %}
                             <a class="dropdown-item" href="{% url 'chs_alumni:chs-alumni' %}">CHS Alumni</a>
                             {% endif %}
+                            <a class="dropdown-item" href="{% url 'private_skates:private-skates' %}">Private Skates</a>
                             {% if user.is_staff %}
                             <a class="dropdown-item" href="{% url 'schedule:choose-rink' %}">Rink Schedule</a>
                             {% endif %}
@@ -137,7 +138,8 @@
                                 href="{% url 'contact:contact-form' %}">Contact</a>
                         </li>
                         {% endif %}
-                        {% if user.is_superuser %}
+                        {% if user.is_superuser or user.id == 5 %}
+                        {% comment %} User ID 5 is Andy Parrott{% endcomment %}
                         <li class="nav-item">
                             <a class="nav-link" target="_blank" rel="noopener noreferrer" href="/admin">Admin</a>
                         </li>

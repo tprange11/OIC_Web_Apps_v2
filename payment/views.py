@@ -21,6 +21,7 @@ from womens_hockey.models import WomensHockeySkateSession
 from bald_eagles.models import BaldEaglesSession
 from lady_hawks.models import LadyHawksSkateSession
 from chs_alumni.models import CHSAlumniSession
+from private_skates.models import PrivateSkateSession, PrivateSkate
 from accounts.models import UserCredit
 
 # Create your views here.
@@ -78,6 +79,7 @@ def process_payment(request, **kwargs):
     bald_eagles_sessions_model = BaldEaglesSession
     lady_hawks_sessions_model = LadyHawksSkateSession
     chs_alumni_sessions_model = CHSAlumniSession
+    private_skate_sessions_model = PrivateSkateSession
     user_credit_model = UserCredit
     today = date.today()
 
@@ -92,7 +94,11 @@ def process_payment(request, **kwargs):
         total = 0
         programs = program_model.objects.all().values_list('program_name', flat=True)
         note = {program: 0 for program in programs}
+        private_skates = PrivateSkate.objects.all().values_list('name', flat=True)
+        for skate in private_skates:
+            note[skate] = 0
         note['User Credits'] = 0
+
         for item, amount in cart_items:
             total += amount
             # if item == 'OH Membership':
@@ -150,6 +156,7 @@ def process_payment(request, **kwargs):
                 bald_eagles_sessions_model.objects.filter(skater=request.user).update(paid=True)
                 lady_hawks_sessions_model.objects.filter(user=request.user).update(paid=True)
                 chs_alumni_sessions_model.objects.filter(skater=request.user).update(paid=True)
+                private_skate_sessions_model.objects.filter(user=request.user).update(paid=True)
             except IntegrityError:
                 pass
 

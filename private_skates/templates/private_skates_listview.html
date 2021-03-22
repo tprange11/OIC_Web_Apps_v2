@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}<title>My Private Skates</title>{% endblock title %}
+{% block content %}
+<h4>My Private Skates</h4>
+<ul class="list-group">
+    {% for skate in private_skates %}
+    <li class="list-group-item"><a href="{% url 'private_skates:skate-dates' slug=skate.slug %}"
+            class="btn btn-dark btn">{{skate.name}}</a>
+    </li>
+    {% empty %}
+    <li class="list-group-item">You have no private skates to join.</li>
+    {% endfor %}
+</ul>
+{% endblock content %}

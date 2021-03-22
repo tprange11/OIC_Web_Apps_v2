@@ -8,7 +8,6 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'OIC_Web_Apps.settings')
 import django
 django.setup()
 
-from django.db import IntegrityError
 from cart.models import Cart
 from stickandpuck.models import StickAndPuckSession
 from thane_storck.models import SkateSession
@@ -20,6 +19,7 @@ from womens_hockey.models import WomensHockeySkateSession
 from bald_eagles.models import BaldEaglesSession
 from lady_hawks.models import LadyHawksSkateSession
 from chs_alumni.models import CHSAlumniSession
+from private_skates.models import PrivateSkateSession
 from accounts.models import UserCredit
 
 from datetime import date
@@ -38,6 +38,7 @@ def clear_cart_and_unpaid_items():
     BaldEaglesSession.objects.filter(paid=False, session_date__skate_date__gte=date.today()).delete()
     LadyHawksSkateSession.objects.filter(paid=False, skate_date__skate_date__gte=date.today()).delete()
     CHSAlumniSession.objects.filter(paid=False, date__skate_date__gte=date.today()).delete()
+    PrivateSkateSession.objects.filter(paid=False, skate_date__date__gte=date.today()).delete()
     UserCredit.objects.filter(pending__gt=0).update(pending=0)
     return
 

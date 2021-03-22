@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %}<title>Private Skate Dates</title>{% endblock title %}
+{% block content %}
+{% with skate_dates.all|first as item%}
+<h4>Private Skate: {{item.private_skate.name}}</h4>
+<p>Available skates are listed below.</p>
+{% endwith %}
+{% for message in messages %}
+{% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}
+<div class="alert alert-danger alert-dismissible alert-link" role="alert">
+    <button class="close" type="button" data-dismiss="alert" aria-label="close">&#215;</button>
+    {{ message }}
+</div>
+{% else %}
+<div class="alert alert-info alert-dismissible alert-link" role="alert">
+    <button class="close" type="button" data-dismiss="alert" aria-label="close">&#215;</button>
+    {{ message }}
+</div>
+{% endif %}
+{% empty %}
+{% endfor %}
+{% include 'accounts/user_credits_include.html' %}
+{% include 'accounts/user_credits_modal_include.html' %}
+<ul class="list-group">
+    {% for skate in skate_dates %}
+    <li class="list-group-item"><a href="{% url 'private_skates:register' pk=skate.pk %}" class="btn btn-dark btn">
+            {{skate.date}} from {{skate.start_time}} to {{skate.end_time}}
+        </a>
+        <button type="button" class="btn btn-primary" data-toggle="modal"
+            data-target="#skaterModalCenter{{forloop.counter}}">Skaters <span class="number-of-skaters">
+                {{skate.registered_skaters.num_skaters }}</span> Goalies <span class="number-of-skaters">
+                {{skate.registered_skaters.num_goalies }}</span></button>
+    </li>
+    <div class="modal fade" id="skaterModalCenter{{forloop.counter}}" tabindex="-1" role="dialog"
+        aria-labelledby="skaterModalCenterTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header text-light bg-secondary">
+                    <h5 class="modal-title" id="skaterModalLongTitle{{forloop.counter}}">{{date.skate_date}} Registered
+                        Skaters</h5>
+                    <button type="button" class="close text-light" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <ul class="list-group">
+                        {% for session in skate.session_skaters.all %}
+                        <li class="list-group-item">
+                            {{session.skater.first_name}} {{session.skater.last_name}}
+                            {% if session.goalie %}<b>(Goalie)</b>{% endif %}
+                            {% if not session.paid and user == session.user %}<b>(Not Paid)</b>
+                            <form method="POST" action="{% url 'private_skates:remove-session' pk=session.pk %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="pk" value="{{session.pk}}">
+                                <input type="submit" value="Remove Skater From This Skate"
+                                    class="btn btn-danger btn-sm mt-2">
+                            </form>
+                            {% endif %}
+                        </li>{% endfor %}
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <li class="list-group-item">There are no private skates available.</li>
+    {% endfor %}
+</ul>
+{% endblock content %}

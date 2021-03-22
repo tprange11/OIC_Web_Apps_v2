@@ -8,6 +8,8 @@ scrape_schedule_bkup.py
 templates/web_apps_sw.js
 templates/info_open_hockey_original.html
 static/js/web_apps.js
+schedule/scrape_schedule_original.py
+schedule/views_original.py
 ##############################
 
 # Django stuff:
