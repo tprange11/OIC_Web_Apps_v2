@@ -37,7 +37,7 @@ class PrivateSkateDate(models.Model):
     def __str__(self) -> str:
         return f"{self.date}, {self.start_time.strftime('%I:%M %p')} to {self.end_time.strftime('%I:%M %p')}"
 
-    def registered_skaters(self, skate_date):
+    def registered_skaters(skate_date):
         '''Returns the number of skaters and goalies registered for a skate date.'''
         num_goalies = PrivateSkateSession.objects.filter(skate_date=skate_date, goalie=True).count()
         num_skaters = PrivateSkateSession.objects.filter(skate_date=skate_date, goalie=False).count()
