@@ -27,7 +27,9 @@
             <div class="row my-2" id="south-schedule-row{{forloop.counter}}">
                 <div class="col-3">{{object.start_time}}</div>
                 <div class="col-3 font-weight-bold">{{object.end_time}}</div>
-                <div class="col-6">{{object.event}}</div>
+                <div class="col-6">{{object.event}}<br />
+                    <small>H: {{object.home_locker_room}}, V: {{object.visitor_locker_room}}</small>
+                </div>
             </div>
             {% endfor %}
         </div>
@@ -47,7 +49,9 @@
             <div class="row my-2" id="north-schedule-row{{forloop.counter}}">
                 <div class="col-3">{{object.start_time}}</div>
                 <div class="col-3 font-weight-bold">{{object.end_time}}</div>
-                <div class="col-6">{{object.event}}</div>
+                <div class="col-6">{{object.event}}<br />
+                    <small>H: {{object.home_locker_room}}, V: {{object.visitor_locker_room}}</small>
+                </div>
             </div>
             {% endfor %}
         </div>
