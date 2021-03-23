@@ -126,14 +126,14 @@ class RemoveItemFromCartView(LoginRequiredMixin, DeleteView):
         elif cart_item.item == Program.objects.all().get(id=11).program_name: # CHS Alumni
             skate_date = self.chs_skate_date_model.objects.filter(skate_date=cart_item.event_date)
             self.chs_skate_model.objects.filter(skater=request.user, date=skate_date[0]).delete()
-        elif cart_item.item == PrivateSkate.objects.all().get(name=cart_item.item).name: # Private Skate
-            skate_date = self.private_skate_date_model.objects.filter(date=cart_item.event_date)
-            skater_name = cart_item.skater_name.split(' ')
-            skater_id = ChildSkater.objects.filter(first_name=skater_name[0], last_name=skater_name[1], user=self.request.user)
-            self.private_skate_model.objects.filter(skater=skater_id[0], skate_date=skate_date[0]).delete()
         # elif cart_item.item == 'OH Membership':
         #     self.oh_member_model.objects.filter(member=request.user).delete()
         elif cart_item.item == 'User Credits':
             self.user_credit_model.objects.filter(user=request.user).update(pending=0)
+        elif cart_item.item == PrivateSkate.objects.all().get(name=cart_item.item).name: # Private Skate KEEP THIS AS THE LAST ELIF STATEMENT
+            skate_date = self.private_skate_date_model.objects.filter(date=cart_item.event_date)
+            skater_name = cart_item.skater_name.split(' ')
+            skater_id = ChildSkater.objects.filter(first_name=skater_name[0], last_name=skater_name[1], user=self.request.user)
+            self.private_skate_model.objects.filter(skater=skater_id[0], skate_date=skate_date[0]).delete()
 
         return super().delete(request, *args, **kwargs)
