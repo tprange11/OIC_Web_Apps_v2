@@ -17,7 +17,7 @@
 <a href=" {% url 'schedule:rink-schedule-list' rink='separate' %}" class="btn btn-warning btn-sm schedule-button">North and South Split</a>
 <a href=" {% url 'schedule:rink-schedule-list' rink='both' %}" class="btn btn-warning btn-sm schedule-button">North and South Combined</a>
 {% if user.is_superuser %}
-<a href=" {% url 'schedule:update-schedule' %}" class="btn btn-secondary btn-sm schedule-button" onclick="showSpinner()" id="update-schedule">Update Schedule</a>
+<a class="btn btn-secondary btn-sm schedule-button text-light" onclick="showSpinner()" id="update-schedule">Update Schedule</a>
 <div id="spinner" class="text-center" style="display: none;">
     <div class="spinner-border text-primary" role="status">
       <span class="sr-only">Loading...</span>
@@ -25,8 +25,15 @@
 </div>
 <script>
     function showSpinner() {
-        document.getElementById('update-schedule').style.display = 'none';
-        document.getElementById('spinner').style.display = 'block';
+        const proceed = confirm(
+                'This will overwrite the current schedule including Locker Room assignments!  On Friday, this will overwrite the whole weekend!\
+                \n\nProceed?'
+            )
+        if (proceed) {
+            document.location.href = "{% url 'schedule:update-schedule' %}"
+            document.getElementById('update-schedule').style.display = 'none';
+            document.getElementById('spinner').style.display = 'block';
+        }
     }
 </script>
 {% endif %}
