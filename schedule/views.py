@@ -177,4 +177,4 @@ class RinkScheduleListAPIView(ListAPIView):
 
     serializer_class = RinkScheduleSerializer
     todays_date = date.isoformat(datetime.today())
-    queryset = models.RinkSchedule.objects.filter(schedule_date=todays_date)
+    queryset = models.RinkSchedule.objects.filter(schedule_date=todays_date).order_by('start_time')
