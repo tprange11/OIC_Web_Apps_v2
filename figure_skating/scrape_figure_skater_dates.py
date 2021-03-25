@@ -129,17 +129,17 @@ def send_skate_dates_email():
 
 if __name__ == "__main__":
 
-    the_date = date.today()
-    # the_date = date.today() + timedelta(days=16)
+    # the_date = date.today()
+    the_date = date.today() + timedelta(days=4)
     send_email = False
 
     # Every Friday scrape the next 12 days for Figure Skating dates
     # if the_date.weekday() == 4:
-    for x in range(22):
-        if the_date.weekday() == 4 or the_date.weekday() == 5:
+    for x in range(32):
+        # if the_date.weekday() == 4 or the_date.weekday() == 5:
             # print(the_date)
-            scrape_date = date.isoformat(the_date)
-            scrape_oic_schedule(scrape_date)
+        scrape_date = date.isoformat(the_date)
+        scrape_oic_schedule(scrape_date)
         the_date += timedelta(days=1)
 
     if len(skate_dates) != 0:
