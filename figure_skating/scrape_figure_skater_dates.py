@@ -136,10 +136,10 @@ if __name__ == "__main__":
     # Every Friday scrape the next 12 days for Figure Skating dates
     # if the_date.weekday() == 4:
     for x in range(32):
-        # if the_date.weekday() == 4 or the_date.weekday() == 5:
+        if the_date.weekday() in [0, 2, 3, 5]:
             # print(the_date)
-        scrape_date = date.isoformat(the_date)
-        scrape_oic_schedule(scrape_date)
+            scrape_date = date.isoformat(the_date)
+            scrape_oic_schedule(scrape_date)
         the_date += timedelta(days=1)
 
     if len(skate_dates) != 0:
