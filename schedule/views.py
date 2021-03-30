@@ -4,9 +4,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from . import models
 from datetime import datetime, date, timedelta
-from .scrape_schedule import scrape_oic_schedule, scrape_ochl_teams, \
-    scrape_owhl_teams, scrape_oyha_teams, add_locker_rooms_to_schedule, \
-    add_schedule_to_model, team_events, oic_schedule
+from .scrape_schedule import scrape_oic_schedule, add_locker_rooms_to_schedule, \
+        add_schedule_to_model, team_events, oic_schedule
 
 from rest_framework.generics import ListAPIView
 from .serializers import RinkScheduleSerializer
@@ -129,40 +128,33 @@ def scrape_schedule(request):
                             oic[4] = f"{item[1]} vs {item[2]}"
 
     # If it's not Saturday or Sunday, scrape oic schedule
-    if date.weekday(date.today()) != 5 and date.weekday(date.today()) !=6:
+    if date.weekday(date.today()) not in [5, 6]:
         scrape_oic_schedule(scrape_date)
-
-        # If it is Friday these additional things need to be done
-        if date.weekday(date.today()) == 4:
-            # Scrape OWHL teams
-            try:
-                scrape_owhl_teams(scrape_date)
-            except Exception as e:
-                print(f"{e}, scrape_owhl_teams()")
-        swap_team_names()
+        # swap_team_names()
         add_locker_rooms_to_schedule()
         add_schedule_to_model(oic_schedule, data_removed)
         data_removed = True
         oic_schedule.clear()
-        team_events.clear()
+        # team_events.clear()
 
+        # If it is Friday, scrape Saturday and Sunday too
         if date.weekday(date.today()) == 4:
             saturday = date.isoformat(date.today() + timedelta(days=1))
             scrape_oic_schedule(saturday)
-            swap_team_names()
+            # swap_team_names()
             add_locker_rooms_to_schedule()
             add_schedule_to_model(oic_schedule, data_removed)
             oic_schedule.clear()
-            team_events.clear()
+            # team_events.clear()
 
             sunday = date.isoformat(date.today() + timedelta(days=2))
             # oic_schedule.clear()
             scrape_oic_schedule(sunday)
-            try:
-                scrape_ochl_teams()
-            except Exception as e:
-                print(f"{e}, scrape_ochl_teams()")
-            swap_team_names()
+            # try:
+            #     scrape_ochl_teams()
+            # except Exception as e:
+            #     print(f"{e}, scrape_ochl_teams()")
+            # swap_team_names()
             add_locker_rooms_to_schedule()
             add_schedule_to_model(oic_schedule, data_removed)
             oic_schedule.clear()
