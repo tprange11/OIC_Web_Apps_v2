@@ -229,7 +229,8 @@ def add_locker_rooms_to_schedule():
             item[4] = short_name[item[4]]
 
     for (_, _, _, rink, customer, event_type) in oic_schedule:
-        if 'Practice' in event_type or customer in no_locker_room:
+        # if 'Practice' in event_type or customer in no_locker_room: # Used for Covid-19
+        if customer in no_locker_room:
             oic_schedule[x].append("")
             oic_schedule[x].append("")
             x += 1
