@@ -249,11 +249,15 @@ def add_locker_rooms_to_schedule():
         elif 'South' in rink:
             if 'Game' in event_type and customer in need_game_locker_rooms:
                 if 'Concordia ACHA' in customer:
-                    oic_schedule[x].append('7') # Concordia ACHA Locker Room
+                    oic_schedule[x].append(south_locker_rooms[2]) # Concordia ACHA Locker Room ##### Dono said only locker room 7
                 else:
-                    oic_schedule[x].append("") # Home team doesn't need a locker room
+                    oic_schedule[x].append("") # Visiting team doesn't need a locker room
                 oic_schedule[x].append(south_locker_rooms[south_lr_flag][0])
             else:
+                if 'Concordia ACHA' in customer:
+                    oic_schedule[x].append(south_locker_rooms[2]) # Concordia ACHA Locker Room
+                    oic_schedule[x].append("")
+                oic_schedule[x].append(south_locker_rooms[south_lr_flag][0])
                 oic_schedule[x].append(south_locker_rooms[south_lr_flag][1])
                 oic_schedule[x].append(south_locker_rooms[south_lr_flag][0])
             if south_lr_flag == 0:
