@@ -257,9 +257,10 @@ def add_locker_rooms_to_schedule():
                 if 'Concordia ACHA' in customer:
                     oic_schedule[x].append(south_locker_rooms[2]) # Concordia ACHA Locker Room
                     oic_schedule[x].append("")
-                oic_schedule[x].append(south_locker_rooms[south_lr_flag][0])
-                oic_schedule[x].append(south_locker_rooms[south_lr_flag][1])
-                oic_schedule[x].append(south_locker_rooms[south_lr_flag][0])
+                    # oic_schedule[x].append(south_locker_rooms[south_lr_flag][0])
+                else:
+                    oic_schedule[x].append(south_locker_rooms[south_lr_flag][1])
+                    oic_schedule[x].append(south_locker_rooms[south_lr_flag][0])
             if south_lr_flag == 0:
                 south_lr_flag = 1
             else:
