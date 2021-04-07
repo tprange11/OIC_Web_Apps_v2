@@ -31,6 +31,7 @@
                 {{ date.skate_date }} {{date.start_time}} to {{date.end_time}}</a>
             {% endif %}
             {% if date.session_pk != None and date.paid == False %}
+            <a href="{% url 'cart:shopping-cart' %}" class="btn btn-sm btn-primary">Pay Now</a>
             <form method="POST" action="{% url 'adult_skills:session-remove' pk=date.session_pk %}">
                 {% csrf_token %}
                 <input type="hidden" name="pk" value="{{date.session_pk}}">

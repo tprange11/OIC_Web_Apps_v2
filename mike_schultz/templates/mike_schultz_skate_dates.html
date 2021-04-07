@@ -57,6 +57,7 @@
                             {% if skater.skate_date.pk == date.pk %}<li class="list-group-item">Skater Name: {{skater.skater.first_name}} {{skater.skater.last_name}}
                                 {% if skater.goalie %}<b>(Goalie)</b>{% endif %}
                             {% if skater.skate_date.pk == date.pk and skater.paid == False and user == skater.user %}
+                            <a href="{% url 'cart:shopping-cart' %}" class="btn btn-sm btn-primary">Pay Now</a>
                             <form method="POST" action="{% url 'mike_schultz:session-remove' pk=skater.pk %}">
                                 {% csrf_token %}
                                 <input type="hidden" name="pk" value="{{date.session_pk}}">

@@ -59,10 +59,11 @@
         <div class="modal-body">
           <ul class="list-group">
             {% for skater in skate_sessions %}
-            {% if skater.skate_date.pk == date.pk %}<li class="list-group-item">Skater Name:
+            {% if skater.skate_date.pk == date.pk %}<li class="list-group-item">
               {{skater.skater.first_name}} {{skater.skater.last_name}}
               {% if skater.goalie %}<b>(Goalie)</b>{% endif %}
               {% if skater.skate_date.pk == date.pk and skater.paid == False and user == skater.user %}
+              <a href="{% url 'cart:shopping-cart' %}" class="btn btn-sm btn-primary">Pay Now</a>
               <form method="POST" action="{% url 'womens_hockey:session-remove' pk=skater.pk %}">
                 {% csrf_token %}
                 <input type="submit" value="Remove Skater" class="btn btn-danger btn-sm mt-2">

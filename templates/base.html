@@ -196,6 +196,13 @@
         <div class="row">
             <div class="col">
                 <div class="container rounded content">
+                    {% if cart_has_items and user.is_authenticated %}
+                    <div class="alert alert-danger alert-dismissible alert-link" role="alert">
+                        <!-- <button class="close" type="button" data-dismiss="alert" aria-label="close">&#215;</button> -->
+                        You have unpaid items in your cart!  You must pay for your sessions to complete your registration and skate!
+                        <a href="{% url 'cart:shopping-cart' %}" class="btn btn-sm btn-danger">Pay Now</a>
+                    </div>
+                    {% endif %}
                     {% block content %}{% endblock content %}
                 </div>
             </div>

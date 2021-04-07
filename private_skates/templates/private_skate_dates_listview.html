@@ -49,6 +49,7 @@
                             {{session.skater.first_name}} {{session.skater.last_name}}
                             {% if session.goalie %}<b>(Goalie)</b>{% endif %}
                             {% if not session.paid and user == session.user %}<b>(Not Paid)</b>
+                            <a href="{% url 'cart:shopping-cart' %}" class="btn btn-sm btn-primary">Pay Now</a>
                             <form method="POST" action="{% url 'private_skates:remove-session' pk=session.pk %}">
                                 {% csrf_token %}
                                 <input type="hidden" name="pk" value="{{session.pk}}">
