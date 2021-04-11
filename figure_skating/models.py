@@ -32,7 +32,7 @@ class FigureSkater(models.Model):
     guardian = models.ForeignKey(User, on_delete=models.CASCADE)
     first_name = models.CharField(max_length=25)
     last_name = models.CharField(max_length=50)
-    date_of_birth = models.DateField(blank=True)
+    date_of_birth = models.DateField(blank=True, null=True)
 
     class Meta:
         # Prevent duplicate skater entries

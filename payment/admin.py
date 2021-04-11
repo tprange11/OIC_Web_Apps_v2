@@ -6,7 +6,7 @@ from . import models
 class PaymentAdmin(admin.ModelAdmin):
     readonly_fields = ('payer', 'square_id', 'square_receipt', 'amount', 'note', 'date',)
     list_display = ['payer_name', 'dollar_amount', 'note', 'date']
-    search_fields = ['payer__first_name', 'payer__last_name']
+    search_fields = ['payer__first_name', 'payer__last_name', 'note']
 
     def payer_name(self, obj):
         return f"{obj.payer.first_name} {obj.payer.last_name}"

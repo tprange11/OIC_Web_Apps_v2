@@ -6,7 +6,6 @@ from django.db import IntegrityError
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Count
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import Group
 from .models import FigureSkatingDate, FigureSkater, FigureSkatingSession
 from .forms import CreateFigureSkaterForm, CreateFigureSkatingSessionForm
