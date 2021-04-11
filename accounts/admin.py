@@ -8,9 +8,10 @@ class ProfileAdmin(admin.ModelAdmin):
     list_filter = ['open_hockey_email', 'stick_and_puck_email', 'figure_skating_email', 'thane_storck_email', 
                     'adult_skills_email', 'mike_schultz_email', 'yeti_skate_email', 'womens_hockey_email',
                     'bald_eagles_email', 'lady_hawks_email', 'chs_alumni_email']
-    readonly_fields = ['slug', 'user', 'open_hockey_email', 'stick_and_puck_email', 'figure_skating_email',
-                    'thane_storck_email', 'adult_skills_email', 'mike_schultz_email', 'yeti_skate_email', 
-                    'womens_hockey_email', 'bald_eagles_email', 'lady_hawks_email', 'chs_alumni_email']
+    readonly_fields = ['slug', 'user']
+    # readonly_fields = ['slug', 'user', 'open_hockey_email', 'stick_and_puck_email', 'figure_skating_email',
+    #                 'thane_storck_email', 'adult_skills_email', 'mike_schultz_email', 'yeti_skate_email', 
+    #                 'womens_hockey_email', 'bald_eagles_email', 'lady_hawks_email', 'chs_alumni_email']
     search_fields = ['user__first_name', 'user__last_name', 'slug']
 
     def user_name(self, obj):
