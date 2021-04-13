@@ -8,13 +8,14 @@ class FigureSkaterAdmin(admin.ModelAdmin):
 
 
 class FigureSkatingDateAdmin(admin.ModelAdmin):
+    search_fields = ['skate_date']
     list_display = ['skate_date', 'start_time', 'end_time', 'available_spots', 'up_down_charge']
 
 
 class FigureSkatingSessionAdmin(admin.ModelAdmin):
     list_display = ['guardian_name', 'skater', 'session', 'paid']
     list_filter = ['session']
-    search_fields = ['guardian__first_name', 'guardian__last_name', 'skater__first_name', 'skater__last_name']
+    search_fields = ['guardian__first_name', 'guardian__last_name', 'skater__first_name', 'skater__last_name', 'session__skate_date']
 
     def guardian_name(self, obj):
         return f"{obj.guardian.first_name} {obj.guardian.last_name}"
