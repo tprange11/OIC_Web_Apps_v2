@@ -223,11 +223,6 @@ def add_locker_rooms_to_schedule():
         "Kettle Moraine Figure Skating Club": "KM Figure Skating Club",
     }
 
-    # Replace long customer name with short name
-    for item in oic_schedule:
-        if item[4] in short_name:
-            item[4] = short_name[item[4]]
-
     for (_, _, _, rink, customer, event_type) in oic_schedule:
         # if 'Practice' in event_type or customer in no_locker_room: # Used for Covid-19
         if customer in no_locker_room:
@@ -262,6 +257,9 @@ def add_locker_rooms_to_schedule():
                 elif 'Yeti' in customer:
                     oic_schedule[x].append('Jaden 8')
                     oic_schedule[x].append('5 & 6')
+                elif customer in need_game_locker_rooms:
+                    oic_schedule[x].append('')
+                    oic_schedule[x].append('')
                 else:
                     oic_schedule[x].append(south_locker_rooms[south_lr_flag][1])
                     oic_schedule[x].append(south_locker_rooms[south_lr_flag][0])
@@ -271,6 +269,10 @@ def add_locker_rooms_to_schedule():
                 south_lr_flag = 0
         x += 1
 
+    # Replace long customer name with short name
+    for item in oic_schedule:
+        if item[4] in short_name:
+            item[4] = short_name[item[4]]
 
 def add_schedule_to_model(schedule, data_removed):
     '''Adds OIC daily schedule to RinkSchedule model.'''
