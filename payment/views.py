@@ -22,6 +22,7 @@ from bald_eagles.models import BaldEaglesSession
 from lady_hawks.models import LadyHawksSkateSession
 from chs_alumni.models import CHSAlumniSession
 from private_skates.models import PrivateSkateSession, PrivateSkate
+from open_roller.models import OpenRollerSkateSession
 from accounts.models import UserCredit
 
 # Create your views here.
@@ -80,6 +81,7 @@ def process_payment(request, **kwargs):
     lady_hawks_sessions_model = LadyHawksSkateSession
     chs_alumni_sessions_model = CHSAlumniSession
     private_skate_sessions_model = PrivateSkateSession
+    open_roller_sessions_model = OpenRollerSkateSession
     user_credit_model = UserCredit
     today = date.today()
 
@@ -156,6 +158,7 @@ def process_payment(request, **kwargs):
                 bald_eagles_sessions_model.objects.filter(skater=request.user).update(paid=True)
                 lady_hawks_sessions_model.objects.filter(user=request.user).update(paid=True)
                 chs_alumni_sessions_model.objects.filter(skater=request.user).update(paid=True)
+                open_roller_sessions_model.objects.filter(user=request.user).update(paid=True)
                 private_skate_sessions_model.objects.filter(user=request.user).update(paid=True)
             except IntegrityError:
                 pass

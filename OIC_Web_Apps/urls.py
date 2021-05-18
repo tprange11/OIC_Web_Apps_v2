@@ -56,6 +56,7 @@ urlpatterns = [
     path('web_apps/schedule/', include('schedule.urls')),
     path('web_apps/programs/', include('programs.urls')),
     path('web_apps/private_skates/', include('private_skates.urls')),
+    path('web_apps/open_roller/', include('open_roller.urls')),
     path('serviceworker.js', (TemplateView.as_view(
         template_name='serviceworker.js',
         content_type='application/javascript'
