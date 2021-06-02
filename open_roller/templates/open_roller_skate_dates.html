@@ -3,8 +3,8 @@
 {% block content %}
     <h4>Upcoming Open Roller Hockey Skate Sessions</h4>
     <p>Choose a date below to register for that session of Open Roller Hockey.  You may remove a skater from a session prior to paying. 
-        Once you have paid for the session(s), you will be unable to remove skaters from the session(s). To remove a skater from a session, click the Registered Skaters button, then the Remove Skater button below the skater you want to remove.</p>
-    <p>If you'd like to be notified when Open Roller Hockey skate dates are available for registration, update your <a href="{% url 'accounts:profile' slug=user.id %}">email preferences</a>.</p>
+        Once you have paid for the session(s), you will be unable to remove skaters from the session(s). To remove a skater from a session, 
+        click the Registered Skaters button, then the Remove Skater button below the skater you want to remove.</p>
     {% for message in messages %}
     {% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}
     <div class="alert alert-danger alert-dismissible alert-link" role="alert">
