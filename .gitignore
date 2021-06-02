@@ -10,6 +10,7 @@ templates/info_open_hockey_original.html
 static/js/web_apps.js
 schedule/scrape_schedule_original.py
 schedule/views_original.py
+open_roller/scrape_open_roller_dates.py
 ##############################
 
 # Django stuff:
