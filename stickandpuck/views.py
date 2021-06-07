@@ -9,7 +9,7 @@ from django.urls import reverse_lazy
 from . import models
 from . import forms
 from cart.models import Cart
-from accounts.models import Profile
+from accounts.models import Profile, UserCredit
 from programs.models import Program
 from datetime import date, timedelta
 
@@ -18,6 +18,19 @@ from datetime import date, timedelta
 class StickAndPuckIndex(LoginRequiredMixin, TemplateView):
     '''Displays page with stick and puck index view'''
     template_name = 'stick_and_puck.html'
+    credit_model = UserCredit
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Create a user credit object if one does not exist
+        try:
+            credit = self.credit_model.objects.get(user=self.request.user)
+        except ObjectDoesNotExist:
+            credit = self.credit_model.objects.create(user=self.request.user, slug=self.request.user.username)
+        context['credit'] = credit
+
+        return context
+
 
 
 class CreateStickAndPuckSkaterView(LoginRequiredMixin, CreateView):
@@ -93,6 +106,7 @@ class CreateStickAndPuckSession(LoginRequiredMixin, CreateView):
     form_class = forms.StickAndPuckSignupForm
     skater_model = models.StickAndPuckSkater
     program_model = Program
+    credit_model = UserCredit
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -113,11 +127,15 @@ class CreateStickAndPuckSession(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         # Set user as guardian for stick and puck sessions model
         form.instance.guardian = self.request.user
+        user_credit = self.credit_model.objects.get(user=self.request.user)
+        credit_used = False
+        cost = self.program_model.objects.get(id=2).skater_price
+        self.object = form.save(commit=False)
+        max_skaters = self.program_model.objects.get(id=2).max_skaters
 
         try:
-            self.object = form.save(commit=False)
             # If this session of stick and puck is full, set message and redirect to error page
-            if self.model.objects.filter(session_date=self.object.session_date, session_time=self.object.session_time).count() >= 26:
+            if self.model.objects.filter(session_date=self.object.session_date, session_time=self.object.session_time).count() >= max_skaters:
                 context = {'user': self.request.user,
                         'message': "Sorry, this session of stick and puck is full!"}
                 return render_to_response('stickandpuck_error.html', context)
@@ -132,9 +150,21 @@ class CreateStickAndPuckSession(LoginRequiredMixin, CreateView):
             'message': "Skater is already signed up for this session!"}
             return render(self.request, 'stickandpuck_error.html', context)
 
-        # If all goes well, add stick and puck session to Shopping Cart
-        self.add_to_cart(form.instance.skater)
-        messages.add_message(self.request, messages.INFO, 'Please make sure to view your cart and pay for your session(s)!')
+        # If all goes well, add stick and puck session to Shopping Cart unless credit is used
+        if user_credit.balance >= cost and user_credit.paid:
+            self.object.paid = True
+            user_credit.balance -= cost
+            if user_credit.balance == 0:
+                user_credit.paid == False
+            user_credit.save()
+            credit_used = True
+        else:
+            self.add_to_cart(form.instance.skater)
+        
+        if credit_used:
+            messages.add_message(self.request, messages.INFO, f'You have successfully registered for the skate! ${cost} in credit has been deducted from your balance.')
+        else:
+            messages.add_message(self.request, messages.INFO, 'Please make sure to view your cart and pay for your session(s)!')
         return super().form_valid(form)
 
     def join_stick_and_puck_group(self, join_group='Stick and Puck'):
