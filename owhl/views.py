@@ -99,11 +99,11 @@ class CreateOWHLSkateSessionView(LoginRequiredMixin, CreateView):
 
         try:
             # If goalie spots are full, do not save object
-            if self.object.goalie == True and self.model.objects.filter(goalie=True, skate_date=self.object.skate_date).count() == Program.objects.get(pk=6).max_goalies:
+            if self.object.goalie == True and self.model.objects.filter(goalie=True, skate_date=self.object.skate_date).count() == Program.objects.get(pk=13).max_goalies:
                 messages.add_message(self.request, messages.ERROR, 'Sorry, goalie spots are full!')
                 return redirect('owhl:owhl')
             # If skater spots are full, do not save object
-            elif self.object.goalie == False and self.model.objects.filter(goalie=False, skate_date=self.object.skate_date).count() == Program.objects.get(pk=6).max_skaters:
+            elif self.object.goalie == False and self.model.objects.filter(goalie=False, skate_date=self.object.skate_date).count() == Program.objects.get(pk=13).max_skaters:
                 messages.add_message(self.request, messages.ERROR, 'Sorry, skater spots are full!')
                 return redirect('owhl:owhl')
 
