@@ -10,5 +10,6 @@ class CreateOWHLSkateSessionForm(forms.ModelForm):
         widgets = {
             'skater': forms.HiddenInput(),
             'skate_date': forms.HiddenInput(),
+            'goalie': forms.HiddenInput(),
         }
         labels = {'goalie': 'Goalie?', }
