@@ -91,7 +91,7 @@ class StickAndPuckSessionCount(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['skater_spots'] = 26 - self.model.objects.filter(session_date=kwargs['session_date'], session_time=kwargs['session_time']).count()
+        context['skater_spots'] = Program.objects.get(id=2).max_skaters - self.model.objects.filter(session_date=kwargs['session_date'], session_time=kwargs['session_time']).count()
         return context
 
 
