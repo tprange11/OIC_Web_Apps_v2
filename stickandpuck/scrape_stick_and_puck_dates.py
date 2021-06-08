@@ -148,23 +148,26 @@ if __name__ == "__main__":
     the_date = date.today()
     # the_date = "2019-09-14"
 
-    # Every day scrape seven days in the future for stick and puck session dates and times
-    for x in range(7):
-        scrape_date = date.isoformat(the_date)
-        scrape_oic_schedule(scrape_date)
-        
-        if len(stick_and_puck) != 0:
-            send_email = add_stick_and_puck_dates(stick_and_puck)
-        else:
-            send_email = False
+    # Every Monday scrape the next Saturday and Sunday for stick and puck session dates and times
+    if the_date.weekday() == 0:
+        for x in range(7):
+            if the_date.weekday() in [5, 6]:
+                scrape_date = date.isoformat(the_date)
+                scrape_oic_schedule(scrape_date)
+                
+                if len(stick_and_puck) != 0:
+                    add_stick_and_puck_dates(stick_and_puck)
+                    # send_email = add_stick_and_puck_dates(stick_and_puck)
+                # else:
+                #     send_email = False
 
-        the_date += timedelta(days=1)
-        stick_and_puck.clear()
-        stick_and_puck_notes.clear()
+            the_date += timedelta(days=1)
+            stick_and_puck.clear()
+            stick_and_puck_notes.clear()
     # print(send_email)
-    if send_email:
-        # print('New Dates Added')
-        send_stick_and_puck_dates_email()
-    else:
-        # print('No SnP Dates Added')
-        send_stick_and_puck_dates_email()
+    # if send_email:
+    #     # print('New Dates Added')
+    #     send_stick_and_puck_dates_email()
+    # else:
+    #     # print('No SnP Dates Added')
+    #     send_stick_and_puck_dates_email()

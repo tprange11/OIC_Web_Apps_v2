@@ -3,7 +3,7 @@
 {% block content %}
     <h4>Stick and Puck Sessions List</h4>
     <p>Select a stick and puck session date from the list below.</p>
-    <p>If you would like to be notified when Stick and Puck sessions are added, update email settings in <a href="{% url 'accounts:profile' slug=user.id %}">your profile</a>.</p>
+    <!-- <p>If you would like to be notified when Stick and Puck sessions are added, update email settings in <a href="{% url 'accounts:profile' slug=user.id %}">your profile</a>.</p> -->
     {% if messages %}{% for message in messages %}
     <div class="alert alert-info alert-dismissible alert-link" role="alert">
     <button class="close" type="button" data-dismiss="alert" aria-label="close">&#215;</button>
