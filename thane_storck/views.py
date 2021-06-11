@@ -117,8 +117,8 @@ class CreateSkateSessionView(LoginRequiredMixin, CreateView):
             # If all goes well, do the following.
             # Get the program skater cost
             cost = self.program_model.objects.get(id=4).skater_price
-            # If skater is a goalie, staff member or Bob Sheehan they skate for free.
-            if self.object.goalie or self.request.user.is_staff or self.request.user.id == 52:
+            # If skater is a goalie or staff member they skate for free.
+            if self.object.goalie or self.request.user.is_staff:
                 self.object.paid = True
             elif user_credit.balance >= cost and user_credit.paid:
                 self.object.paid = True
