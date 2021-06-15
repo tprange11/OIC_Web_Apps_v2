@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 import mechanicalsoup
 from datetime import date, datetime, timedelta
 import os, requests, sys
+from mechanicalsoup import browser
 
 if os.name == 'nt':
     sys.path.append("C:\\Users\\brian\\Documents\\Python\\OIC_Web_Apps\\")
@@ -148,25 +149,100 @@ def scrape_oic_schedule(date):
 #         else:
 #             team_events.append([cols[0].get_text().strip(), cols[6].get_text().strip(), cols[4].get_text().strip(), cols[3].get_text().strip()])
 
-def scrape_ochl_teams():
-    '''Scrapes OCHL Schedule website for teams.'''
+def scrape_ochl_summer_int_comp_teams(the_date):
+    '''Scrapes OIC Rink League Schedule website for OCHL summer Int/Comp teams.'''
 
-    url = "https://www.ozaukeeicecenter.org/schedule/day/league_instance/128332?subseason=714101"
+    today_split = the_date.split("-")
+    today_string = f"{months[today_split[1]]} {today_split[2].lstrip('0')}, {today_split[0]}"
+
+    url = "https://ozaukeeicecenter.maxgalaxy.net/LeagueScheduleList.aspx?ID=21"
     response = requests.get(url)
 
+    # Request the web page
     soup = BeautifulSoup(response.text, "html.parser")
-    # Get game schedule table
-    table = soup.find(class_="statTable")
-    # Get table body which contains game or practice rows
-    tbody = table.find_next("tbody")
+    # Get all div's with class = "activityGroupName"
+    dates = soup.find_all(class_="activityGroupName")
 
-    # Get the rows
-    rows = tbody.find_all("tr")
+    # Loop through and find today's date then find the next table with the days events
+    table = None
+    for each in dates:
+        if today_string in each.get_text():
+            table = each.find_next("table")
 
-    # Get the data from the pertinent table cells: home, visitor, rink, start time
+    # Get all rows from the table
+    rows = table.find_all("tr")
+
+    # Collect pertinent data from the rows
     for row in rows:
         cols = row.find_all("td")
-        team_events.append([cols[5].find("span").get_text().strip(" CST").strip(" CDT"), cols[2].find("a").get_text(), cols[0].find("a").get_text(), cols[4].find("div").get_text().strip()])
+        # If it's the header row, skip the row
+        if cols[0].get_text().strip() == "Start Time":
+            continue
+        else:
+            team_events.append([cols[0].get_text().strip(), cols[6].get_text().strip(), cols[4].get_text().strip(), cols[3].get_text().strip()])
+
+
+def scrape_ochl_summer_nov_int_teams(the_date):
+    '''Scrapes OIC Rink League Schedule website for OCHL summer Int/Novice Teams.'''
+
+    today_split = the_date.split("-")
+    today_string = f"{months[today_split[1]]} {today_split[2].lstrip('0')}, {today_split[0]}"
+
+    browser - mechanicalsoup.StatefulBrowser()
+
+    browser.open('https://ozaukeeicecenter.maxgalaxy.net/LeagueScheduleList.aspx?ID=21')
+
+    browser.get_current_page()
+    browser.select_form('form[action="./LeagueScheduleList.aspx?ID=21"]')
+
+    browser["ctl00$ContentPlaceHolder1$cboLeague"] = "OCHL Summer 2021 Nov/Int"
+
+    response = browser.submit_selected()
+    html = response.text.replace('</br>', '').replace('<br>', '')
+    browser.close()
+
+    soup = BeautifulSoup(html, 'html.parser')
+
+    dates = soup.find_all(class_="activityGroupName")
+
+    # Loop through and find today's date then find the next table with the days events
+    table = None
+    for each in dates:
+        if today_string in each.get_text():
+            table = each.find_next("table")
+
+    # Get all rows from the table
+    rows = table.find_all("tr")
+
+    # Collect pertinent data from the rows
+    for row in rows:
+        cols = row.find_all("td")
+        # If it's the header row, skip the row
+        if cols[0].get_text().strip() == "Start Time":
+            continue
+        else:
+            team_events.append([cols[0].get_text().strip(), cols[6].get_text().strip(), cols[4].get_text().strip(), cols[3].get_text().strip()])
+
+
+# def scrape_ochl_teams():
+#     '''Scrapes OCHL Schedule website for teams.'''
+
+#     url = "https://www.ozaukeeicecenter.org/schedule/day/league_instance/128332?subseason=714101"
+#     response = requests.get(url)
+
+#     soup = BeautifulSoup(response.text, "html.parser")
+#     # Get game schedule table
+#     table = soup.find(class_="statTable")
+#     # Get table body which contains game or practice rows
+#     tbody = table.find_next("tbody")
+
+#     # Get the rows
+#     rows = tbody.find_all("tr")
+
+#     # Get the data from the pertinent table cells: home, visitor, rink, start time
+#     for row in rows:
+#         cols = row.find_all("td")
+#         team_events.append([cols[5].find("span").get_text().strip(" CST").strip(" CDT"), cols[2].find("a").get_text(), cols[0].find("a").get_text(), cols[4].find("div").get_text().strip()])
 
 
 # def scrape_oyha_teams(the_date):
@@ -214,7 +290,7 @@ def add_locker_rooms_to_schedule():
     south_lr_flag = 0
     north_lr_flag = 0
     x = 0  # index of rink list for appending locker room numbers
-    no_locker_room = ("Public Skate", "Learn to Skate", "Open Figure Skating", "Kettle Moraine Figure Skating Club")
+    no_locker_room = ("Public Skate", "Learn to Skate", "Open Figure Skating", "Kettle Moraine Figure Skating Club", "GRIT Hockey Club")
     need_game_locker_rooms = ("Cedarburg Hockey", "Homestead Hockey", "Lakeshore Lightning",
                               "Concordia ACHA", "Concordia University Men", "Concordia University Women")
     short_name = {
@@ -345,7 +421,16 @@ if __name__ == "__main__":
             #     scrape_ochl_teams()
             # except Exception as e:
             #     print(f"{e}, scrape_ochl_teams()")
-            # swap_team_names()
+            try:
+                scrape_ochl_summer_int_comp_teams(sunday)
+            except Exception as e:
+                print(f'{e}, scrape_ochl_summer_int_comp_teams()')
+            try:
+                scrape_ochl_summer_nov_int_teams(sunday)
+            except Exception as e:
+                print(f'{e}, scrape_ochl_summer_nov_int_teams()')
+            swap_team_names()
+
             add_locker_rooms_to_schedule()
             add_schedule_to_model(oic_schedule, data_removed)
             oic_schedule.clear()
