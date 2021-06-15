@@ -188,14 +188,15 @@ def scrape_ochl_summer_nov_int_teams(the_date):
     today_split = the_date.split("-")
     today_string = f"{months[today_split[1]]} {today_split[2].lstrip('0')}, {today_split[0]}"
 
-    browser - mechanicalsoup.StatefulBrowser()
+    browser = mechanicalsoup.StatefulBrowser()
 
     browser.open('https://ozaukeeicecenter.maxgalaxy.net/LeagueScheduleList.aspx?ID=21')
 
     browser.get_current_page()
     browser.select_form('form[action="./LeagueScheduleList.aspx?ID=21"]')
 
-    browser["ctl00$ContentPlaceHolder1$cboLeague"] = "OCHL Summer 2021 Nov/Int"
+    browser["ctl00$ContentPlaceHolder1$cboLeague"] = '18'
+    browser["ctl00_ContentPlaceHolder1_cboLeague_ClientState"] = '{"value":"18","selected":true}'
 
     response = browser.submit_selected()
     html = response.text.replace('</br>', '').replace('<br>', '')
