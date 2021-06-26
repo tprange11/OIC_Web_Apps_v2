@@ -91,7 +91,7 @@
                 <div class="modal-body">
                     <ul class="list-group">
                         {% for skater in skate_sessions %}
-                        {% if skater.skate_date.pk == date.pk %}<li class="list-group-item">Skater Name:
+                        {% if skater.skate_date.pk == date.pk %}<li class="list-group-item">
                             {{skater.skater.first_name}} {{skater.skater.last_name}}
                             {% if skater.goalie %}<b>(Goalie)</b>{% endif %}
                             {% if user.is_superuser %}
