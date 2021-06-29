@@ -22,7 +22,7 @@ class FigureSkatingDate(models.Model):
         unique_together = ['skate_date', 'start_time', 'end_time']
 
     def __str__(self):
-        return f"{self.skate_date} @ {self.start_time}"
+        return f"{self.skate_date} ({self.start_time} to {self.end_time})"
 
 
 class FigureSkater(models.Model):
