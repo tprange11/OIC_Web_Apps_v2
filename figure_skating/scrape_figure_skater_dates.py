@@ -130,13 +130,12 @@ def send_skate_dates_email():
 if __name__ == "__main__":
 
     # the_date = date.today()
-    the_date = date.today() + timedelta(days=4)
+    the_date = date.today() + timedelta(days=5)
     send_email = False
 
     # if the_date.weekday() == 4:
-    for x in range(61):
-        # if the_date.weekday() in [0, 2, 3, 5]:
-            # print(the_date)
+    for x in range(31):
+        # if the_date.weekday() in [1, 5]:
         scrape_date = date.isoformat(the_date)
         scrape_oic_schedule(scrape_date)
         the_date += timedelta(days=1)
