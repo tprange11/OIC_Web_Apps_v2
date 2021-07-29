@@ -19,6 +19,12 @@ class SkateDate(models.Model):
     def __str__(self):
         return f"{self.skate_date}"
 
+    def registered_skaters(skate_date):
+        '''Returns the number of skaters and goalies registered for a skate date.'''
+        num_goalies = SkateSession.objects.filter(skate_date=skate_date, goalie=True).count()
+        num_skaters = SkateSession.objects.filter(skate_date=skate_date, goalie=False).count()
+        return {'num_skaters': num_skaters, 'num_goalies': num_goalies}
+
 
 class SkateSession(models.Model):
     '''Model that stores skate session data.'''

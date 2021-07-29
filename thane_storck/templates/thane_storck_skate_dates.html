@@ -21,15 +21,6 @@
     {% endfor %}
     {% include 'accounts/user_credits_include.html' %}
     {% include 'accounts/user_credits_modal_include.html' %}
-    {% if user.is_superuser %}
-    <div class="row mb-4 d-flex align-content-center">
-        <div class="col-lg-3 col-md-6 col-12 pr-md-0 pr-3 pl-3 mb-0 d-flex" style="height: 50px;">
-            <div class="bg-primary d-flex flex-fill align-content-center">
-                <a href="{% url 'group_message:group-message' group=4 %}" class="text-white m-auto">Send Group Message</a>
-            </div>
-        </div>
-    </div>
-    {% endif %}
     <ul class="list-group" style="display: inline-block; margin-bottom: 10px;">
         {% for date in skate_dates %}
             {% if date.disabled %}
@@ -39,7 +30,10 @@
                 <li class="list-group-item" style="padding: 5px 15px;"><a href="{% url 'thane_storck:register' pk=date.pk %}" class="btn btn-warning btn-sm mb-2 mb-sm-0">
                 {{ date.skate_date }} {{date.start_time}} to {{date.end_time}}</a>
             {% endif %}
-            <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#skaterModalCenter{{forloop.counter}}">Registered Skaters  <span class="number-of-skaters">{{ date.num_skaters }}</span></button>
+            <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#skaterModalCenter{{forloop.counter}}">
+                Skaters <span class="number-of-skaters">{{date.registered_skaters.num_skaters}}</span>
+                Goalies <span class="number-of-skaters">{{date.registered_skaters.num_goalies}}</span>
+            </button>
             {% if date.session_pk != None and date.paid == False %}
             <form method="POST" action="{% url 'thane_storck:session-remove' pk=date.session_pk %}">
                 {% csrf_token %}
