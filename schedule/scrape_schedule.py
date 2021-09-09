@@ -331,9 +331,9 @@ def add_locker_rooms_to_schedule():
                     oic_schedule[x].append(south_locker_rooms[2]) # Concordia ACHA Locker Room
                     oic_schedule[x].append("")
                     # oic_schedule[x].append(south_locker_rooms[south_lr_flag][0])
-                elif 'Yeti' in customer:
-                    oic_schedule[x].append('Jaden 8')
-                    oic_schedule[x].append('5 & 6')
+                # elif 'Yeti' in customer:
+                #     oic_schedule[x].append('Jaden 8')
+                #     oic_schedule[x].append('5 & 6')
                 elif customer in need_game_locker_rooms:
                     oic_schedule[x].append('')
                     oic_schedule[x].append('')
