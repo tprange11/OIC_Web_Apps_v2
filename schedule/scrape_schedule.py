@@ -308,6 +308,11 @@ def add_locker_rooms_to_schedule():
             oic_schedule[x].append("")
             x += 1
             continue
+        elif 'Milwaukee Power' in customer:
+            oic_schedule[x].append(south_locker_rooms[1][1])
+            oic_schedule[x].append("")
+            x += 1
+            continue
         elif 'North' in rink:
             # if 'Game' in event_type:
             #     oic_schedule[x].append("") # Home team doesn't need a locker room
