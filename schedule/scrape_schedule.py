@@ -357,9 +357,9 @@ def add_schedule_to_model(schedule, data_removed):
     '''Adds OIC daily schedule to RinkSchedule model.'''
     model = RinkSchedule
 
-    # First, clear the database table once if data_removed = False
+    # First, clear objects older than 14 days if data_removed = False
     if not data_removed:
-        RinkSchedule.objects.all().delete()
+        RinkSchedule.objects.filter(schedule_date__lte=date.today() + timedelta(days=-15)).delete()
 
     for item in schedule:
         try:

@@ -5,7 +5,7 @@ from django.contrib import messages
 from . import models
 from datetime import datetime, date, timedelta
 from .scrape_schedule import scrape_oic_schedule, add_locker_rooms_to_schedule, \
-        add_schedule_to_model, team_events, oic_schedule
+        add_schedule_to_model, scrape_ochl_teams, team_events, oic_schedule
 
 from rest_framework.generics import ListAPIView
 from .serializers import RinkScheduleSerializer
@@ -150,11 +150,11 @@ def scrape_schedule(request):
             sunday = date.isoformat(date.today() + timedelta(days=2))
             # oic_schedule.clear()
             scrape_oic_schedule(sunday)
-            # try:
-            #     scrape_ochl_teams()
-            # except Exception as e:
-            #     print(f"{e}, scrape_ochl_teams()")
-            # swap_team_names()
+            try:
+                scrape_ochl_teams()
+            except Exception as e:
+                print(f"{e}, scrape_ochl_teams()")
+            swap_team_names()
             add_locker_rooms_to_schedule()
             add_schedule_to_model(oic_schedule, data_removed)
             oic_schedule.clear()

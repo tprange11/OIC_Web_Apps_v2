@@ -13,9 +13,9 @@ class RinkSchedule(models.Model):
     visitor_locker_room = models.CharField(max_length=50, null=True, blank=True)
     notes = models.CharField(max_length=50, blank=True)
 
-    class meta:
+    class Meta:
         ordering = ['end_time']
-        unique_together = [['schedule_date', 'start_time', 'end_time', 'rink']]
+        unique_together = ['schedule_date', 'start_time', 'end_time', 'rink']
         verbose_name_plural = 'Rink Schedule'
 
     def __str__(self):
