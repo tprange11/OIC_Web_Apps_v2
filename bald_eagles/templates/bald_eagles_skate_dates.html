@@ -52,7 +52,7 @@
                             {% for skater in skate_sessions %}
                             {% if skater.session_date.pk == date.pk %}<li class="list-group-item">{{skater.skater.first_name}} {{skater.skater.last_name}}
                                 {% if skater.goalie %}<b>(Goalie)</b>{% endif %}
-                                {% if skater.paid == False %}<a href="{% url 'cart:shopping-cart' %}" class="btn btn-sm btn-primary">Pay Now</a>{% endif %}
+                                {% if skater.paid == False and skater.skater == user %}<a href="{% url 'cart:shopping-cart' %}" class="btn btn-sm btn-primary">Pay Now</a>{% endif %}
                                 {% if user.is_superuser %}
                                 {% if skater.paid %}<b>(Paid)</b>{% else %}<b>(Not Paid)</b>{% endif %}
                                 {% endif %}
