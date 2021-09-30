@@ -1,12 +1,11 @@
-## This file is run daily to scrape the OIC online schedule and save the days events for the zamboni
+## This file is run daily to request the OIC online schedule and save the days events for the zamboni
 ## resurface schedule.  It is also used from views.py scrape_schedule() view to update the schedule if anything
 ## has been added or removed.
 
 from bs4 import BeautifulSoup
-import mechanicalsoup
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 import os, requests, sys
-from mechanicalsoup import browser
+import json
 
 if os.name == 'nt':
     sys.path.append("C:\\Users\\brian\\Documents\\Python\\OIC_Web_Apps\\")
@@ -21,9 +20,6 @@ django.setup()
 from django.db import IntegrityError
 from schedule.models import RinkSchedule
 
-months = {"01": "January", "02": "February", "03": "March", "04": "April", "05": "May", 
-            "06": "June", "07": "July", "08": "August", "09": "September", "10": "October", "11": "November", "12": "December"}
-
 oic_schedule = []  # list that will hold the day's events
 schedule_notes = [] # list that will hold notes if any
 team_events = [] # list that will hold OYHA, OCHL and OWHL teams to merge with oic_schedule[]
@@ -31,66 +27,39 @@ north_locker_rooms = [[1, 3], [2, 4]]  # Locker room numbers in North
 south_locker_rooms = [[6, 9], [5, 8], 7]  # Locker room numbers in South
 
 
-def scrape_oic_schedule(date):
-    '''Scrapes Ozaukee Ice Center schedule website the days events.'''
-    xx_xx_xxxx = f"{date[5:7]}/{date[8:]}/{date[0:4]}"
-    xxxx_xx_xx = f"{date[0:4]},{date[5:7]},{date[8:]}"
-    today_with_time = date + "-00-00-00"
-
-    # Used for testing purposes
-    # print(xx_xx_xxxx)
-    # print(xxxx_xx_xx)
-    # print(today_with_time)
-
-    browser = mechanicalsoup.StatefulBrowser()
-
-    browser.open("https://ozaukeeicecenter.maxgalaxy.net/ScheduleList.aspx?ID=2")
-
-    browser.get_current_page()
-    # print(page)
-    browser.select_form('form[action="./ScheduleList.aspx?ID=2"]')
-    # browser.get_current_form().print_summary()
-
-    browser["ctl00_ContentPlaceHolder1_txtFromDate_dateInput_ClientState"] = '{"enabled":true,"emptyMessage":"","validationText":"'+today_with_time+'","valueAsString":"'+today_with_time+'","minDateStr":"1980-01-01-00-00-00","maxDateStr":"2099-12-31-00-00-00","lastSetTextBoxValue":"'+xx_xx_xxxx+'"}'
-    browser["ctl00_ContentPlaceHolder1_txtThroughDate_dateInput_ClientState"] = '{"enabled":true,"emptyMessage":"","validationText":"'+today_with_time+'","valueAsString":"'+today_with_time+'","minDateStr":"1980-01-01-00-00-00","maxDateStr":"2099-12-31-00-00-00","lastSetTextBoxValue":"'+xx_xx_xxxx+'"}'
-    browser["ctl00_ContentPlaceHolder1_cboSortBy_ClientState"] = '{"logEntries":[],"value":"2","text":"Start Time","enabled":true,"checkedIndices":[],"checkedItemsTextOverflows":false}'
-    browser["ctl00$ContentPlaceHolder1$txtFromDate"] = date
-    browser["ctl00$ContentPlaceHolder1$txtFromDate$dateInput"] = xx_xx_xxxx
-    browser["ctl00_ContentPlaceHolder1_txtFromDate_calendar_AD"] = '[[1980,1,1],[2099,12,30],['+xxxx_xx_xx+']]'
-    browser["ctl00_ContentPlaceHolder1_txtFromDate_calendar_SD"] = '[['+xxxx_xx_xx+']]'
-    browser["ctl00$ContentPlaceHolder1$txtThroughDate"] = date
-    browser["ctl00$ContentPlaceHolder1$txtThroughDate$dateInput"] = xx_xx_xxxx
-    browser["ctl00_ContentPlaceHolder1_txtThroughDate_calendar_AD"] = '[[1980,1,1],[2099,12,30],['+xxxx_xx_xx+']]'
-    browser["ctl00_ContentPlaceHolder1_txtThroughDate_calendar_SD"] = '[['+xxxx_xx_xx+']]'
-    browser["ctl00_ContentPlaceHolder1_cboFacility_ClientState"] = '{"logEntries":[],"value":"","text":"7 items checked","enabled":true,"checkedIndices":[1,2,3,4,5,6,7],"checkedItemsTextOverflows":true}'
-    browser["ctl00$ContentPlaceHolder1$cboFacility"] = '7 items checked'
-
-    response = browser.submit_selected()
-    html = response.text.replace('</br>', '').replace('<br>', '')
-    browser.close()
-
-    soup = BeautifulSoup(html, 'html.parser')
-    try:
-        rows = soup.find(class_="clear listTable").find_all('tr')
-    except AttributeError:
-        return
+def get_schedule_data(from_date, to_date):
+    '''Request schedule data from Schedule Werks for the specified period.'''
     
-    # print(rows)
+    url = f"https://ozaukeeicecenter.schedulewerks.com/public/ajax/swCalGet?tid=-1&from={from_date}&to={to_date}&Complex=-1"
+    
+    try:
+        response = requests.get(url)
+        data = json.loads(response.text)
+        process_data(data, from_date)
+        return data
+    except requests.exceptions.RequestException as e:
+        print(e)
+        return ""
 
-    # Get the days events
-    for row in rows:
-        cols = row.find_all('td')
-        if (cols[0].get_text().strip() == "Start Time"):
-            continue
-        else:
-            if len(cols) > 2:
-                oic_schedule.append([date, cols[0].get_text().strip(), cols[1].get_text().strip(), cols[3].get_text().strip(), cols[4].get_text().strip(), cols[5].get_text().strip()])
-                # schedule_notes.append("")
-            # elif len(cols) == 2:
-                # schedule_notes[x-1] = cols[1].get_text().strip()
-        # print(schedule_notes)
-                
-        # print(cols)
+def process_data(data, from_date):
+    for item in data:
+        if item["start_date"].split(" ")[0] == from_date:
+            schedule_date = item["start_date"].split(" ")[0]
+            start_time = item["start_date"].split(" ")[1]
+            end_time = item["end_date"].split(" ")[1]
+            if "South Rink" in item["text"]:
+                rink = "South Rink"
+                event = item["text"][30:].strip().replace("(", "").replace(")", "")
+            else:
+                rink = "North Rink"
+                event = item["text"][30:].strip().replace("(", "").replace(")", "")
+            event_type = item["usg"]
+
+            oic_schedule.append(
+                [
+                    schedule_date, start_time, end_time, rink, event, event_type
+                ]
+                )
 
     # Replace some long strings in oic_schedule[]
     for item in oic_schedule:
@@ -117,118 +86,12 @@ def scrape_oic_schedule(date):
             else:
                 oic_schedule[x].append(schedule_notes[x])
 
-# def scrape_owhl_teams(the_date):
-#     '''Scrapes OIC Rink League Schedule website for OWHL teams.'''
-
-#     today_split = the_date.split("-")
-#     today_string = f"{months[today_split[1]]} {today_split[2].lstrip('0')}, {today_split[0]}"
-
-#     url = "https://ozaukeeicecenter.maxgalaxy.net/LeagueScheduleList.aspx?ID=17"
-#     response = requests.get(url)
-
-#     # Request the web page
-#     soup = BeautifulSoup(response.text, "html.parser")
-#     # Get all div's with class = "activityGroupName"
-#     dates = soup.find_all(class_="activityGroupName")
-
-#     # Loop through and find today's date then find the next table with the days events
-#     table = None
-#     for each in dates:
-#         if today_string in each.get_text():
-#             table = each.find_next("table")
-
-#     # Get all rows from the table
-#     rows = table.find_all("tr")
-
-#     # Collect pertinent data from the rows
-#     for row in rows:
-#         cols = row.find_all("td")
-#         # If it's the header row, skip the row
-#         if cols[0].get_text().strip() == "Start Time":
-#             continue
-#         else:
-#             team_events.append([cols[0].get_text().strip(), cols[6].get_text().strip(), cols[4].get_text().strip(), cols[3].get_text().strip()])
-
-# def scrape_ochl_summer_int_comp_teams(the_date):
-#     '''Scrapes OIC Rink League Schedule website for OCHL summer Int/Comp teams.'''
-
-#     today_split = the_date.split("-")
-#     today_string = f"{months[today_split[1]]} {today_split[2].lstrip('0')}, {today_split[0]}"
-
-#     url = "https://ozaukeeicecenter.maxgalaxy.net/LeagueScheduleList.aspx?ID=21"
-#     response = requests.get(url)
-
-#     # Request the web page
-#     soup = BeautifulSoup(response.text, "html.parser")
-#     # Get all div's with class = "activityGroupName"
-#     dates = soup.find_all(class_="activityGroupName")
-
-#     # Loop through and find today's date then find the next table with the days events
-#     table = None
-#     for each in dates:
-#         if today_string in each.get_text():
-#             table = each.find_next("table")
-
-#     # Get all rows from the table
-#     rows = table.find_all("tr")
-
-#     # Collect pertinent data from the rows
-#     for row in rows:
-#         cols = row.find_all("td")
-#         # If it's the header row, skip the row
-#         if cols[0].get_text().strip() == "Start Time":
-#             continue
-#         else:
-#             team_events.append([cols[0].get_text().strip(), cols[6].get_text().strip(), cols[4].get_text().strip(), cols[3].get_text().strip()])
-
-
-# def scrape_ochl_summer_nov_int_teams(the_date):
-#     '''Scrapes OIC Rink League Schedule website for OCHL summer Int/Novice Teams.'''
-
-#     today_split = the_date.split("-")
-#     today_string = f"{months[today_split[1]]} {today_split[2].lstrip('0')}, {today_split[0]}"
-
-#     browser = mechanicalsoup.StatefulBrowser()
-
-#     browser.open('https://ozaukeeicecenter.maxgalaxy.net/LeagueScheduleList.aspx?ID=21')
-
-#     browser.get_current_page()
-#     browser.select_form('form[action="./LeagueScheduleList.aspx?ID=21"]')
-
-#     browser["ctl00$ContentPlaceHolder1$cboLeague"] = '18'
-#     browser["ctl00_ContentPlaceHolder1_cboLeague_ClientState"] = '{"value":"18","selected":true}'
-
-#     response = browser.submit_selected()
-#     html = response.text.replace('</br>', '').replace('<br>', '')
-#     browser.close()
-
-#     soup = BeautifulSoup(html, 'html.parser')
-
-#     dates = soup.find_all(class_="activityGroupName")
-
-#     # Loop through and find today's date then find the next table with the days events
-#     table = None
-#     for each in dates:
-#         if today_string in each.get_text():
-#             table = each.find_next("table")
-
-#     # Get all rows from the table
-#     rows = table.find_all("tr")
-
-#     # Collect pertinent data from the rows
-#     for row in rows:
-#         cols = row.find_all("td")
-#         # If it's the header row, skip the row
-#         if cols[0].get_text().strip() == "Start Time":
-#             continue
-#         else:
-#             team_events.append([cols[0].get_text().strip(), cols[6].get_text().strip(), cols[4].get_text().strip(), cols[3].get_text().strip()])
+    return
 
 
 def scrape_ochl_teams():
     '''Scrapes OCHL Schedule website for teams.'''
 
-    # url = "https://www.ozaukeeicecenter.org/schedule/day/league_instance/128332?subseason=714101"
     url = "https://www.ozaukeeicecenter.org/schedule/day/league_instance/150944?subseason=773253"
     response = requests.get(url)
 
@@ -247,52 +110,13 @@ def scrape_ochl_teams():
         team_events.append([cols[5].find("span").get_text().strip(" CST").strip(" CDT"), cols[2].find("a").get_text(), cols[0].find("a").get_text(), cols[4].find("div").get_text().strip()])
 
 
-# def scrape_oyha_teams(the_date):
-#     '''Scrapes OIC Rink League Schedule website for OYHA and Opponent teams.'''
-
-#     today_split = the_date.split("-")
-#     today_string = f"{months[today_split[1]]} {today_split[2].lstrip('0')}, {today_split[0]}"
-
-#     url = "https://ozaukeeicecenter.maxgalaxy.net/LeagueScheduleList.aspx?ID=13"
-#     response = requests.get(url)
-
-#     # Request the web page
-#     soup = BeautifulSoup(response.text, "html.parser")
-#     # Get all div's with class = "activityGroupName"
-#     dates = soup.find_all(class_="activityGroupName")
-
-#     # Loop through and find today's date then find the next table with the days events
-#     table = []
-#     for each in dates:
-#         if today_string in each.get_text():
-#             table = each.find_next("table")
-
-#     # Get all rows from the table
-#     if len(table) == 0:
-#         return
-#     else:
-#         rows = table.find_all("tr")
-
-#     # Collect pertinent data from the rows
-#     for row in rows:
-#         cols = row.find_all("td")
-#         # If it's the header row skip it
-#         if cols[0].get_text().strip() == "Start Time":
-#             continue
-#         else:
-#             team_events.append([cols[0].get_text().strip(), cols[6].get_text().strip(), cols[4].get_text().strip(), cols[3].get_text().strip()])
-
-#     for event in team_events:
-#         if event[1] == '':
-#             event[1] = 'OYHA'
-
 def add_locker_rooms_to_schedule():
     '''Add locker room assignments to oic_schedule list'''
 
     south_lr_flag = 0
     north_lr_flag = 0
     x = 0  # index of rink list for appending locker room numbers
-    no_locker_room = ("Public Skate", "Learn to Skate", "Open Figure Skating", "Kettle Moraine Figure Skating Club", "GRIT Hockey Club")
+    no_locker_room = ("Public Skate", "LTS", "Open FS", "Kettle Moraine Figure Skating Club", "GRIT Hockey Club")
     need_game_locker_rooms = ("Cedarburg Hockey", "Homestead Hockey", "Lakeshore Lightning",
                               "Concordia ACHA", "Concordia University Men", "Concordia University Women")
     short_name = {
@@ -308,7 +132,7 @@ def add_locker_rooms_to_schedule():
             oic_schedule[x].append("")
             x += 1
             continue
-        elif 'Milwaukee Power' in customer:
+        elif 'MKE Power' in customer:
             oic_schedule[x].append(south_locker_rooms[1][1])
             oic_schedule[x].append("")
             x += 1
@@ -369,9 +193,9 @@ def add_schedule_to_model(schedule, data_removed):
     for item in schedule:
         try:
             data = model(
-                schedule_date=item[0], 
-                start_time=datetime.strptime(item[1], '%I:%M %p'), 
-                end_time=datetime.strptime(item[2], '%I:%M %p'), 
+                schedule_date=f"{item[0][6:]}-{item[0][0:2]}-{item[0][3:5]}", # Date formatted to YYYY-MM-DD
+                start_time=item[1], 
+                end_time=item[2], 
                 rink=item[3], 
                 event=item[4],
                 home_locker_room=item[6],
@@ -385,9 +209,10 @@ def add_schedule_to_model(schedule, data_removed):
 
 if __name__ == "__main__":
     
-    the_date = date.today()
-    # the_date = "2019-10-26"
-    scrape_date = date.isoformat(the_date)
+    todays_date = date.today()
+    # print(todays_date.strftime("%m-%d-%Y"))
+    formatted_date = date.isoformat(todays_date)
+    start_date = f"{formatted_date[5:7]}/{formatted_date[8:]}/{formatted_date[0:4]}"
     data_removed = False # used to check if the database table has been cleared once
 
 
@@ -404,7 +229,7 @@ if __name__ == "__main__":
 
     # If it's not Saturday or Sunday, scrape oic schedule
     if date.weekday(date.today()) not in [5, 6]:
-        scrape_oic_schedule(scrape_date)
+        data = get_schedule_data(start_date, start_date)
         # swap_team_names()
         add_locker_rooms_to_schedule()
         add_schedule_to_model(oic_schedule, data_removed)
@@ -412,34 +237,50 @@ if __name__ == "__main__":
         oic_schedule.clear()
         # team_events.clear()
 
-        # If it is Friday, scrape Saturday and Sunday too
-        if date.weekday(date.today()) == 4:
-            saturday = date.isoformat(date.today() + timedelta(days=1))
-            scrape_oic_schedule(saturday)
-            # swap_team_names()
-            add_locker_rooms_to_schedule()
-            add_schedule_to_model(oic_schedule, data_removed)
-            oic_schedule.clear()
+        # If it is Friday, process Saturday and Sunday too
+        if date.weekday(date.today()) == 3:
+            saturday = (date.today() + timedelta(days=1)).strftime("%m/%d/%Y")
+            # print(saturday)
+            process_data(data, saturday)
+            sunday = (date.today() + timedelta(days=2)).strftime("%m/%d/%Y")
+            # print(sunday)
+            process_data(data, sunday)
+            # add_locker_rooms_to_schedule()
+            # add_schedule_to_model(oic_schedule, data_removed)
+            # oic_schedule.clear()
             # team_events.clear()
 
-            sunday = date.isoformat(date.today() + timedelta(days=2))
-            # oic_schedule.clear()
-            scrape_oic_schedule(sunday)
             try:
                 scrape_ochl_teams()
             except Exception as e:
                 print(f"{e}, scrape_ochl_teams()")
-            # try:
-            #     scrape_ochl_summer_int_comp_teams(sunday)
-            # except Exception as e:
-            #     print(f'{e}, scrape_ochl_summer_int_comp_teams()')
-            # try:
-            #     scrape_ochl_summer_nov_int_teams(sunday)
-            # except Exception as e:
-            #     print(f'{e}, scrape_ochl_summer_nov_int_teams()')
-            swap_team_names()
 
+            swap_team_names()
             add_locker_rooms_to_schedule()
             add_schedule_to_model(oic_schedule, data_removed)
             oic_schedule.clear()
             team_events.clear()
+    
+        # if date.weekday(date.today()) == 3:
+        #     saturday = (date.today() + timedelta(days=1)).strftime("%m-%d-%Y")
+        #     print(saturday)
+        #     get_schedule_data(saturday, saturday)
+        #     # swap_team_names()
+        #     add_locker_rooms_to_schedule()
+        #     add_schedule_to_model(oic_schedule, data_removed)
+        #     oic_schedule.clear()
+        #     # team_events.clear()
+
+        #     sunday = (date.today() + timedelta(days=2)).strftime("%m-%d-%Y")
+        #     print(sunday)
+        #     get_schedule_data(sunday, sunday)
+        #     try:
+        #         scrape_ochl_teams()
+        #     except Exception as e:
+        #         print(f"{e}, scrape_ochl_teams()")
+
+        #     swap_team_names()
+        #     add_locker_rooms_to_schedule()
+        #     add_schedule_to_model(oic_schedule, data_removed)
+        #     oic_schedule.clear()
+        #     team_events.clear()

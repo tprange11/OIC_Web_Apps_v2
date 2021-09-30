@@ -4,7 +4,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from . import models
 from datetime import datetime, date, timedelta
-from .scrape_schedule import scrape_oic_schedule, add_locker_rooms_to_schedule, \
+from .scrape_schedule import get_schedule_data, process_data, add_locker_rooms_to_schedule, \
         add_schedule_to_model, scrape_ochl_teams, team_events, oic_schedule
 
 from rest_framework.generics import ListAPIView
@@ -110,9 +110,10 @@ def scrape_schedule(request):
     '''This view is called when the Update Schedule button is clicked. I will update the zamboni resurface
     schedule if the online schedule has changed.'''
     
-    the_date = date.today()
-    # the_date = "2019-10-26"
-    scrape_date = date.isoformat(the_date)
+    todays_date = date.today()
+    # print(todays_date.strftime("%m-%d-%Y"))
+    formatted_date = date.isoformat(todays_date)
+    start_date = f"{formatted_date[5:7]}/{formatted_date[8:]}/{formatted_date[0:4]}"
     data_removed = False # used to check if the database table has been cleared once
 
 
@@ -129,7 +130,7 @@ def scrape_schedule(request):
 
     # If it's not Saturday or Sunday, scrape oic schedule
     if date.weekday(date.today()) not in [5, 6]:
-        scrape_oic_schedule(scrape_date)
+        data = get_schedule_data(start_date, start_date)
         # swap_team_names()
         add_locker_rooms_to_schedule()
         add_schedule_to_model(oic_schedule, data_removed)
@@ -138,22 +139,23 @@ def scrape_schedule(request):
         # team_events.clear()
 
         # If it is Friday, scrape Saturday and Sunday too
-        if date.weekday(date.today()) == 4:
-            saturday = date.isoformat(date.today() + timedelta(days=1))
-            scrape_oic_schedule(saturday)
-            # swap_team_names()
-            add_locker_rooms_to_schedule()
-            add_schedule_to_model(oic_schedule, data_removed)
-            oic_schedule.clear()
+        if date.weekday(date.today()) == 3:
+            saturday = (date.today() + timedelta(days=1)).strftime("%m/%d/%Y")
+            # print(saturday)
+            process_data(data, saturday)
+            sunday = (date.today() + timedelta(days=2)).strftime("%m/%d/%Y")
+            # print(sunday)
+            process_data(data, sunday)
+            # add_locker_rooms_to_schedule()
+            # add_schedule_to_model(oic_schedule, data_removed)
+            # oic_schedule.clear()
             # team_events.clear()
 
-            sunday = date.isoformat(date.today() + timedelta(days=2))
-            # oic_schedule.clear()
-            scrape_oic_schedule(sunday)
             try:
                 scrape_ochl_teams()
             except Exception as e:
                 print(f"{e}, scrape_ochl_teams()")
+
             swap_team_names()
             add_locker_rooms_to_schedule()
             add_schedule_to_model(oic_schedule, data_removed)
