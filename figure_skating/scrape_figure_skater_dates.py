@@ -1,7 +1,5 @@
-from bs4 import BeautifulSoup
-import mechanicalsoup
 from datetime import date, timedelta
-import os, sys
+import os, sys, json, requests
 
 if os.name == 'nt':
     sys.path.append("C:\\Users\\brian\\Documents\\Python\\OIC_Web_Apps\\")
@@ -21,59 +19,23 @@ from accounts.models import Profile
 
 skate_dates = []
 
-def scrape_oic_schedule(date):
-    '''Scrapes Ozaukee Ice Center schedule website for Figure Skating dates.'''
-    xx_xx_xxxx = f"{date[5:7]}/{date[8:]}/{date[0:4]}"
-    xxxx_xx_xx = f"{date[0:4]},{date[5:7]},{date[8:]}"
-    today_with_time = date + "-00-00-00"
+def get_schedule_data(from_date, to_date):
+    '''Request schedule data from Schedule Werks for the specified period.'''
+    
+    url = f"https://ozaukeeicecenter.schedulewerks.com/public/ajax/swCalGet?tid=-1&from={from_date}&to={to_date}&Complex=-1"
+    response = requests.get(url)
+    data = json.loads(response.text)
 
-    # Used for testing purposes
-    # print(xx_xx_xxxx)
-    # print(xxxx_xx_xx)
-    # print(today_with_time)
+    for item in data:
+        if "Open FS" in item["text"]:
+            skate_date = item["start_date"].split(" ")[0]
+            skate_date = f"{skate_date[6:]}-{skate_date[:2]}-{skate_date[3:5]}"
+            start_time = item["st"].replace("P", " PM").replace("A", " AM")
+            end_time = item["et"].replace("P", " PM").replace("A", " AM")
 
-    browser = mechanicalsoup.StatefulBrowser()
+            skate_dates.append([skate_date, start_time, end_time])
+    return
 
-    browser.open("https://ozaukeeicecenter.maxgalaxy.net/ScheduleList.aspx?ID=2")
-
-    browser.get_current_page()
-    # print(page)
-    browser.select_form('form[action="./ScheduleList.aspx?ID=2"]')
-    # browser.get_current_form().print_summary()
-
-    browser["ctl00_ContentPlaceHolder1_txtFromDate_dateInput_ClientState"] = '{"enabled":true,"emptyMessage":"","validationText":"'+today_with_time+'","valueAsString":"'+today_with_time+'","minDateStr":"1980-01-01-00-00-00","maxDateStr":"2099-12-31-00-00-00","lastSetTextBoxValue":"'+xx_xx_xxxx+'"}'
-    browser["ctl00_ContentPlaceHolder1_txtThroughDate_dateInput_ClientState"] = '{"enabled":true,"emptyMessage":"","validationText":"'+today_with_time+'","valueAsString":"'+today_with_time+'","minDateStr":"1980-01-01-00-00-00","maxDateStr":"2099-12-31-00-00-00","lastSetTextBoxValue":"'+xx_xx_xxxx+'"}'
-    browser["ctl00_ContentPlaceHolder1_cboSortBy_ClientState"] = '{"logEntries":[],"value":"2","text":"Start Time","enabled":true,"checkedIndices":[],"checkedItemsTextOverflows":false}'
-    browser["ctl00$ContentPlaceHolder1$txtFromDate"] = date
-    browser["ctl00$ContentPlaceHolder1$txtFromDate$dateInput"] = xx_xx_xxxx
-    browser["ctl00_ContentPlaceHolder1_txtFromDate_calendar_AD"] = '[[1980,1,1],[2099,12,30],['+xxxx_xx_xx+']]'
-    browser["ctl00_ContentPlaceHolder1_txtFromDate_calendar_SD"] = '[['+xxxx_xx_xx+']]'
-    browser["ctl00$ContentPlaceHolder1$txtThroughDate"] = date
-    browser["ctl00$ContentPlaceHolder1$txtThroughDate$dateInput"] = xx_xx_xxxx
-    browser["ctl00_ContentPlaceHolder1_txtThroughDate_calendar_AD"] = '[[1980,1,1],[2099,12,30],['+xxxx_xx_xx+']]'
-    browser["ctl00_ContentPlaceHolder1_txtThroughDate_calendar_SD"] = '[['+xxxx_xx_xx+']]'
-    browser["ctl00_ContentPlaceHolder1_cboFacility_ClientState"] = '{"logEntries":[],"value":"","text":"All items checked","enabled":true,"checkedIndices":[0,1,2,3,4,5,6,7],"checkedItemsTextOverflows":false}'
-    browser["ctl00$ContentPlaceHolder1$cboFacility"] = 'All items checked'
-
-    response = browser.submit_selected()
-    html = response.text.replace('</br>', '')
-    browser.close()
-
-    soup = BeautifulSoup(html, 'html.parser')
-    for br in soup.find_all('br'):
-        br.replace_with('')
-
-    try:
-        rows = soup.find(class_="clear listTable").find_all('tr')
-    except AttributeError:
-        return
-
-    for row in rows:
-        cols = row.find_all('td')
-
-        if len(cols) > 2:
-            if cols[4].get_text().strip() == "Open Figure Skating":
-                skate_dates.append([date, cols[0].get_text().strip(), cols[1].get_text().strip()])
 
 def add_skate_dates(sessions):
     '''Adds Figure Skating skate dates and times SkateDates model.'''
@@ -130,15 +92,9 @@ def send_skate_dates_email():
 if __name__ == "__main__":
 
     # the_date = date.today()
-    the_date = date.today() #+ timedelta(days=5)
     send_email = False
 
-    # if the_date.weekday() == 4:
-    for x in range(21):
-        if the_date.weekday() in [4, 5]:
-            scrape_date = date.isoformat(the_date)
-            scrape_oic_schedule(scrape_date)
-        the_date += timedelta(days=1)
+    get_schedule_data("10/01/2021", "10/24/2021")    
 
     if len(skate_dates) != 0:
         # send_email = add_skate_dates(skate_dates)
