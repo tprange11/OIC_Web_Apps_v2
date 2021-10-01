@@ -108,7 +108,15 @@ def scrape_ochl_teams():
     for row in rows:
         cols = row.find_all("td")
         team_events.append([cols[5].find("span").get_text().strip(" CST").strip(" CDT"), cols[2].find("a").get_text(), cols[0].find("a").get_text(), cols[4].find("div").get_text().strip()])
-
+    
+    # Convert start time to 24 hour time to match oic_schedule time format
+    for row in team_events:
+        time = row[0].strip(" PM")
+        time = time.split(":")
+        time[0] = str(int(time[0]) + 12)
+        time = ":".join(time)
+        row[0] = time
+    
 
 def add_locker_rooms_to_schedule():
     '''Add locker room assignments to oic_schedule list'''
@@ -120,8 +128,10 @@ def add_locker_rooms_to_schedule():
     need_game_locker_rooms = ("Cedarburg Hockey", "Homestead Hockey", "Lakeshore Lightning",
                               "Concordia ACHA", "Concordia University Men", "Concordia University Women")
     short_name = {
-        "Concordia University Men": "CUW Men",
-        "Concordia University Women": "CUW Women",
+        "Concordia Men CUW": "Concordia Men",
+        "Concordia Women CUW": "Concordia Women",
+        "Concordia ACHA CUW": "Concordia ACHA",
+        "Team Wisconsin Girls 14U TWG":"Team Wisconsin Girls 14U",
         "Kettle Moraine Figure Skating Club": "KM Figure Skating Club",
     }
 
@@ -209,10 +219,12 @@ def add_schedule_to_model(schedule, data_removed):
 
 if __name__ == "__main__":
     
-    todays_date = date.today()
+    # todays_date = date.today()
+    from_date = date.today().strftime("%m/%d/%Y")
+    to_date = (date.today() + timedelta(days=2)).strftime("%m/%d/%Y")
     # print(todays_date.strftime("%m-%d-%Y"))
-    formatted_date = date.isoformat(todays_date)
-    start_date = f"{formatted_date[5:7]}/{formatted_date[8:]}/{formatted_date[0:4]}"
+    # formatted_date = date.isoformat(todays_date)
+    # start_date = f"{formatted_date[5:7]}/{formatted_date[8:]}/{formatted_date[0:4]}"
     data_removed = False # used to check if the database table has been cleared once
 
 
@@ -229,7 +241,7 @@ if __name__ == "__main__":
 
     # If it's not Saturday or Sunday, scrape oic schedule
     if date.weekday(date.today()) not in [5, 6]:
-        data = get_schedule_data(start_date, start_date)
+        data = get_schedule_data(from_date, to_date)
         # swap_team_names()
         add_locker_rooms_to_schedule()
         add_schedule_to_model(oic_schedule, data_removed)
