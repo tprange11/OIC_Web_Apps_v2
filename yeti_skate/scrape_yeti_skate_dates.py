@@ -24,8 +24,13 @@ def get_schedule_data(from_date, to_date):
     '''Request schedule data from Schedule Werks for the specified period.'''
     
     url = f"https://ozaukeeicecenter.schedulewerks.com/public/ajax/swCalGet?tid=-1&from={from_date}&to={to_date}&Complex=-1"
-    response = requests.get(url)
-    data = json.loads(response.text)
+
+    try:
+        response = requests.get(url)
+        data = json.loads(response.text)
+    except requests.exceptions.RequestException as e:
+        print(e)
+        return
 
     for item in data:
         if "Yeti" in item["text"]:
