@@ -1,7 +1,5 @@
-from bs4 import BeautifulSoup
-import mechanicalsoup
 from datetime import date, timedelta
-import os, sys
+import os, sys, json, requests
 
 if os.name == 'nt':
     sys.path.append("C:\\Users\\brian\\Documents\\Python\\OIC_Web_Apps\\")
@@ -21,57 +19,29 @@ from accounts.models import Profile
 
 skate_dates = []
 
-def scrape_oic_schedule(date):
-    '''Scrapes Ozaukee Ice Center schedule website for OWHL Hockey skate dates.'''
-    xx_xx_xxxx = f"{date[5:7]}/{date[8:]}/{date[0:4]}"
-    xxxx_xx_xx = f"{date[0:4]},{date[5:7]},{date[8:]}"
-    today_with_time = date + "-00-00-00"
 
-    # Used for testing purposes
-    # print(xx_xx_xxxx)
-    # print(xxxx_xx_xx)
-    # print(today_with_time)
+def get_schedule_data(from_date, to_date):
+    '''Request schedule data from Schedule Werks for the specified period.'''
+    
+    url = f"https://ozaukeeicecenter.schedulewerks.com/public/ajax/swCalGet?tid=-1&from={from_date}&to={to_date}&Complex=-1"
 
-    browser = mechanicalsoup.StatefulBrowser()
-
-    browser.open("https://ozaukeeicecenter.maxgalaxy.net/ScheduleList.aspx?ID=2")
-
-    browser.get_current_page()
-    # print(page)
-    browser.select_form('form[action="./ScheduleList.aspx?ID=2"]')
-    # browser.get_current_form().print_summary()
-
-    browser["ctl00_ContentPlaceHolder1_txtFromDate_dateInput_ClientState"] = '{"enabled":true,"emptyMessage":"","validationText":"'+today_with_time+'","valueAsString":"'+today_with_time+'","minDateStr":"1980-01-01-00-00-00","maxDateStr":"2099-12-31-00-00-00","lastSetTextBoxValue":"'+xx_xx_xxxx+'"}'
-    browser["ctl00_ContentPlaceHolder1_txtThroughDate_dateInput_ClientState"] = '{"enabled":true,"emptyMessage":"","validationText":"'+today_with_time+'","valueAsString":"'+today_with_time+'","minDateStr":"1980-01-01-00-00-00","maxDateStr":"2099-12-31-00-00-00","lastSetTextBoxValue":"'+xx_xx_xxxx+'"}'
-    browser["ctl00_ContentPlaceHolder1_cboSortBy_ClientState"] = '{"logEntries":[],"value":"2","text":"Start Time","enabled":true,"checkedIndices":[],"checkedItemsTextOverflows":false}'
-    browser["ctl00$ContentPlaceHolder1$txtFromDate"] = date
-    browser["ctl00$ContentPlaceHolder1$txtFromDate$dateInput"] = xx_xx_xxxx
-    browser["ctl00_ContentPlaceHolder1_txtFromDate_calendar_AD"] = '[[1980,1,1],[2099,12,30],['+xxxx_xx_xx+']]'
-    browser["ctl00_ContentPlaceHolder1_txtFromDate_calendar_SD"] = '[['+xxxx_xx_xx+']]'
-    browser["ctl00$ContentPlaceHolder1$txtThroughDate"] = date
-    browser["ctl00$ContentPlaceHolder1$txtThroughDate$dateInput"] = xx_xx_xxxx
-    browser["ctl00_ContentPlaceHolder1_txtThroughDate_calendar_AD"] = '[[1980,1,1],[2099,12,30],['+xxxx_xx_xx+']]'
-    browser["ctl00_ContentPlaceHolder1_txtThroughDate_calendar_SD"] = '[['+xxxx_xx_xx+']]'
-    browser["ctl00_ContentPlaceHolder1_cboFacility_ClientState"] = '{"logEntries":[],"value":"","text":"All items checked","enabled":true,"checkedIndices":[0,1,2,3,4,5,6,7],"checkedItemsTextOverflows":false}'
-    browser["ctl00$ContentPlaceHolder1$cboFacility"] = 'All items checked'
-
-    response = browser.submit_selected()
-    # print(response.text)
-    browser.close()
-
-    soup = BeautifulSoup(response.text, 'html.parser')
     try:
-        rows = soup.find(class_="clear listTable").find_all('tr')
-    except AttributeError:
+        response = requests.get(url)
+        data = json.loads(response.text)
+    except requests.exceptions.RequestException as e:
+        print(e)
         return
 
-    for row in rows:
-        cols = row.find_all('td')
+    for item in data:
+        if "OWHL" in item["text"]:
+            skate_date = item["start_date"].split(" ")[0]
+            skate_date = f"{skate_date[6:]}-{skate_date[:2]}-{skate_date[3:5]}"
+            start_time = item["st"].replace("P", " PM").replace("A", " AM")
+            end_time = item["et"].replace("P", " PM").replace("A", " AM")
 
-        if len(cols) > 2:
-            if cols[4].get_text().strip() == "Ozaukee Womens Hockey League":
-                skate_dates.append([date, cols[0].get_text().strip(), cols[1].get_text().strip()])
-                break
+            skate_dates.append([skate_date, start_time, end_time])
+    return
+
 
 def add_skate_dates(sessions):
     '''Adds OWHL Hockey skate dates and times to OWHLSkateDates model.'''
@@ -88,64 +58,50 @@ def add_skate_dates(sessions):
     # print(new_dates)
     return new_dates
 
-def send_skate_dates_email():
-    '''Sends email to Users letting them know when OWHL Hockey skate dates are added.'''
-    recipients = Profile.objects.filter(open_roller_email=True).select_related('user')
+# def send_skate_dates_email():
+#     '''Sends email to Users letting them know when OWHL Hockey skate dates are added.'''
+#     recipients = Profile.objects.filter(open_roller_email=True).select_related('user')
 
-    for recipient in recipients:
-        if recipient.user.is_active:
-            to_email = [recipient.user.email]
-            from_email = 'no-reply@mg.oicwebapps.com'
-            subject = 'New OWHL Hockey Skate Date Added'
+#     for recipient in recipients:
+#         if recipient.user.is_active:
+#             to_email = [recipient.user.email]
+#             from_email = 'no-reply@mg.oicwebapps.com'
+#             subject = 'New OWHL Hockey Skate Date Added'
 
-            # Build the plain text message
-            text_message = f'Hi {recipient.user.first_name},\n\n'
-            text_message += f'New OWHL Hockey skate dates are now available online. Sign up at the url below.\n\n'
-            text_message += f'https://www.oicwebapps.com/web_apps/open_roller/\n\n'
-            text_message += f'If you no longer wish to receive these emails, log in to your account,\n'
-            text_message += f'click on your username and change the email settings in your profile.\n\n'
-            text_message += f'Thank you for using OICWebApps.com!\n\n'
+#             # Build the plain text message
+#             text_message = f'Hi {recipient.user.first_name},\n\n'
+#             text_message += f'New OWHL Hockey skate dates are now available online. Sign up at the url below.\n\n'
+#             text_message += f'https://www.oicwebapps.com/web_apps/open_roller/\n\n'
+#             text_message += f'If you no longer wish to receive these emails, log in to your account,\n'
+#             text_message += f'click on your username and change the email settings in your profile.\n\n'
+#             text_message += f'Thank you for using OICWebApps.com!\n\n'
 
-            # Build the html message
-            html_message = render_to_string(
-                'open_roller_skate_dates_email.html',
-                {
-                    'recipient_name': recipient.user.first_name,
-                }
-            )
+#             # Build the html message
+#             html_message = render_to_string(
+#                 'open_roller_skate_dates_email.html',
+#                 {
+#                     'recipient_name': recipient.user.first_name,
+#                 }
+#             )
 
-            # Send email to each recipient separately
-            try:
-                mail = EmailMultiAlternatives(
-                    subject, text_message, from_email, to_email
-                )
-                mail.attach_alternative(html_message, 'text/html')
-                mail.send()
-            except:
-                return
+#             # Send email to each recipient separately
+#             try:
+#                 mail = EmailMultiAlternatives(
+#                     subject, text_message, from_email, to_email
+#                 )
+#                 mail.attach_alternative(html_message, 'text/html')
+#                 mail.send()
+#             except:
+#                 return
 
 
 if __name__ == "__main__":
 
-    the_date = date.today()
-    # the_date = "2019-09-14"
-    send_email = False
-
-    # Scrape 7 days for OWHL Hockey every Friday
+    from_date = "10/15/2021"
+    to_date = "03/11/2022"
     
-    # if the_date.weekday() == 2: # I
-    for x in range(87):
-        scrape_date = date.isoformat(the_date)
-        if the_date.weekday() == 4: # Scrape Friday's
-            scrape_oic_schedule(scrape_date)
-
-        the_date += timedelta(days=1)
+    get_schedule_data(from_date, to_date)
+    # print(skate_dates)
 
     if len(skate_dates) != 0:
-        # send_email = add_skate_dates(skate_dates)
         add_skate_dates(skate_dates)
-
-    # print(skate_dates)
-    # print(send_email)
-    # if send_email:
-    #     send_skate_dates_email()
