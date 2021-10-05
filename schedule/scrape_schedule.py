@@ -116,6 +116,35 @@ def scrape_ochl_teams():
         time[0] = str(int(time[0]) + 12)
         time = ":".join(time)
         row[0] = time
+
+
+def scrape_owhl_teams():
+    '''Scrapes OCHL Schedule website for teams.'''
+
+    url = "https://www.ozaukeeicecenter.org/schedule/day/league_instance/153383?subseason=781038"
+    response = requests.get(url)
+
+    soup = BeautifulSoup(response.text, "html.parser")
+    # Get game schedule table
+    table = soup.find(class_="statTable")
+    # Get table body which contains game or practice rows
+    tbody = table.find_next("tbody")
+
+    # Get the rows
+    rows = tbody.find_all("tr")
+
+    # Get the data from the pertinent table cells: home, visitor, rink, start time
+    for row in rows:
+        cols = row.find_all("td")
+        team_events.append([cols[5].find("span").get_text().strip(" CST").strip(" CDT"), cols[2].find("a").get_text(), cols[0].find("a").get_text(), cols[4].find("div").get_text().strip()])
+    
+    # Convert start time to 24 hour time to match oic_schedule time format
+    for row in team_events:
+        time = row[0].strip(" PM")
+        time = time.split(":")
+        time[0] = str(int(time[0]) + 12)
+        time = ":".join(time)
+        row[0] = time
     
 
 def add_locker_rooms_to_schedule():
@@ -132,6 +161,8 @@ def add_locker_rooms_to_schedule():
         "Concordia Women CUW": "Concordia Women",
         "Concordia ACHA CUW": "Concordia ACHA",
         "Team Wisconsin Girls 14U TWG":"Team Wisconsin Girls 14U",
+        "Yeti Yeti": "Yeti",
+        "Lady Hawks Lady Hawks": "Lady Hawks",
         "Kettle Moraine Figure Skating Club": "KM Figure Skating Club",
     }
 
@@ -242,12 +273,20 @@ if __name__ == "__main__":
     # If it's not Saturday or Sunday, scrape oic schedule
     if date.weekday(date.today()) not in [5, 6]:
         data = get_schedule_data(from_date, to_date)
-        # swap_team_names()
+
+        if date.weekday(date.today()) == 4:
+            try:
+                scrape_owhl_teams()
+            except Exception as e:
+                print(f"{e}, scrape_owhl_teams()")
+
+            swap_team_names()
+
         add_locker_rooms_to_schedule()
         add_schedule_to_model(oic_schedule, data_removed)
         data_removed = True
         oic_schedule.clear()
-        # team_events.clear()
+        team_events.clear()
 
         # If it is Friday, process Saturday and Sunday too
         if date.weekday(date.today()) == 4:
@@ -257,10 +296,6 @@ if __name__ == "__main__":
             sunday = (date.today() + timedelta(days=2)).strftime("%m/%d/%Y")
             # print(sunday)
             process_data(data, sunday)
-            # add_locker_rooms_to_schedule()
-            # add_schedule_to_model(oic_schedule, data_removed)
-            # oic_schedule.clear()
-            # team_events.clear()
 
             try:
                 scrape_ochl_teams()
@@ -272,27 +307,3 @@ if __name__ == "__main__":
             add_schedule_to_model(oic_schedule, data_removed)
             oic_schedule.clear()
             team_events.clear()
-    
-        # if date.weekday(date.today()) == 3:
-        #     saturday = (date.today() + timedelta(days=1)).strftime("%m-%d-%Y")
-        #     print(saturday)
-        #     get_schedule_data(saturday, saturday)
-        #     # swap_team_names()
-        #     add_locker_rooms_to_schedule()
-        #     add_schedule_to_model(oic_schedule, data_removed)
-        #     oic_schedule.clear()
-        #     # team_events.clear()
-
-        #     sunday = (date.today() + timedelta(days=2)).strftime("%m-%d-%Y")
-        #     print(sunday)
-        #     get_schedule_data(sunday, sunday)
-        #     try:
-        #         scrape_ochl_teams()
-        #     except Exception as e:
-        #         print(f"{e}, scrape_ochl_teams()")
-
-        #     swap_team_names()
-        #     add_locker_rooms_to_schedule()
-        #     add_schedule_to_model(oic_schedule, data_removed)
-        #     oic_schedule.clear()
-        #     team_events.clear()
