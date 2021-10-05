@@ -1,7 +1,5 @@
-from bs4 import BeautifulSoup
-import mechanicalsoup
 from datetime import date, timedelta
-import os, sys
+import os, sys, requests, json
 
 if os.name == 'nt':
     sys.path.append("C:\\Users\\brian\\Documents\\Python\\OIC_Web_Apps\\")
@@ -21,57 +19,29 @@ from accounts.models import Profile
 
 skate_dates = []
 
-def scrape_oic_schedule(date):
-    '''Scrapes Ozaukee Ice Center schedule website for Bald Eagles dates.'''
-    xx_xx_xxxx = f"{date[5:7]}/{date[8:]}/{date[0:4]}"
-    xxxx_xx_xx = f"{date[0:4]},{date[5:7]},{date[8:]}"
-    today_with_time = date + "-00-00-00"
 
-    # Used for testing purposes
-    # print(xx_xx_xxxx)
-    # print(xxxx_xx_xx)
-    # print(today_with_time)
+def get_schedule_data(from_date, to_date):
+    '''Request schedule data from Schedule Werks for the specified period.'''
+    
+    url = f"https://ozaukeeicecenter.schedulewerks.com/public/ajax/swCalGet?tid=-1&from={from_date}&to={to_date}&Complex=-1"
 
-    browser = mechanicalsoup.StatefulBrowser()
-
-    browser.open("https://ozaukeeicecenter.maxgalaxy.net/ScheduleList.aspx?ID=2")
-
-    browser.get_current_page()
-    # print(page)
-    browser.select_form('form[action="./ScheduleList.aspx?ID=2"]')
-    # browser.get_current_form().print_summary()
-
-    browser["ctl00_ContentPlaceHolder1_txtFromDate_dateInput_ClientState"] = '{"enabled":true,"emptyMessage":"","validationText":"'+today_with_time+'","valueAsString":"'+today_with_time+'","minDateStr":"1980-01-01-00-00-00","maxDateStr":"2099-12-31-00-00-00","lastSetTextBoxValue":"'+xx_xx_xxxx+'"}'
-    browser["ctl00_ContentPlaceHolder1_txtThroughDate_dateInput_ClientState"] = '{"enabled":true,"emptyMessage":"","validationText":"'+today_with_time+'","valueAsString":"'+today_with_time+'","minDateStr":"1980-01-01-00-00-00","maxDateStr":"2099-12-31-00-00-00","lastSetTextBoxValue":"'+xx_xx_xxxx+'"}'
-    browser["ctl00_ContentPlaceHolder1_cboSortBy_ClientState"] = '{"logEntries":[],"value":"2","text":"Start Time","enabled":true,"checkedIndices":[],"checkedItemsTextOverflows":false}'
-    browser["ctl00$ContentPlaceHolder1$txtFromDate"] = date
-    browser["ctl00$ContentPlaceHolder1$txtFromDate$dateInput"] = xx_xx_xxxx
-    browser["ctl00_ContentPlaceHolder1_txtFromDate_calendar_AD"] = '[[1980,1,1],[2099,12,30],['+xxxx_xx_xx+']]'
-    browser["ctl00_ContentPlaceHolder1_txtFromDate_calendar_SD"] = '[['+xxxx_xx_xx+']]'
-    browser["ctl00$ContentPlaceHolder1$txtThroughDate"] = date
-    browser["ctl00$ContentPlaceHolder1$txtThroughDate$dateInput"] = xx_xx_xxxx
-    browser["ctl00_ContentPlaceHolder1_txtThroughDate_calendar_AD"] = '[[1980,1,1],[2099,12,30],['+xxxx_xx_xx+']]'
-    browser["ctl00_ContentPlaceHolder1_txtThroughDate_calendar_SD"] = '[['+xxxx_xx_xx+']]'
-    browser["ctl00_ContentPlaceHolder1_cboFacility_ClientState"] = '{"logEntries":[],"value":"","text":"All items checked","enabled":true,"checkedIndices":[0,1,2,3,4,5,6,7],"checkedItemsTextOverflows":false}'
-    browser["ctl00$ContentPlaceHolder1$cboFacility"] = 'All items checked'
-
-    response = browser.submit_selected()
-    # print(response.text)
-    browser.close()
-
-    soup = BeautifulSoup(response.text, 'html.parser')
     try:
-        rows = soup.find(class_="clear listTable").find_all('tr')
-    except AttributeError:
+        response = requests.get(url)
+        data = json.loads(response.text)
+    except requests.exceptions.RequestException as e:
+        print(e)
         return
 
-    for row in rows:
-        cols = row.find_all('td')
+    for item in data:
+        if "Baldies" in item["text"]:
+            skate_date = item["start_date"].split(" ")[0]
+            skate_date = f"{skate_date[6:]}-{skate_date[:2]}-{skate_date[3:5]}"
+            start_time = item["st"].replace("P", " PM").replace("A", " AM")
+            end_time = item["et"].replace("P", " PM").replace("A", " AM")
 
-        if len(cols) > 2:
-            if cols[4].get_text().strip() == "Bald Eagles":
-                skate_dates.append([date, cols[0].get_text().strip(), cols[1].get_text().strip()])
-                break
+            skate_dates.append([skate_date, start_time, end_time])
+    return
+
 
 def add_skate_dates(sessions):
     '''Adds Bald Eagles dates and times to BaldEaglesSkateDate model.'''
@@ -127,18 +97,13 @@ def send_skate_dates_email():
 
 if __name__ == "__main__":
     
-    the_date = date.today()
-    # the_date = "2019-09-14"
+    from_date = (date.today() + timedelta(days=1)).strftime("%m/%d/%Y")
+    to_date = from_date
     send_email = False
 
     # Every Saturday scrape the next Tuesday/Friday for Bald Eagles dates
-    if the_date.weekday() == 5:
-        for x in range(7):
-            scrape_date = date.isoformat(the_date)
-            if the_date.weekday() == 1 or the_date.weekday() == 4:
-                scrape_oic_schedule(scrape_date)
-
-            the_date += timedelta(days=1)
+    if date.today().weekday() == 5:
+        get_schedule_data(from_date, to_date)
 
     if len(skate_dates) != 0:
         send_email = add_skate_dates(skate_dates)
