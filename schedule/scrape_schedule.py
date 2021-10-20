@@ -222,6 +222,8 @@ def add_locker_rooms_to_schedule():
     for item in oic_schedule:
         if item[4] in short_name:
             item[4] = short_name[item[4]]
+        elif " OYHA" in item[4]:
+            item[4] = item[4].strip(" OYHA ")
 
 def add_schedule_to_model(schedule, data_removed):
     '''Adds OIC daily schedule to RinkSchedule model.'''
