@@ -153,7 +153,7 @@ def add_locker_rooms_to_schedule():
     south_lr_flag = 0
     north_lr_flag = 0
     x = 0  # index of rink list for appending locker room numbers
-    no_locker_room = ("Public Skate", "LTS", "Open FS", "Kettle Moraine Figure Skating Club", "GRIT Hockey Club")
+    no_locker_room = ("Public Skate", "LTS", "Open Figure Open FS", "Kettle Moraine Figure Skating Club", "GRIT Hockey Club")
     need_game_locker_rooms = ("Cedarburg Hockey", "Homestead Hockey", "Lakeshore Lightning",
                               "Concordia ACHA", "Concordia University Men", "Concordia University Women")
     short_name = {
