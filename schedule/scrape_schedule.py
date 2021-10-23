@@ -163,6 +163,7 @@ def add_locker_rooms_to_schedule():
         "Team Wisconsin Girls 14U TWG":"Team Wisconsin Girls 14U",
         "Yeti Yeti": "Yeti",
         "Lady Hawks Lady Hawks": "Lady Hawks",
+        "Open Figure Open FS": "Open FS",
         "Kettle Moraine Figure Skating Club": "KM Figure Skating Club",
     }
 
