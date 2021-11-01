@@ -99,10 +99,14 @@
                             {% if in_group_owhl_hockey %}
                             <a class="dropdown-item" href="{% url 'owhl:owhl' %}">OWHL</a>
                             {% endif %}
+                            {% if in_group_kranich %}
+                            <a class="dropdown-item" href="{% url 'kranich:kranich' %}">John Kranich</a>
+                            {% endif %}
                             <a class="dropdown-item" href="{% url 'private_skates:private-skates' %}">Private Skates</a>
                             {% if user.is_staff %}
                             <a class="dropdown-item" href="{% url 'schedule:choose-rink' %}">Rink Schedule</a>
                             {% endif %}
+                            <a class="dropdown-item" href="{% url 'how_to_videos:index' %}">How To Videos</a>
                         </div>
                     </li>
                     {% endif %}
@@ -181,6 +185,7 @@
                                 <a class="dropdown-item" href="{% url 'open_roller:open-roller-sessions' %}">Open Roller Hockey</a>
                                 <a class="dropdown-item" href="{% url 'owhl:owhl-sessions' %}">OWHL Hockey</a>
                                 <a class="dropdown-item" href="{% url 'schedule:choose-rink' %}">Rink Schedule</a>
+                                <a class="dropdown-item" href="{% url 'how_to_videos:index' %}">How To Videos</a>
                             </div>
                         </li>
                         {% endif %}

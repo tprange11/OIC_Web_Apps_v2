@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}<title>OIC How To Video Categories</title>{% endblock title %}
+{% block content %}
+<div class="container text-center">
+    <h4>OIC How To Video Categories</h4>
+    {% for category in categories %}
+    <div class="row">
+        <div class="col">
+            <a href="{% url 'how_to_videos:video-list' slug=category.slug %}" class="btn btn-lg btn-success my-3">{{ category.video_category }} Videos</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock content %}

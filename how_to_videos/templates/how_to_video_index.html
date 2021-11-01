@@ -1,0 +1,22 @@
+{% extends 'base.html' %}{% load bootstrap4 %}
+{% block title %}<title>OIC How To Videos</title>{% endblock title %}
+{% block content %}
+<div class="container text-center">
+    <h4>OIC How To Videos</h4>
+    <div class="mt-5">
+        <a class="btn btn-lg btn-success" href="{% url 'how_to_videos:categories' %}">Browse by Category</a>
+    </div>
+    <div class="my-5">
+        <h5 class="mb-3">Search by Keyword</h5>
+        <form action="{% url 'how_to_videos:search' %}" method="GET">
+            {% csrf_token %}
+            <div class="form-group">
+                <input type="text" name="keyword" class="form-control">
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Search" class="btn btn-dark btn-lg">
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock content %}

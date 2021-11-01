@@ -20,6 +20,7 @@ from bald_eagles.models import BaldEaglesSession
 from lady_hawks.models import LadyHawksSkateSession
 from chs_alumni.models import CHSAlumniSession
 from private_skates.models import PrivateSkateSession
+from kranich.models import KranichSkateSession
 from accounts.models import UserCredit
 
 from datetime import date
@@ -27,18 +28,21 @@ from datetime import date
 def clear_cart_and_unpaid_items():
     '''Clears bailed shopping carts and unpaid memberships, stick and puck sessions and open hockey sessions.'''
 
+    todays_date = date.today()
+
     Cart.objects.all().delete()
-    StickAndPuckSession.objects.filter(paid=False, session_date__gte=date.today()).delete()
-    SkateSession.objects.filter(paid=False, skate_date__skate_date__gte=date.today()).delete()
-    FigureSkatingSession.objects.filter(paid=False, session__skate_date__gte=date.today()).delete()
-    AdultSkillsSkateSession.objects.filter(paid=False, skate_date__skate_date__gte=date.today()).delete()
-    MikeSchultzSkateSession.objects.filter(paid=False, skate_date__skate_date__gte=date.today()).delete()
-    YetiSkateSession.objects.filter(paid=False, skate_date__skate_date__gte=date.today()).delete()
-    WomensHockeySkateSession.objects.filter(paid=False, skate_date__skate_date__gte=date.today()).delete()
-    BaldEaglesSession.objects.filter(paid=False, session_date__skate_date__gte=date.today()).delete()
-    LadyHawksSkateSession.objects.filter(paid=False, skate_date__skate_date__gte=date.today()).delete()
-    CHSAlumniSession.objects.filter(paid=False, date__skate_date__gte=date.today()).delete()
-    PrivateSkateSession.objects.filter(paid=False, skate_date__date__gte=date.today()).delete()
+    StickAndPuckSession.objects.filter(paid=False, session_date__gte=todays_date).delete()
+    SkateSession.objects.filter(paid=False, skate_date__skate_date__gte=todays_date).delete()
+    FigureSkatingSession.objects.filter(paid=False, session__skate_date__gte=todays_date).delete()
+    AdultSkillsSkateSession.objects.filter(paid=False, skate_date__skate_date__gte=todays_date).delete()
+    MikeSchultzSkateSession.objects.filter(paid=False, skate_date__skate_date__gte=todays_date).delete()
+    YetiSkateSession.objects.filter(paid=False, skate_date__skate_date__gte=todays_date).delete()
+    WomensHockeySkateSession.objects.filter(paid=False, skate_date__skate_date__gte=todays_date).delete()
+    BaldEaglesSession.objects.filter(paid=False, session_date__skate_date__gte=todays_date).delete()
+    LadyHawksSkateSession.objects.filter(paid=False, skate_date__skate_date__gte=todays_date).delete()
+    CHSAlumniSession.objects.filter(paid=False, date__skate_date__gte=todays_date).delete()
+    PrivateSkateSession.objects.filter(paid=False, skate_date__date__gte=todays_date).delete()
+    KranichSkateSession.objects.filter(paid=False, skate_date__skate_date__gte=todays_date).delete()
     UserCredit.objects.filter(pending__gt=0).update(pending=0)
     return
 

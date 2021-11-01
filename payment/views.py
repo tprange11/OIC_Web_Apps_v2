@@ -7,6 +7,8 @@ from django.core.exceptions import ObjectDoesNotExist
 import uuid, os
 from datetime import date
 from square.client import Client
+
+import kranich
 from . import models
 from cart.models import Cart
 from programs.models import Program
@@ -24,6 +26,7 @@ from chs_alumni.models import CHSAlumniSession
 from private_skates.models import PrivateSkateSession, PrivateSkate
 from open_roller.models import OpenRollerSkateSession
 from owhl.models import OWHLSkateSession
+from kranich.models import KranichSkateSession
 from accounts.models import UserCredit
 
 # Create your views here.
@@ -84,6 +87,7 @@ def process_payment(request, **kwargs):
     private_skate_sessions_model = PrivateSkateSession
     open_roller_sessions_model = OpenRollerSkateSession
     owhl_sessions_model = OWHLSkateSession
+    kranich_sessions_model = KranichSkateSession
     user_credit_model = UserCredit
     today = date.today()
 
@@ -163,6 +167,7 @@ def process_payment(request, **kwargs):
                 open_roller_sessions_model.objects.filter(user=request.user).update(paid=True)
                 private_skate_sessions_model.objects.filter(user=request.user).update(paid=True)
                 owhl_sessions_model.objects.filter(skater=request.user, paid=False).update(paid=True)
+                kranich_sessions_model.objects.filter(skater=request.user, paid=False).update(paid=True)
             except IntegrityError:
                 pass
 

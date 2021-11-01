@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %}<title>OIC How To Video Search Results</title>{% endblock title %}
+{% block content %}
+<div class="container text-center">
+    <div class="mb-3">
+        <a href="{% url 'how_to_videos:index' %}" class="btn btn-warning">How To Videos</a> &gt;&gt; Search Results
+    </div>
+    {% for video in videos %}
+    <div class="row">
+        <div class="col">
+            <a href="{{video.video_url}}" class="btn btn-lg btn-dark my-3" target="_blank">{{ video.title }}</a>
+        </div>
+    </div>
+    {% empty %}
+    <p>No How To Videos found.</p>
+    {% endfor %}
+</div>
+{% endblock content %}
