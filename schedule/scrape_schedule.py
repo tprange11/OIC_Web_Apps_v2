@@ -164,6 +164,7 @@ def add_locker_rooms_to_schedule():
         "Yeti Yeti": "Yeti",
         "Lady Hawks Lady Hawks": "Lady Hawks",
         "Open Figure Open FS": "Open FS",
+        "Kranich Kranich": "Kranich",
         "Kettle Moraine Figure Skating Club": "KM Figure Skating Club",
     }
 
