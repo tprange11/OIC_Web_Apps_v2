@@ -225,7 +225,7 @@ def add_locker_rooms_to_schedule():
         if item[4] in short_name:
             item[4] = short_name[item[4]]
         elif " OYHA" in item[4]:
-            item[4] = item[4].strip(" OYHA ")
+            item[4] = item[4][:-5] # Remove the last 6 characters " OYHA "
 
 def add_schedule_to_model(schedule, data_removed):
     '''Adds OIC daily schedule to RinkSchedule model.'''
@@ -257,9 +257,6 @@ if __name__ == "__main__":
     # todays_date = date.today()
     from_date = date.today().strftime("%m/%d/%Y")
     to_date = (date.today() + timedelta(days=2)).strftime("%m/%d/%Y")
-    # print(todays_date.strftime("%m-%d-%Y"))
-    # formatted_date = date.isoformat(todays_date)
-    # start_date = f"{formatted_date[5:7]}/{formatted_date[8:]}/{formatted_date[0:4]}"
     data_removed = False # used to check if the database table has been cleared once
 
 
