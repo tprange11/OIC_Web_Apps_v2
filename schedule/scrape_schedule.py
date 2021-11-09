@@ -165,6 +165,9 @@ def add_locker_rooms_to_schedule():
         "Lady Hawks Lady Hawks": "Lady Hawks",
         "Open Figure Open FS": "Open FS",
         "Kranich Kranich": "Kranich",
+        "Cedarburg CHS": "Cedarburg",
+        "Homestead HHS": "Homestead",
+        "Lakeshore Lightning LSL": "Lakeshore Lightning",
         "Kettle Moraine Figure Skating Club": "KM Figure Skating Club",
     }
 
