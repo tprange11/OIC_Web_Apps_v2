@@ -8,7 +8,6 @@ import uuid, os
 from datetime import date
 from square.client import Client
 
-import kranich
 from . import models
 from cart.models import Cart
 from programs.models import Program
