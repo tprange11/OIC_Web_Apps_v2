@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.views.generic import TemplateView, ListView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
@@ -91,7 +91,7 @@ def process_payment(request, **kwargs):
     today = date.today()
 
     if request.method == 'GET':
-        return
+        return redirect('cart:shopping-cart')
     else:
 
         nonce = request.POST['nonce']
