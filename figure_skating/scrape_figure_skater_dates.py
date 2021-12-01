@@ -94,7 +94,7 @@ if __name__ == "__main__":
     # the_date = date.today()
     send_email = False
 
-    get_schedule_data("11/01/2021", "11/26/2021")
+    get_schedule_data("12/01/2021", "12/31/2021")
 
     if len(skate_dates) != 0:
         # send_email = add_skate_dates(skate_dates)
