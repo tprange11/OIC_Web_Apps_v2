@@ -180,6 +180,8 @@ def add_locker_rooms_to_schedule():
         "Homestead HHS": "Homestead",
         "Lakeshore Lightning LSL": "Lakeshore Lightning",
         "Kettle Moraine Figure Skating Club": "KM Figure Skating Club",
+        "Womens Open Hockey Women Open": "Womens Open Hockey",
+        "Milwaukee Power MKE Power": "Milwaukee Power",
     }
 
     # Replace long customer name with short name
