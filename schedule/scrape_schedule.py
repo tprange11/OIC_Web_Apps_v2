@@ -24,7 +24,7 @@ oic_schedule = []  # list that will hold the day's events
 schedule_notes = [] # list that will hold notes if any
 team_events = [] # list that will hold OYHA, OCHL and OWHL teams to merge with oic_schedule[]
 north_locker_rooms = [[1, 3], [2, 4]]  # Locker room numbers in North
-south_locker_rooms = [[6, 9], [5, 8], 7]  # Locker room numbers in South
+south_locker_rooms = [[5, 7], [6, 8], 7]  # Locker room numbers in South
 
 
 def get_schedule_data(from_date, to_date):
