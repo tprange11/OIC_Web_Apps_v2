@@ -1,7 +1,5 @@
-from bs4 import BeautifulSoup
-import mechanicalsoup
 from datetime import date, timedelta
-import os, sys
+import os, sys, requests, json
 
 if os.name == 'nt':
     sys.path.append("C:\\Users\\brian\\Documents\\Python\\OIC_Web_Apps\\")
@@ -17,80 +15,31 @@ from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from stickandpuck.models import StickAndPuckDate
 from accounts.models import Profile
-# from django.contrib.auth import get_user_model
-# User = get_user_model()
 
-stick_and_puck = []  # list that will hold stick and puck dates
-stick_and_puck_notes = [] # list that will hold stick and puck session notes
+skate_dates = []
 
-def scrape_oic_schedule(date):
+def get_schedule_data(date):
     '''Scrapes Ozaukee Ice Center schedule website for stick and puck session dates.'''
-    xx_xx_xxxx = f"{date[5:7]}/{date[8:]}/{date[0:4]}"
-    xxxx_xx_xx = f"{date[0:4]},{date[5:7]},{date[8:]}"
-    today_with_time = date + "-00-00-00"
 
-    # Used for testing purposes
-    # print(xx_xx_xxxx)
-    # print(xxxx_xx_xx)
-    # print(today_with_time)
+    url = f"https://ozaukeeicecenter.schedulewerks.com/public/ajax/swCalGet?tid=-1&from={date}&to={date}&Complex=-1"
 
-    browser = mechanicalsoup.StatefulBrowser()
-
-    browser.open("https://ozaukeeicecenter.maxgalaxy.net/ScheduleList.aspx?ID=2")
-
-    browser.get_current_page()
-    # print(page)
-    browser.select_form('form[action="./ScheduleList.aspx?ID=2"]')
-    # browser.get_current_form().print_summary()
-
-    browser["ctl00_ContentPlaceHolder1_txtFromDate_dateInput_ClientState"] = '{"enabled":true,"emptyMessage":"","validationText":"'+today_with_time+'","valueAsString":"'+today_with_time+'","minDateStr":"1980-01-01-00-00-00","maxDateStr":"2099-12-31-00-00-00","lastSetTextBoxValue":"'+xx_xx_xxxx+'"}'
-    browser["ctl00_ContentPlaceHolder1_txtThroughDate_dateInput_ClientState"] = '{"enabled":true,"emptyMessage":"","validationText":"'+today_with_time+'","valueAsString":"'+today_with_time+'","minDateStr":"1980-01-01-00-00-00","maxDateStr":"2099-12-31-00-00-00","lastSetTextBoxValue":"'+xx_xx_xxxx+'"}'
-    browser["ctl00_ContentPlaceHolder1_cboSortBy_ClientState"] = '{"logEntries":[],"value":"2","text":"Start Time","enabled":true,"checkedIndices":[],"checkedItemsTextOverflows":false}'
-    browser["ctl00$ContentPlaceHolder1$txtFromDate"] = date
-    browser["ctl00$ContentPlaceHolder1$txtFromDate$dateInput"] = xx_xx_xxxx
-    browser["ctl00_ContentPlaceHolder1_txtFromDate_calendar_AD"] = '[[1980,1,1],[2099,12,30],['+xxxx_xx_xx+']]'
-    browser["ctl00_ContentPlaceHolder1_txtFromDate_calendar_SD"] = '[['+xxxx_xx_xx+']]'
-    browser["ctl00$ContentPlaceHolder1$txtThroughDate"] = date
-    browser["ctl00$ContentPlaceHolder1$txtThroughDate$dateInput"] = xx_xx_xxxx
-    browser["ctl00_ContentPlaceHolder1_txtThroughDate_calendar_AD"] = '[[1980,1,1],[2099,12,30],['+xxxx_xx_xx+']]'
-    browser["ctl00_ContentPlaceHolder1_txtThroughDate_calendar_SD"] = '[['+xxxx_xx_xx+']]'
-    browser["ctl00_ContentPlaceHolder1_cboFacility_ClientState"] = '{"logEntries":[],"value":"","text":"All items checked","enabled":true,"checkedIndices":[0,1,2,3,4,5,6,7],"checkedItemsTextOverflows":false}'
-    browser["ctl00$ContentPlaceHolder1$cboFacility"] = 'All items checked'
-
-    response = browser.submit_selected()
-    # print(response.text)
-    browser.close()
-
-    soup = BeautifulSoup(response.text, 'html.parser')
     try:
-        rows = soup.find(class_="clear listTable").find_all('tr')
-    except AttributeError:
+        response = requests.get(url)
+        data = json.loads(response.text)
+    except requests.exceptions.RequestException as e:
+        print(e)
         return
 
-    for row in rows:
-        cols = row.find_all('td')
+    for item in data:
+        if "Stick&Puck" in item["text"]:
+            skate_date = item["start_date"].split(" ")[0]
+            skate_date = f"{skate_date[6:]}-{skate_date[:2]}-{skate_date[3:5]}"
+            start_time = item["st"].replace("P", " PM").replace("A", " AM")
+            end_time = item["et"].replace("P", " PM").replace("A", " AM")
 
-        if len(cols) > 2:
-            if cols[4].get_text().strip() == "Stick and Puck":
-                stick_and_puck.append([date, cols[0].get_text().strip(), cols[1].get_text().strip()])
-        if len(cols) == 2:
-            stick_and_puck_notes.append(cols[1].get_text().strip())
+            skate_dates.append([skate_date, start_time, end_time, ''])
 
-    # print(stick_and_puck)
-    # print(stick_and_puck_notes)
-
-    # Add Stick and Puck age range to Stick and Puck dates list if there is one
-    if len(stick_and_puck_notes) != 0:
-        for x in range(len(stick_and_puck)):
-            if "14 and Under" in stick_and_puck[x] and "14 and Over" in stick_and_puck[x]:
-                stick_and_puck[x].append(stick_and_puck_notes[x].strip("Schedule Notes: "))
-            else:
-                stick_and_puck[x].append("All Ages")
-    else:
-        for x in range(len(stick_and_puck)):
-            stick_and_puck[x].append("All Ages")
-
-    # print(stick_and_puck)
+    return
 
 def add_stick_and_puck_dates(sessions):
     '''Adds stick and puck dates, times and session notes to StickAndPuckDate model.'''
@@ -146,28 +95,22 @@ def send_stick_and_puck_dates_email():
 if __name__ == "__main__":
     
     the_date = date.today()
-    # the_date = "2019-09-14"
+    from_date = the_date + timedelta(days=5)
+    from_date = from_date.strftime("%m/%d/%Y")
+    send_email = False
 
-    # Every Monday scrape the next Saturday and Sunday for stick and puck session dates and times
-    if the_date.weekday() == 0:
-        for x in range(7):
-            if the_date.weekday() in [5, 6]:
-                scrape_date = date.isoformat(the_date)
-                scrape_oic_schedule(scrape_date)
+    # Every Tuesday request schedule data for following week and parse for Stick n Puck dates
+    if the_date.weekday() == 1:
+        get_schedule_data(from_date)
                 
-                if len(stick_and_puck) != 0:
-                    add_stick_and_puck_dates(stick_and_puck)
-                    # send_email = add_stick_and_puck_dates(stick_and_puck)
-                # else:
-                #     send_email = False
+        if len(skate_dates) != 0:
+            # for item in skate_dates:
+            #     print(item)
+            send_email = add_stick_and_puck_dates(skate_dates)
 
-            the_date += timedelta(days=1)
-            stick_and_puck.clear()
-            stick_and_puck_notes.clear()
-    # print(send_email)
-    # if send_email:
-    #     # print('New Dates Added')
-    #     send_stick_and_puck_dates_email()
-    # else:
-    #     # print('No SnP Dates Added')
-    #     send_stick_and_puck_dates_email()
+    if send_email:
+        # print('New Dates Added')
+        send_stick_and_puck_dates_email()
+    else:
+        # print('No SnP Dates Added')
+        send_stick_and_puck_dates_email()
