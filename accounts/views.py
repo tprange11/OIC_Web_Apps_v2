@@ -1,3 +1,4 @@
+from re import template
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy, reverse
 from django.views.generic import CreateView, UpdateView, DeleteView
@@ -5,12 +6,15 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.db.utils import IntegrityError
 from django.core.exceptions import ObjectDoesNotExist
+from django.views.generic.base import TemplateView
 from . import forms
 from accounts.models import Profile, ReleaseOfLiability, ChildSkater, UserCredit
 from cart.models import Cart
 from programs.models import UserCreditIncentive
+from payment.models import Payment
 
-from datetime import date
+from datetime import date, timedelta
+from django.utils import timezone
 
 
 class SignUp(CreateView):
@@ -170,3 +174,45 @@ class UpdateUserCreditView(LoginRequiredMixin, UpdateView):
                 free_points = self.object.pending * ((incentive.incentive / 100) + 1)
                 self.object.pending = round(free_points)
                 return
+
+
+class ReportView(TemplateView, LoginRequiredMixin):
+    
+    template_name = 'accounts/reports.html'
+
+
+class OutstandingUserCreditsView(TemplateView, LoginRequiredMixin):
+
+    template_name = 'accounts/user_credits_report.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        outstanding_credits = 0
+        credits = UserCredit.objects.all().filter(balance__gte=1)
+        for object in credits:
+            outstanding_credits += object.balance
+        context['outstanding_credits'] = outstanding_credits
+
+        today = timezone.now()
+        today = today.replace(hour=0, minute=0, second=0)
+        start_date = today + timedelta(days=-365)
+
+        payment_records = Payment.objects.all().filter(note__icontains='User Credits', date__gte=start_date)
+        context['payment_records'] = payment_records
+
+        user_credit_records = []
+        user_credit_revenue = 0
+        for record in payment_records:
+            credits = record.note.split(') (')
+            for credit in credits:
+                if 'Credits' in credit:
+                    user_credit_records.append(credit)
+
+        for item in user_credit_records:
+            item = item.split(' ')
+            user_credit_revenue += int(item[2].strip('$').strip(')'))
+        
+        context['user_credit_revenue'] = user_credit_revenue
+
+        return context

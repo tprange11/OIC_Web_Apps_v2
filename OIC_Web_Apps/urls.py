@@ -17,6 +17,7 @@ from django.contrib import admin
 from django.urls import path, include
 from . import views
 from django.views.generic import TemplateView
+from accounts.views import ReportView, OutstandingUserCreditsView
 
 handler404 = 'OIC_Web_Apps.views.handler404'
 handler500 = 'OIC_Web_Apps.views.handler500'
@@ -40,6 +41,8 @@ urlpatterns = [
     path('group_message/', include('group_message.urls')),
     path('message_boards/', include('message_boards.urls')),
     path('payment/', include('payment.urls')),
+    path('web_apps/reports/', ReportView.as_view(), name='reports'),
+    path('web_apps/reports/outstanding-user-credits/', OutstandingUserCreditsView.as_view(), name='outstanding-credits-report'),
     path('web_apps/thane_storck/', include('thane_storck.urls')),
     path('web_apps/', views.WebAppsPage.as_view(), name='web_apps'),
     path('web_apps/shopping_cart/', include('cart.urls')),
