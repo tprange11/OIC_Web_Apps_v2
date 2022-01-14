@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block title %}<title>OIC Web Apps Outstanding User Credits Report</title>{% endblock title %}
 {% block content %}
 <h4>OIC Web Apps Outstanding User Credits Report</h4>
@@ -6,6 +7,7 @@
     <p>As of <b>{% now 'SHORT_DATETIME_FORMAT' %}</b> there are a total of <b>{{ outstanding_credits }} outstanding user credits</b>.</p>
 </div>
 <p>User Credit revenue for the past 12 months was <b>${{ user_credit_revenue }}</b>. The following records contain the User Credit purchases in the past 12 months.</p>
+<p><a href="{% static 'reports/UserCreditsPurchased.csv' %}" class="btn btn-dark">Download Supporting Data</a></p>
 <div>
     <div class="row">
         <div class="col-3 font-weight-bold">

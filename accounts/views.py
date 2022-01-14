@@ -7,6 +7,8 @@ from django.contrib import messages
 from django.db.utils import IntegrityError
 from django.core.exceptions import ObjectDoesNotExist
 from django.views.generic.base import TemplateView
+from django.utils import timezone
+from django.conf import settings
 from . import forms
 from accounts.models import Profile, ReleaseOfLiability, ChildSkater, UserCredit
 from cart.models import Cart
@@ -14,8 +16,8 @@ from programs.models import UserCreditIncentive
 from payment.models import Payment
 
 from datetime import date, timedelta
-from django.utils import timezone
-
+import csv
+import os
 
 class SignUp(CreateView):
     form_class = forms.UserCreateForm
@@ -201,13 +203,24 @@ class OutstandingUserCreditsView(TemplateView, LoginRequiredMixin):
         payment_records = Payment.objects.all().filter(note__icontains='User Credits', date__gte=start_date)
         context['payment_records'] = payment_records
 
+        if os.name == 'nt':
+            path_to_file = '\\reports\\UserCreditsPurchased.csv'
+        else:
+            path_to_file = '/reports/UserCreditsPurchased.csv'
+
+        f= open(settings.STATICFILES_DIRS[0] + path_to_file, 'w', newline='')
+        writer = csv.writer(f)
+        writer.writerow(['User', 'Amount', 'Payment Breakdown', 'Date'])
+
         user_credit_records = []
         user_credit_revenue = 0
         for record in payment_records:
+            writer.writerow([record.payer.get_full_name(),record.amount,record.note,record.date.strftime('%Y-%m-%d')])
             credits = record.note.split(') (')
             for credit in credits:
                 if 'Credits' in credit:
                     user_credit_records.append(credit)
+        f.close()
 
         for item in user_credit_records:
             item = item.split(' ')
