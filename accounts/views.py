@@ -18,6 +18,7 @@ from payment.models import Payment
 from datetime import date, timedelta
 import csv
 import os
+import calendar
 
 class SignUp(CreateView):
     form_class = forms.UserCreateForm
@@ -190,25 +191,34 @@ class OutstandingUserCreditsView(TemplateView, LoginRequiredMixin):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
+        if os.name == 'nt':
+            path_to_file = '\\reports\\UserCreditsPurchased.csv'
+            path_to_credits_file = '\\reports\\OutstandingCreditsData.csv'
+        else:
+            path_to_file = '/reports/UserCreditsPurchased.csv'
+            path_to_credits_file = '/reports/OutstandingCreditsData.csv'
+
+        cf = open(settings.STATICFILES_DIRS[0] + path_to_credits_file, 'w', newline='')
+        writer = csv.writer(cf)
+        writer.writerow(['User', 'Credit Balance'])
+
         outstanding_credits = 0
         credits = UserCredit.objects.all().filter(balance__gte=1)
         for object in credits:
+            writer.writerow([object.user.get_full_name(), object.balance])
             outstanding_credits += object.balance
         context['outstanding_credits'] = outstanding_credits
+        cf.close()
 
         today = timezone.now()
         today = today.replace(hour=0, minute=0, second=0)
-        start_date = today + timedelta(days=-365)
+        offset = -365
+        if calendar.isleap(today.year):
+            offset = -366
+        start_date = today + timedelta(days=offset)
 
         payment_records = Payment.objects.all().filter(note__icontains='User Credits', date__gte=start_date)
-        context['payment_records'] = payment_records
-
-        if os.name == 'nt':
-            path_to_file = '\\reports\\UserCreditsPurchased.csv'
-        else:
-            path_to_file = '/reports/UserCreditsPurchased.csv'
-
-        f= open(settings.STATICFILES_DIRS[0] + path_to_file, 'w', newline='')
+        f = open(settings.STATICFILES_DIRS[0] + path_to_file, 'w', newline='')
         writer = csv.writer(f)
         writer.writerow(['User', 'Amount', 'Payment Breakdown', 'Date'])
 

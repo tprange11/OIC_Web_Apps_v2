@@ -14,6 +14,7 @@ schedule/request_schedule.py
 schedule/views_original.py
 open_roller/scrape_open_roller_dates.py
 static/reports/UserCreditsPurchased.csv
+static/reports/OutstandingCreditsData.csv
 ##############################
 
 # Django stuff:

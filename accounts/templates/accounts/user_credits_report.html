@@ -7,31 +7,12 @@
     <p>As of <b>{% now 'SHORT_DATETIME_FORMAT' %}</b> there are a total of <b>{{ outstanding_credits }} outstanding user credits</b>.</p>
 </div>
 <p>User Credit revenue for the past 12 months was <b>${{ user_credit_revenue }}</b>. The following records contain the User Credit purchases in the past 12 months.</p>
-<p><a href="{% static 'reports/UserCreditsPurchased.csv' %}" class="btn btn-dark">Download Supporting Data</a></p>
-<div>
-    <div class="row">
-        <div class="col-3 font-weight-bold">
-            Name
-        </div>
-        <div class="col-2 font-weight-bold">
-            Purchase Amt
-        </div>
-        <div class="col-7 font-weight-bold">
-            Payment Breakdown
-        </div>
+<div class="row">
+    <div class="col-md-6 col-sm-12 my-3">
+        <a href="{% static 'reports/UserCreditsPurchased.csv' %}" class="btn btn-dark">Download Credit Revenue Data</a>
     </div>
-    {% for record in payment_records %}
-    <div class="row">
-        <div class="col-3">
-            {{ record.payer.get_full_name }}
-        </div>
-        <div class="col-2">
-            {{ record.amount }}
-        </div>
-        <div class="col-7">
-            {{ record.note }}
-        </div>
+    <div class="col-md-6 col-sm-12 my-3">
+        <a href="{% static 'reports/OutstandingCreditsData.csv' %}" class="btn btn-dark">Download Outstanding Credits Data</a>
     </div>
-    {% endfor %}
 </div>
 {% endblock content %}
