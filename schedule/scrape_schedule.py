@@ -52,11 +52,13 @@ def process_data(data, from_date):
                 event = item["text"][30:].strip().replace("(", "").replace(")", "")
                 if " OYHA" in event:
                     event = event[:-5]
-            else:
+            elif "North Rink" in item["text"]:
                 rink = "North Rink"
                 event = item["text"][30:].strip().replace("(", "").replace(")", "")
                 if " OYHA" in event:
                     event = event[:-5]
+            else:
+                continue
             event_type = item["usg"]
 
             oic_schedule.append(
