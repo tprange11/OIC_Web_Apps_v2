@@ -105,6 +105,9 @@
                             {% if in_group_kranich %}
                             <a class="dropdown-item" href="{% url 'kranich:kranich' %}">John Kranich</a>
                             {% endif %}
+                            {% if in_group_caribou %}
+                            <a class="dropdown-item" href="{% url 'caribou:caribou' %}">Caribou</a>
+                            {% endif %}
                             <a class="dropdown-item" href="{% url 'private_skates:private-skates' %}">Private Skates</a>
                             {% if user.is_staff %}
                             <a class="dropdown-item" href="{% url 'schedule:choose-rink' %}">Zam Schedule</a>

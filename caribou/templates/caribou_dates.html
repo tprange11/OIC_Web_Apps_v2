@@ -1,0 +1,91 @@
+{% extends 'base.html' %}{% load bootstrap4 %}
+{% block title %}<title>Upcoming Caribou Skate Sessions</title>{% endblock title %}
+{% block content %}
+<h4>Upcoming Caribou Skate Sessions</h4>
+<p>Choose a date below to register for that session of Caribou Skate. Disabled skate sessions indicate that you have
+    registered for the skate session(s). You may remove yourself
+    from a session prior to paying. Once you have paid for the session(s), you will be unable to remove yourself from
+    the session(s).</p>
+<p>If you'd like to be notified when Caribou Skate dates are available for registration, update your <a
+        href="{% url 'accounts:profile' slug=user.id %}">email preferences</a>.</p>
+<p>Skate's on! <span class="text-success text-nowrap" style="font-size: 1.2rem;"><i class="far fa-thumbs-up"></i></span>
+    Skate's off! <span class="text-danger text-nowrap" style="font-size: 1.2rem;"><i
+            class="far fa-thumbs-down"></i></span></p>
+{% for message in messages %}
+{% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}
+<div class="alert alert-danger alert-dismissible alert-link" role="alert">
+    <button class="close" type="button" data-dismiss="alert" aria-label="close">&#215;</button>
+    {{ message }}
+</div>
+{% else %}
+<div class="alert alert-info alert-dismissible alert-link" role="alert">
+    <button class="close" type="button" data-dismiss="alert" aria-label="close">&#215;</button>
+    {{ message }}
+</div>
+{% endif %}
+{% empty %}
+{% endfor %}
+{% include 'accounts/user_credits_include.html' %}
+{% include 'accounts/user_credits_modal_include.html' %}
+<ul class="list-group mb-3 d-inline-block">
+    {% for date in skate_dates %}
+    {% if date.disabled %}
+    <li class="list-group-item" style="padding: 5px 15px;"><a href="#"
+            class="btn btn-warning btn-sm mb-2 mb-sm-0 disabled">
+            {{ date.skate_date }} {{date.start_time}} to {{date.end_time}}</a>
+        {% else %}
+    <li class="list-group-item" style="padding: 5px 15px;"><a href="{% url 'caribou:register' pk=date.pk %}"
+            class="btn btn-warning btn-sm mb-2 mb-sm-0">
+            {{ date.skate_date }} {{date.start_time}} to {{date.end_time}}</a>
+        {% endif %}
+        <button type="button" class="btn btn-primary btn-sm" data-toggle="modal"
+            data-target="#skaterModalCenter{{forloop.counter}}">Skaters <span
+                class="number-of-skaters">{{date.registered_skaters.num_skaters}}</span> Goalies <span
+                class="number-of-skaters">{{date.registered_skaters.num_goalies}}</span></button>
+        {% if date.registered_skaters.num_skaters >= 10 %}
+        <span class="text-success text-nowrap" style="font-size: 1.2rem;"><i class="far fa-thumbs-up"></i></span>
+        {% else %}
+        <span class="text-danger text-nowrap" style="font-size: 1.2rem;"><i class="far fa-thumbs-down"></i></span>
+        {% endif %}
+        {% if date.session_pk != None and date.paid == False %}
+        <form method="POST" action="{% url 'caribou:session-remove' pk=date.session_pk %}">
+            {% csrf_token %}
+            <input type="hidden" name="pk" value="{{date.session_pk}}">
+            <input type="submit" value="Remove Me From This Skate" class="btn btn-danger btn-sm mt-2">
+        </form>
+        {% endif %}
+    </li>
+    <div class="modal fade" id="skaterModalCenter{{forloop.counter}}" tabindex="-1" role="dialog"
+        aria-labelledby="skaterModalCenterTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header text-light bg-secondary">
+                    <h5 class="modal-title" id="skaterModalLongTitle{{forloop.counter}}">{{date.skate_date}} Registered
+                        Skaters</h5>
+                    <button type="button" class="close text-light" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <ul class="list-group">
+                        {% for skater in skate_sessions %}
+                        {% if skater.skate_date.pk == date.pk %}<li class="list-group-item">
+                            {{skater.skater.first_name}} {{skater.skater.last_name}}
+                            {% if skater.goalie %}<b>(Goalie)</b>{% endif %}
+                            {% if user.is_superuser or user.id == 870 or user.id == skater.skater.id %} {% comment %}{{ John Kranich is user.id 870 }}{% endcomment %}
+                            {% if skater.paid %}<b>(Paid)</b>{% else %}<b>(Not Paid)</b>{% endif %}
+                            {% endif %}
+                        </li>{% endif %}{% endfor %}
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <li class="list-group-item" style="padding: 5px 15px;">Sorry, no skates are available at this time.</li>
+    {% endfor %}
+</ul>
+{% endblock content %}

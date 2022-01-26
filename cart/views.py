@@ -21,6 +21,7 @@ from private_skates.models import PrivateSkate, PrivateSkateDate, PrivateSkateSe
 from open_roller.models import OpenRollerSkateDate, OpenRollerSkateSession
 from owhl.models import OWHLSkateDate, OWHLSkateSession
 from kranich.models import KranichSkateDate, KranichSkateSession
+from caribou.models import CaribouSkateDate, CaribouSkateSession
 from accounts.models import UserCredit
 
 # Create your views here.
@@ -87,6 +88,8 @@ class RemoveItemFromCartView(LoginRequiredMixin, DeleteView):
     owhl_skate_date_model = OWHLSkateDate
     kranich_model = KranichSkateSession
     kranich_skate_date_model = KranichSkateDate
+    caribou_model = CaribouSkateSession
+    caribou_skate_date_model = CaribouSkateDate
 
     user_credit_model = UserCredit
     success_url = reverse_lazy('cart:shopping-cart')
@@ -146,6 +149,9 @@ class RemoveItemFromCartView(LoginRequiredMixin, DeleteView):
         elif cart_item.item == Program.objects.all().get(id=14).program_name: # Kranich
             skate_date = self.kranich_skate_date_model.objects.filter(skate_date=cart_item.event_date)
             self.kranich_model.objects.filter(skater=request.user, skate_date=skate_date[0]).delete()
+        elif cart_item.item == Program.objects.all().get(id=15).program_name: # Caribou
+            skate_date = self.caribou_skate_date_model.objects.filter(skate_date=cart_item.event_date)
+            self.caribou_model.objects.filter(skater=request.user, skate_date=skate_date[0]).delete()
         # elif cart_item.item == 'OH Membership':
         #     self.oh_member_model.objects.filter(member=request.user).delete()
         elif cart_item.item == 'User Credits':

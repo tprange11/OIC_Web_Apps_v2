@@ -28,7 +28,8 @@ class ProfileForm(forms.ModelForm):
         model = Profile
         fields = ['user', 'stick_and_puck_email', 'figure_skating_email',
                  'thane_storck_email', 'adult_skills_email', 'mike_schultz_email', 'yeti_skate_email', 
-                 'womens_hockey_email', 'bald_eagles_email', 'lady_hawks_email', 'chs_alumni_email', 'kranich_email']
+                 'womens_hockey_email', 'bald_eagles_email', 'lady_hawks_email', 'chs_alumni_email',
+                 'kranich_email', 'caribou_email']
         widgets = {'user': forms.HiddenInput()}
         labels = {
             'stick_and_puck_email': 'Receive Stick and Puck emails.',
@@ -42,6 +43,7 @@ class ProfileForm(forms.ModelForm):
             'lady_hawks_email': 'Receive Lady Hawks Skate Emails.',
             'chs_alumni_email': 'Receive CHS Alumni Skate Emails.',
             'kranich_email': 'Receive Kranich Skate Emails.',
+            'caribou_email': 'Receive Caribou Skate Emails.',
         }
 
 

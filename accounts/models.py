@@ -30,6 +30,7 @@ class Profile(models.Model):
     lady_hawks_email = models.BooleanField(default=False)
     chs_alumni_email = models.BooleanField(default=False)
     kranich_email = models.BooleanField(default=False)
+    caribou_email = models.BooleanField(default=False)
     slug = models.SlugField(unique=True, null=False)
 
     def get_absolute_url(self):

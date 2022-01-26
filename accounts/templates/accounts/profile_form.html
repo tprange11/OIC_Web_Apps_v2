@@ -110,5 +110,8 @@
     {% if not in_group_kranich %}
     document.querySelector('#id_kranich_email').parentNode.parentNode.style.display = 'none';
     {% endif %}
+    {% if not in_group_caribou %}
+    document.querySelector('#id_caribou_email').parentNode.parentNode.style.display = 'none';
+    {% endif %}
 </script>
 {% endblock content %}

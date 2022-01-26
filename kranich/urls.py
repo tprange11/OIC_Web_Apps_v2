@@ -8,5 +8,4 @@ urlpatterns = [
     path('register/<pk>/', views.CreateKranichSkateSessionView.as_view(), name='register'),
     path('register/', views.CreateKranichSkateSessionView.as_view(), name='register'),
     path('session/remove/<pk>', views.DeleteKranichSkateSessionView.as_view(), name='session-remove'),
-    # path('session/list/', views.YetiSkateDateStaffListView.as_view(), name='yeti-skate-sessions'),
 ]
