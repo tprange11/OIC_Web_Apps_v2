@@ -142,8 +142,9 @@ class CreateKranichSkateSessionView(LoginRequiredMixin, CreateView):
                 return redirect('kranich:kranich')
             # If spots are not full do the following
             
-            if self.request.user.is_staff or cost == 0: # Employees skate for free
+            if self.request.user.is_staff or self.request.user.id == 870 or cost == 0: # Employees and John Kranich(id 870) skate for free
                 self.object.paid = True
+                cost = 0 # Set cost = 0 for correct message
             elif user_credit.balance >= cost and user_credit.paid:
                 self.object.paid = True
                 user_credit.balance -= cost
@@ -168,12 +169,6 @@ class CreateKranichSkateSessionView(LoginRequiredMixin, CreateView):
 
     def add_to_cart(self, cost):
         '''Adds Kranich Skate session to shopping cart.'''
-        # Get price of Kranich Skate program
-        # if self.object.goalie:
-        #     price = self.program_model.objects.get(id=14).goalie_price
-        #     if price == 0:
-        #         return True
-        # else:
         price = cost
         item_name = self.program_model.objects.get(id=14).program_name
         start_time = self.skate_date_model.objects.filter(skate_date=self.object.skate_date.skate_date).values_list('start_time', flat=True)
