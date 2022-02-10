@@ -3,8 +3,8 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
-class CaribouSkateDate(models.Model):
-    '''Model holds dates for the Caribou Skate.'''
+class NachoSkateDate(models.Model):
+    '''Model holds dates for the Nacho Skate.'''
 
     # Model Fields
     skate_date = models.DateField()
@@ -22,17 +22,17 @@ class CaribouSkateDate(models.Model):
 
     def registered_skaters(skate_date):
         '''Returns the number of skaters and goalies registered for a skate date.'''
-        num_goalies = CaribouSkateSession.objects.filter(skate_date=skate_date, goalie=True).count()
-        num_skaters = CaribouSkateSession.objects.filter(skate_date=skate_date, goalie=False).count()
+        num_goalies = NachoSkateSession.objects.filter(skate_date=skate_date, goalie=True).count()
+        num_skaters = NachoSkateSession.objects.filter(skate_date=skate_date, goalie=False).count()
         return {'num_skaters': num_skaters, 'num_goalies': num_goalies}
 
 
-class CaribouSkateSession(models.Model):
+class NachoSkateSession(models.Model):
     '''Model that stores skate session data.'''
 
     # Model Fields
     skater = models.ForeignKey(User, on_delete=models.CASCADE)
-    skate_date = models.ForeignKey(CaribouSkateDate, on_delete=models.CASCADE, related_name='session_skaters')
+    skate_date = models.ForeignKey(NachoSkateDate, on_delete=models.CASCADE, related_name='session_skaters')
     goalie = models.BooleanField(default=False)
     paid = models.BooleanField(default=False)
 

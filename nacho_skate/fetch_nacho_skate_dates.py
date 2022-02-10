@@ -14,7 +14,7 @@ django.setup()
 from django.db import IntegrityError
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
-from caribou.models import CaribouSkateDate
+from nacho_skate.models import NachoSkateDate
 from accounts.models import Profile
 
 skate_dates = []
@@ -33,18 +33,18 @@ def get_schedule_data(from_date, to_date):
         return
 
     for item in data:
-        if "Caribou" in item["text"]:
+        if "Nacho Skate" in item["text"]:
             skate_date = item["start_date"].split(" ")[0]
             skate_date = f"{skate_date[6:]}-{skate_date[:2]}-{skate_date[3:5]}"
-            start_time = item["st"].replace("P", "").replace("A", "")
-            end_time = item["et"].replace("P", "").replace("A", "")
+            start_time = item["start_date"][-5:] # Last 5 characters HH:MM
+            end_time = item["end_date"][-5:] # Last 5 characters HH:MM
 
             skate_dates.append([skate_date, start_time, end_time])
     return
 
 def add_skate_dates(sessions):
-    '''Adds Caribou Skate dates and times to the CaribouSkateDate model.'''
-    model = CaribouSkateDate
+    '''Adds Nacho Skate dates and times to the NachoSkateDate model.'''
+    model = NachoSkateDate
     new_dates = False
 
     for session in sessions:
@@ -58,26 +58,26 @@ def add_skate_dates(sessions):
     return new_dates
 
 def send_skate_dates_email():
-    '''Sends email to Users in the Caribou group letting them know when Caribou Skate dates are added.'''
-    recipients = Profile.objects.filter(caribou_email=True).select_related('user')
+    '''Sends email to Users who opted in letting them know when Nacho Skate dates are added.'''
+    recipients = Profile.objects.filter(nacho_skate_email=True).select_related('user')
 
     for recipient in recipients:
         if recipient.user.is_active:
             to_email = [recipient.user.email]
             from_email = 'no-reply@mg.oicwebapps.com'
-            subject = 'New Caribou Skate Date Added'
+            subject = 'New Nacho Skate Date Added'
 
             # Build the plain text message
             text_message = f'Hi {recipient.user.first_name},\n\n'
-            text_message += f'New Caribou Skate dates are now available online. Sign up at the url below.\n\n'
-            text_message += f'https://www.oicwebapps.com/web_apps/caribou/\n\n'
+            text_message += f'New Nacho Skate dates are now available online. Sign up at the url below.\n\n'
+            text_message += f'https://www.oicwebapps.com/web_apps/nacho_skate/\n\n'
             text_message += f'If you no longer wish to receive these emails, log in to your account,\n'
             text_message += f'click on your username and change the email settings in your profile.\n\n'
             text_message += f'Thank you for using OICWebApps.com!\n\n'
 
             # Build the html message
             html_message = render_to_string(
-                'caribou_skate_dates_email.html',
+                'nacho_skate_dates_email.html',
                 {
                     'recipient_name': recipient.user.first_name,
                 }
@@ -100,12 +100,12 @@ if __name__ == "__main__":
     from_date = from_date.strftime("%m/%d/%Y")
     send_email = False
 
-    # Every Friday request schedule data and parse for Caribou Skate dates
-    if date.today().weekday() == 4:
+    # Every Sunday request schedule data and parse for Nacho Skate dates
+    if date.today().weekday() == 3:
         get_schedule_data(from_date, from_date)
 
-    if len(skate_dates) != 0:
-        send_email = add_skate_dates(skate_dates)
-
-    if send_email:
-        send_skate_dates_email()
+        if len(skate_dates) > 0:
+            send_email = add_skate_dates(skate_dates)
+        
+        if send_email:
+            send_skate_dates_email()

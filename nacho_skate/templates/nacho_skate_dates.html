@@ -1,12 +1,12 @@
 {% extends 'base.html' %}{% load bootstrap4 %}
-{% block title %}<title>Upcoming Caribou Skate Sessions</title>{% endblock title %}
+{% block title %}<title>Upcoming Nacho Skate Sessions</title>{% endblock title %}
 {% block content %}
-<h4>Upcoming Caribou Skate Sessions</h4>
-<p>Choose a date below to register for that session of Caribou Skate. Disabled skate sessions indicate that you have
+<h4>Upcoming Nacho Skate Sessions</h4>
+<p>Choose a date below to register for that session of Nacho Skate. Disabled skate sessions indicate that you have
     registered for the skate session(s). You may remove yourself
     from a session prior to paying. Once you have paid for the session(s), you will be unable to remove yourself from
     the session(s).</p>
-<p>If you'd like to be notified when Caribou Skate dates are available for registration, update your <a
+<p>If you'd like to be notified when Nacho Skate dates are available for registration, update your <a
         href="{% url 'accounts:profile' slug=user.id %}">email preferences</a>.</p>
 <p>Skate's on! <span class="text-success text-nowrap" style="font-size: 1.2rem;"><i class="far fa-thumbs-up"></i></span>
     Skate's off! <span class="text-danger text-nowrap" style="font-size: 1.2rem;"><i
@@ -34,7 +34,7 @@
             class="btn btn-warning btn-sm mb-2 mb-sm-0 disabled">
             {{ date.skate_date }} {{date.start_time}} to {{date.end_time}}</a>
         {% else %}
-    <li class="list-group-item" style="padding: 5px 15px;"><a href="{% url 'caribou:register' pk=date.pk %}"
+    <li class="list-group-item" style="padding: 5px 15px;"><a href="{% url 'nacho_skate:register' pk=date.pk %}"
             class="btn btn-warning btn-sm mb-2 mb-sm-0">
             {{ date.skate_date }} {{date.start_time}} to {{date.end_time}}</a>
         {% endif %}
@@ -48,7 +48,7 @@
         <span class="text-danger text-nowrap" style="font-size: 1.2rem;"><i class="far fa-thumbs-down"></i></span>
         {% endif %}
         {% if date.session_pk != None and date.paid == False %}
-        <form method="POST" action="{% url 'caribou:session-remove' pk=date.session_pk %}">
+        <form method="POST" action="{% url 'nacho_skate:session-remove' pk=date.session_pk %}">
             {% csrf_token %}
             <input type="hidden" name="pk" value="{{date.session_pk}}">
             <input type="submit" value="Remove Me From This Skate" class="btn btn-danger btn-sm mt-2">

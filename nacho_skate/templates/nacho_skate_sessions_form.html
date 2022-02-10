@@ -1,8 +1,8 @@
 {% extends 'base.html' %}{% load bootstrap4 %}
-{% block title %}<title>Caribou Skate Session Register</title>{% endblock title %}
+{% block title %}<title>Nacho Skate Session Register</title>{% endblock title %}
 {% block content %}
 <h5>Register for {{skate_info.skate_date}} {{skate_info.start_time}} to {{skate_info.end_time}} Skate</h5>
-    <form method="POST" action="{% url 'caribou:register' %}">
+    <form method="POST" action="{% url 'nacho_skate:register' %}">
         {% csrf_token %}
         {% bootstrap_form form %}
         <p><input type="submit" value="Register" class="btn btn-success btn-sm"></p>

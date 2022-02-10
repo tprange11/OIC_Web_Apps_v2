@@ -5,6 +5,6 @@ def appname(request):
     return { 'appname': resolve(request.path).app_name }
 
 
-def in_group_caribou(request):
-    in_group = request.user.groups.filter(name='Caribou')
-    return { 'in_group_caribou': in_group }
+def in_group_nacho_skate(request):
+    in_group = request.user.groups.filter(name='Nacho Skate')
+    return { 'in_group_nacho_skate': in_group }

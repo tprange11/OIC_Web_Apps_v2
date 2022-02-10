@@ -7,8 +7,8 @@ from django.contrib import messages
 from django.db import IntegrityError
 from django.core.exceptions import ObjectDoesNotExist
 
-from .models import CaribouSkateDate, CaribouSkateSession
-from .forms import CreateCaribouSkateSessionForm
+from .models import NachoSkateDate, NachoSkateSession
+from .forms import CreateNachoSkateSessionForm
 from accounts.models import Profile, UserCredit
 from programs.models import Program
 from cart.models import Cart
@@ -17,12 +17,12 @@ from datetime import date
 
 # Create your views here.
 
-class CaribouSkateDateListView(LoginRequiredMixin, ListView):
-    '''Page that displays upcoming Caribou skates.'''
+class NachoSkateDateListView(LoginRequiredMixin, ListView):
+    '''Page that displays upcoming Nacho skates.'''
 
-    template_name = 'caribou_dates.html'
-    model = CaribouSkateDate
-    session_model = CaribouSkateSession
+    template_name = 'nacho_skate_dates.html'
+    model = NachoSkateDate
+    session_model = NachoSkateSession
     credit_model = UserCredit
     group_model = Group
     profile_model = Profile
@@ -30,8 +30,8 @@ class CaribouSkateDateListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Join the Caribou Group
-        self.join_caribou_group()
+        # Join the Nacho Group
+        self.join_nacho_skate_group()
         # Get all skaters signed up for each session to display the list of skaters for each session
         skate_sessions = self.session_model.objects.filter(skate_date__skate_date__gte=date.today())
         context['skate_sessions'] = skate_sessions
@@ -70,8 +70,8 @@ class CaribouSkateDateListView(LoginRequiredMixin, ListView):
                     continue
         return queryset
 
-    def join_caribou_group(self, join_group='Caribou'):
-        '''Adds user to Caribou group "behind the scenes", for communication purposes.'''
+    def join_nacho_skate_group(self, join_group='Nacho Skate'):
+        '''Adds user to Nacho group "behind the scenes", for communication purposes.'''
         
         try:
             group = self.group_model.objects.get(name=join_group)
@@ -83,24 +83,24 @@ class CaribouSkateDateListView(LoginRequiredMixin, ListView):
             # If a profile already exists, do nothing
             profile = self.profile_model.objects.get(user=self.request.user)
         except ObjectDoesNotExist:
-            # If no profile exists, create one and set caribou_email to True
-            profile = self.profile_model(user=self.request.user, caribou_email=False, slug=self.request.user.id)
+            # If no profile exists, create one and set nacho_skate_email to True
+            profile = self.profile_model(user=self.request.user, nacho_skate_email=False, slug=self.request.user.id)
             profile.save()
 
         return
 
-class CreateCaribouSkateSessionView(LoginRequiredMixin, CreateView):
+class CreateNachoSkateSessionView(LoginRequiredMixin, CreateView):
     '''Page that displays form for user to register for skate sessions.'''
 
-    model = CaribouSkateSession
-    form_class = CreateCaribouSkateSessionForm
+    model = NachoSkateSession
+    form_class = CreateNachoSkateSessionForm
     profile_model = Profile
     program_model = Program
-    skate_date_model = CaribouSkateDate
+    skate_date_model = NachoSkateDate
     cart_model = Cart
     credit_model = UserCredit
-    template_name = 'caribou_skate_sessions_form.html'
-    success_url = reverse_lazy('caribou:caribou')
+    template_name = 'nacho_skate_sessions_form.html'
+    success_url = reverse_lazy('nacho_skate:index')
 
     def get_initial(self, *args, **kwargs):
         initial = super().get_initial()
@@ -134,11 +134,11 @@ class CreateCaribouSkateSessionView(LoginRequiredMixin, CreateView):
             # If goalie spots are full, do not save object
             if self.object.goalie == True and self.model.objects.filter(goalie=True, skate_date=self.object.skate_date).count() == Program.objects.get(pk=15).max_goalies:
                 messages.add_message(self.request, messages.ERROR, 'Sorry, goalie spots are full!')
-                return redirect('caribou:caribou')
+                return redirect('nacho_skate:index')
             # If skater spots are full, do not save object
             elif self.object.goalie == False and self.model.objects.filter(goalie=False, skate_date=self.object.skate_date).count() == Program.objects.get(pk=15).max_skaters:
                 messages.add_message(self.request, messages.ERROR, 'Sorry, skater spots are full!')
-                return redirect('caribou:caribou')
+                return redirect('nacho_skate:index')
             # If spots are not full do the following
             
             if cost == 0: # Employees skate for free
@@ -166,13 +166,7 @@ class CreateCaribouSkateSessionView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
 
     def add_to_cart(self, cost):
-        '''Adds Caribou Skate session to shopping cart.'''
-        # Get price of Caribou Skate program
-        # if self.object.goalie:
-        #     price = self.program_model.objects.get(id=15).goalie_price
-        #     if price == 0:
-        #         return True
-        # else:
+        '''Adds Nacho Skate session to shopping cart.'''
         price = cost
         item_name = self.program_model.objects.get(id=15).program_name
         start_time = self.skate_date_model.objects.filter(skate_date=self.object.skate_date.skate_date).values_list('start_time', flat=True)
@@ -182,11 +176,11 @@ class CreateCaribouSkateSessionView(LoginRequiredMixin, CreateView):
         return False
 
 
-class DeleteCaribouSkateSessionView(LoginRequiredMixin, DeleteView):
+class DeleteNachoSkateSessionView(LoginRequiredMixin, DeleteView):
     '''Allows user to remove themself from a skate session'''
-    model = CaribouSkateSession
-    skate_date_model = CaribouSkateDate
-    success_url = reverse_lazy('caribou:caribou')
+    model = NachoSkateSession
+    skate_date_model = NachoSkateDate
+    success_url = reverse_lazy('nacho_skate:index')
 
     def delete(self, *args, **kwargs):
         '''Things that need doing once a session is removed.'''

@@ -1,12 +1,12 @@
 from django import forms
-from caribou.models import CaribouSkateSession
+from nacho_skate.models import NachoSkateSession
 
 
-class CreateCaribouSkateSessionForm(forms.ModelForm):
-    '''Form used to sign up for Caribou skate sessions.'''
+class CreateNachoSkateSessionForm(forms.ModelForm):
+    '''Form used to sign up for Nacho skate sessions.'''
 
     class Meta:
-        model = CaribouSkateSession
+        model = NachoSkateSession
         exclude = ['paid']
         widgets = {
             'skater': forms.HiddenInput(),
