@@ -101,7 +101,7 @@ if __name__ == "__main__":
     send_email = False
 
     # Every Sunday request schedule data and parse for Nacho Skate dates
-    if date.today().weekday() == 3:
+    if date.today().weekday() == 6:
         get_schedule_data(from_date, from_date)
 
         if len(skate_dates) > 0:
