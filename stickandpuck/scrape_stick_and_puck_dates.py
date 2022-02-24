@@ -99,8 +99,8 @@ if __name__ == "__main__":
     from_date = from_date.strftime("%m/%d/%Y")
     send_email = False
 
-    # Every Tuesday request schedule data for following week and parse for Stick n Puck dates
-    if the_date.weekday() == 1:
+    # Every Thursday request schedule data for following week and parse for Stick n Puck dates
+    if the_date.weekday() == 3:
         get_schedule_data(from_date)
                 
         if len(skate_dates) != 0:
