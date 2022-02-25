@@ -108,9 +108,6 @@ if __name__ == "__main__":
             #     print(item)
             send_email = add_stick_and_puck_dates(skate_dates)
 
-    if send_email:
-        # print('New Dates Added')
-        send_stick_and_puck_dates_email()
-    else:
-        # print('No SnP Dates Added')
-        send_stick_and_puck_dates_email()
+        if send_email:
+            # print('New Dates Added')
+            send_stick_and_puck_dates_email()
