@@ -239,3 +239,37 @@ class OutstandingUserCreditsView(TemplateView, LoginRequiredMixin):
         context['user_credit_revenue'] = user_credit_revenue
 
         return context
+
+
+class FigureSkatingRevenueReport(TemplateView, LoginRequiredMixin):
+    template_name = 'accounts/fs_revenue_report.html'
+
+    def in_group_figure(self, user):
+        return user.groups.filter(name='Figure Skating')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        if os.name == 'nt':
+            path_to_file = '\\reports\\FSRevenueReport.csv'
+        else:
+            path_to_file = '/reports/FSRevenueReport.csv'
+
+        today = timezone.now()
+        today = today.replace(hour=0, minute=0, second=0)
+        offset = -365
+        if calendar.isleap(today.year):
+            offset = -366
+        start_date = today + timedelta(days=offset)
+
+        payment_records = Payment.objects.all().filter(date__gte=start_date)
+        f = open(settings.STATICFILES_DIRS[0] + path_to_file, 'w', newline='')
+        writer = csv.writer(f)
+        writer.writerow(['User', 'Amount', 'Payment Breakdown', 'Date'])
+
+        for record in payment_records:
+            if self.in_group_figure(record.payer):
+                writer.writerow([record.payer.get_full_name(),record.amount,record.note,record.date.strftime('%Y-%m-%d')])
+        f.close()
+
+        return context

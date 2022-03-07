@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}<title>OIC Web Apps Figure Skating Revenue Report</title>{% endblock title %}
+{% block content %}
+<h4>OIC Web Apps Figure Skating Revenue Report</h4>
+<p>The following report contains the last 12 months of Figure Skating Revenue.</p>
+<div class="row">
+    <div class="col-md-6 col-sm-12 my-3">
+        <a href="{% static 'reports/FSRevenueReport.csv' %}" class="btn btn-dark">Download Figure Skating Revenue Report</a>
+    </div>
+</div>
+{% endblock content %}
