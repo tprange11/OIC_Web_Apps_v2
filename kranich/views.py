@@ -6,6 +6,8 @@ from django.contrib.auth.models import Group
 from django.contrib import messages
 from django.db import IntegrityError
 from django.core.exceptions import ObjectDoesNotExist
+from django.contrib.auth import get_user_model
+User = get_user_model()
 
 from .models import KranichSkateDate, KranichSkateSession
 from .forms import CreateKranichSkateSessionForm
@@ -47,10 +49,10 @@ class KranichSkateDateListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         queryset = super().get_queryset()
         queryset = queryset.filter(skate_date__gte=date.today()).values('pk', 'skate_date', 'start_time', 'end_time')#.annotate(num_skaters=Count('session_skaters'))
-        skater_sessions = self.session_model.objects.filter(skater=self.request.user).values_list('skate_date','pk', 'paid')
-        # print(skater_sessions)
+        skater_sessions = self.session_model.objects.filter(skater=self.request.user).values_list('skate_date','pk', 'paid', 'goalie')
         # If user is already signed up for the skate, add key value pair to disable button
         for item in queryset:
+            # item['is_in_future'] = date.today() < item['skate_date'] # This is used for the Remove Me button if already paid.
             item['registered_skaters'] = self.model.registered_skaters(skate_date=item['pk'])
             for session in skater_sessions:
                 # If the session date and skate date match and paid is True, add disabled = True to queryset
@@ -58,11 +60,13 @@ class KranichSkateDateListView(LoginRequiredMixin, ListView):
                     item['disabled'] = True
                     item['session_pk'] = session[1]
                     item['paid'] = session[2]
+                    item['goalie'] = session[3]
                     break
                 elif item['pk'] == session[0] and session[2] == False:
                     item['disabled'] = True
                     item['session_pk'] = session[1]
                     item['paid'] = session[2]
+                    item['goalie'] = session[3]
                     break
                 else:
                     item['disabled'] = False
@@ -84,7 +88,7 @@ class KranichSkateDateListView(LoginRequiredMixin, ListView):
             # If a profile already exists, do nothing
             profile = self.profile_model.objects.get(user=self.request.user)
         except ObjectDoesNotExist:
-            # If no profile exists, create one and set kranich_email to True
+            # If no profile exists, create one and set kranich_email to False
             profile = self.profile_model(user=self.request.user, kranich_email=False, slug=self.request.user.id)
             profile.save()
 
@@ -129,7 +133,6 @@ class CreateKranichSkateSessionView(LoginRequiredMixin, CreateView):
             cost = self.program_model.objects.get(id=14).goalie_price
         else:
             cost = self.program_model.objects.get(id=14).skater_price
-        print(f'Cost: {cost}')
 
         try:
             # If goalie spots are full, do not save object
@@ -182,18 +185,33 @@ class DeleteKranichSkateSessionView(LoginRequiredMixin, DeleteView):
     '''Allows user to remove themself from a skate session'''
     model = KranichSkateSession
     skate_date_model = KranichSkateDate
+    credit_model = UserCredit
     success_url = reverse_lazy('kranich:kranich')
 
     def delete(self, *args, **kwargs):
         '''Things that need doing once a session is removed.'''
 
-        # Clear session from the cart
-        skate_date = self.model.objects.filter(id=kwargs['pk']).values_list('skate_date', flat=True)
-        cart_date = self.skate_date_model.objects.filter(id=skate_date[0])
-        # print(cart_date[0])
-        cart_item = Cart.objects.filter(item=Program.objects.all().get(id=14).program_name, event_date=cart_date[0].skate_date)
-        cart_item.delete()
+        user = User.objects.get(pk=kwargs['skater_pk'])
+        print(user.id)
+        if user.is_staff or user.id == 870: # John Kranich is id 870
+            success_msg = 'Skater has been removed from that skate session!'
+        elif kwargs['paid'] == 'True': # The user has paid and credit will be added to the users profile.
+            # If the session is paid for, issue credit to the user
+            price = Program.objects.get(id=14).skater_price
+            user_credit = self.credit_model.objects.get(slug=user)
+            old_balance = user_credit.balance
+            user_credit.balance += price
+            user_credit.paid = True
+            success_msg = f'{user.get_full_name()} has been removed from the session. The Users credit balance has been increased from ${old_balance} to ${user_credit.balance}.'
+            user_credit.save()
+        else:
+            # Clear session from the cart, user hasn't paid yet.
+            skate_date = self.model.objects.filter(id=kwargs['pk']).values_list('skate_date', flat=True)
+            cart_date = self.skate_date_model.objects.filter(id=skate_date[0])
+            cart_item = Cart.objects.filter(item=Program.objects.all().get(id=14).program_name, event_date=cart_date[0].skate_date)
+            cart_item.delete()
+            success_msg = 'You have been removed from that skate session!'
 
         # Set success message and return
-        messages.add_message(self.request, messages.SUCCESS, 'You have been removed from that skate session!')
+        messages.add_message(self.request, messages.SUCCESS, success_msg)
         return super().delete(*args, **kwargs)
