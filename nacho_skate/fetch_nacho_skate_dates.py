@@ -33,7 +33,7 @@ def get_schedule_data(from_date, to_date):
         return
 
     for item in data:
-        if "Nacho Skate" in item["text"]:
+        if "Nacho" in item["text"]:
             skate_date = item["start_date"].split(" ")[0]
             skate_date = f"{skate_date[6:]}-{skate_date[:2]}-{skate_date[3:5]}"
             start_time = item["start_date"][-5:] # Last 5 characters HH:MM
