@@ -13,8 +13,7 @@ schedule/scrape_schedule_old.py
 schedule/request_schedule.py
 schedule/views_original.py
 open_roller/scrape_open_roller_dates.py
-static/reports/UserCreditsPurchased.csv
-static/reports/OutstandingCreditsData.csv
+static/reports/
 ##############################
 
 # Django stuff:
