@@ -1,13 +1,13 @@
 
-var STATIC_CACHE = 'oicwebapps-v24';
+var STATIC_CACHE = 'oicwebapps-v25';
 // var DYNAMIC_CACHE = 'oicwebapps-dyn-v1';
 
 self.addEventListener('install', function(event) {
-    console.log('[Service Worker] Installing Service Worker....');
+    // console.log('[Service Worker] Installing Service Worker....');
     event.waitUntil(
         caches.open(STATIC_CACHE)
             .then(function(cache) {
-                console.log('[Service Worker] Precaching App Shell!');
+                // console.log('[Service Worker] Precaching App Shell!');
                 cache.addAll([
                     '/',
                     '/offline/',
@@ -38,13 +38,13 @@ self.addEventListener('install', function(event) {
 });
 
 self.addEventListener('activate', function(event) {
-    console.log('[Service Worker] Activating Service Worker....');
+    // console.log('[Service Worker] Activating Service Worker....');
     event.waitUntil(
         caches.keys()
             .then(function(keyList) {
                 return Promise.all(keyList.map(function(key) {
                     if (key !== STATIC_CACHE) {
-                        console.log('[Service Worker] Removing old cache.', key);
+                        // console.log('[Service Worker] Removing old cache.', key);
                         return caches.delete(key);
                     }
                 }));
@@ -76,10 +76,10 @@ self.addEventListener('notificationclick', function(event) {
     var notification = event.notification;
     var action = event.action;
 
-    console.log(notification);
+    // console.log(notification);
 
     if (action === 'confirm') {
-        console.log('Open App pressed.')
+        // console.log('Open App pressed.')
         // event.waitUntil(
         //     clients.matchAll()
         //         .then(function(clis) {
@@ -97,7 +97,7 @@ self.addEventListener('notificationclick', function(event) {
         //         })
         // )
     } else {
-        console.log('Dismiss pressed.');
+        // console.log('Dismiss pressed.');
         notification.close();
     }
 });
