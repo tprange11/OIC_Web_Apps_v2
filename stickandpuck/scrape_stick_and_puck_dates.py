@@ -27,7 +27,7 @@ def get_schedule_data(date):
         response = requests.get(url)
         data = json.loads(response.text)
     except requests.exceptions.RequestException as e:
-        print(e)
+        # print(e)
         return
 
     for item in data:

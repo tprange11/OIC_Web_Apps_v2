@@ -192,10 +192,10 @@ class DeleteKranichSkateSessionView(LoginRequiredMixin, DeleteView):
         '''Things that need doing once a session is removed.'''
 
         user = User.objects.get(pk=kwargs['skater_pk'])
-        print(user.id)
+        # print(user.id)
         if user.is_staff or user.id == 870: # John Kranich is id 870
             success_msg = 'Skater has been removed from that skate session!'
-        elif kwargs['paid'] == 'True': # The user has paid and credit will be added to the users profile.
+        elif kwargs['paid'] == 'True':
             # If the session is paid for, issue credit to the user
             price = Program.objects.get(id=14).skater_price
             user_credit = self.credit_model.objects.get(slug=user)

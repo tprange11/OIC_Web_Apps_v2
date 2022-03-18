@@ -38,7 +38,7 @@ def get_schedule_data(from_date, to_date):
         process_data(data, from_date)
         return data
     except requests.exceptions.RequestException as e:
-        print(e)
+        # print(e)
         return ""
 
 def process_data(data, from_date):

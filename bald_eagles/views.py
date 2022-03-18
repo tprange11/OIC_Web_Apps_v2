@@ -34,7 +34,7 @@ class BaldEaglesSkateDateListView(LoginRequiredMixin, ListView):
         self.join_bald_eagles_group()
         # Get all skaters signed up for each session to display the list of skaters for each session
         skate_sessions = self.session_model.objects.filter(session_date__skate_date__gte=date.today())
-        print(skate_sessions)
+        # print(skate_sessions)
         context['skate_sessions'] = skate_sessions
         # Create a user credit object if one does not exist
         try:
