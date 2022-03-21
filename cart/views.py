@@ -1,8 +1,8 @@
-from django.shortcuts import render
+from django.shortcuts import redirect
 from django.views.generic import ListView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
-from django.db import IntegrityError
+from django.core.exceptions import ObjectDoesNotExist
 from . import models
 from accounts.models import ChildSkater
 from programs.models import Program
@@ -96,7 +96,12 @@ class RemoveItemFromCartView(LoginRequiredMixin, DeleteView):
 
     def delete(self, request, *args, **kwargs):
         # Determine which model session we are deleting that corresponds to cart item.
-        cart_item = self.model.objects.get(pk=kwargs['pk'])
+        # Try/except block is used for when carts are cleared overnight due to non-payment,
+        # then someone clicks the Remove Item button because the page has been cached locally
+        try:
+            cart_item = self.model.objects.get(pk=kwargs['pk'])
+        except ObjectDoesNotExist:
+            return redirect('cart:shopping-cart')
         if cart_item.item == Program.objects.all().get(id=2).program_name: #'Stick and Puck'
             skater_name = cart_item.skater_name.split(' ')
             skater_id = self.snp_skater_model.objects.filter(guardian=request.user, first_name=skater_name[0], last_name=skater_name[1])
