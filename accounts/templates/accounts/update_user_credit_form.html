@@ -12,7 +12,7 @@
 {% endif %}
 <h5>Purchase Credits</h5>
 <p>Please enter the number of credits you would like to purchase. ($1 = 1 credit)</p>
-<h5>Credits Incentive Program</h5>
+<h5>Credits Incentive Program*</h5>
 <ul class="list-group mb-3">
     {% for incentive in incentives %}
     <li class="list-group-item">
@@ -22,6 +22,9 @@
 </ul>
 <div class="small footnote">
     *Incentive price points and percentages are subject to change without notice.
+</div>
+<div class="small footnote">
+    **In the event you need a refund for credits purchased, the amount you received in free credits will be deducted from your refund.
 </div>
     
 <form action="{% url 'accounts:purchase-credit' slug=user.username %}" method="POST">
