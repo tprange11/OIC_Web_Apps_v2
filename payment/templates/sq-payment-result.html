@@ -6,10 +6,17 @@
     <p>Sorry, something went wrong.  Please <a href="{% url 'payment:payment' %}">try again</a>.</p>
     <div class="alert alert-danger">
         <h5 class="alert-heading">Error Message</h5>
-        &quot;{{ error_message|capfirst }}&quot;
+        {{ error_message|capfirst }}
     </div>
 {% elif message %}
     <h4>Thank you for your payment!</h4>
+    <p>Payment amount: ${{ amount|floatformat:"0" }}<br />
+       Payment for: {{ note }}
+    </p>
+    {% if 'User Credits' in note %}
+    <p>Please make sure your credits were applied to your account viewing your <a href="{% url 'accounts:profile' slug=user.id %} ">Profile</a>.
+        If they were not applied, please use the contact form to let us know.</p>
+    {% endif %}
     <p><a href="{% url 'payment:payments-list' %}" class="btn btn-primary btn-sm">View Your Payment History</a></p>
 {% endif %}
 {% endblock content %}

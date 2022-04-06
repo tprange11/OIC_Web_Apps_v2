@@ -13,17 +13,17 @@ from cart.models import Cart
 from programs.models import Program
 # from open_hockey.models import OpenHockeySessions, OpenHockeyMember
 from stickandpuck.models import StickAndPuckSession
-from thane_storck.models import SkateSession
+# from thane_storck.models import SkateSession
 from figure_skating.models import FigureSkatingSession
 from adult_skills.models import AdultSkillsSkateSession
-from mike_schultz.models import MikeSchultzSkateSession
+# from mike_schultz.models import MikeSchultzSkateSession
 from yeti_skate.models import YetiSkateSession
 from womens_hockey.models import WomensHockeySkateSession
 from bald_eagles.models import BaldEaglesSession
 from lady_hawks.models import LadyHawksSkateSession
-from chs_alumni.models import CHSAlumniSession
+# from chs_alumni.models import CHSAlumniSession
 from private_skates.models import PrivateSkateSession, PrivateSkate
-from open_roller.models import OpenRollerSkateSession
+# from open_roller.models import OpenRollerSkateSession
 from owhl.models import OWHLSkateSession
 from kranich.models import KranichSkateSession
 from nacho_skate.models import NachoSkateSession
@@ -46,8 +46,17 @@ class PaymentView(LoginRequiredMixin, TemplateView):
         context['total'] = total
         context['app_id'] = os.getenv("SQUARE_APP_ID") # uncomment in production and development
         context['loc_id'] = os.getenv("SQUARE_LOCATION_ID") # uncomment in production and development
+        access_token = os.getenv('SQUARE_API_ACCESS_TOKEN') # uncomment in production and development
         # context['app_id'] = 'sandbox-sq0idb-Rbc4KuE-WwQ2C3nT0RodQA' # uncomment on local machine
         # context['loc_id'] = 'BSPYH5AEJGW8C' # uncomment on local machine
+        # access_token = 'EAAAEEfoRSmtj9WaKOOwhm4fcit-hzrtJ9SdYnsUS9WIs9UrV2ljbe9Ryj49pq7r' # uncomment on local machine
+        client = Client(
+            access_token=access_token,
+            environment=os.getenv('SQUARE_API_ENVIRONMENT'), # Uncomment in production and development
+        )
+        location = client.locations.retrieve_location(location_id=context['loc_id']).body['location']
+        context['currency'] = location['currency']
+        context['country'] = location['country']
         return context
 
 
@@ -75,17 +84,17 @@ def process_payment(request, **kwargs):
     # open_hockey_sessions_model = OpenHockeySessions
     # open_hockey_member_model = OpenHockeyMember
     stick_and_puck_sessions_model = StickAndPuckSession
-    thane_storck_sessions_model = SkateSession
+    # thane_storck_sessions_model = SkateSession
     figure_skating_sessions_model = FigureSkatingSession
     adult_skills_sessions_model = AdultSkillsSkateSession
-    mike_schultz_sessions_model = MikeSchultzSkateSession
+    # mike_schultz_sessions_model = MikeSchultzSkateSession
     yeti_sessions_model = YetiSkateSession
     womens_hockey_sessions_model = WomensHockeySkateSession
     bald_eagles_sessions_model = BaldEaglesSession
     lady_hawks_sessions_model = LadyHawksSkateSession
-    chs_alumni_sessions_model = CHSAlumniSession
+    # chs_alumni_sessions_model = CHSAlumniSession
     private_skate_sessions_model = PrivateSkateSession
-    open_roller_sessions_model = OpenRollerSkateSession
+    # open_roller_sessions_model = OpenRollerSkateSession
     owhl_sessions_model = OWHLSkateSession
     kranich_sessions_model = KranichSkateSession
     nacho_skate_sessions_model = NachoSkateSession
@@ -96,7 +105,8 @@ def process_payment(request, **kwargs):
         return redirect('cart:shopping-cart')
     else:
 
-        nonce = request.POST['nonce']
+        token = request.POST['payment-token']
+        # print(f"Token: {token}")
         access_token = os.getenv('SQUARE_API_ACCESS_TOKEN') # uncomment in production and development
         # access_token = 'EAAAEEfoRSmtj9WaKOOwhm4fcit-hzrtJ9SdYnsUS9WIs9UrV2ljbe9Ryj49pq7r' # uncomment on local machine
         cart_items = cart_model.objects.filter(customer=request.user).values_list('item', 'amount')
@@ -122,9 +132,13 @@ def process_payment(request, **kwargs):
             environment=os.getenv('SQUARE_API_ENVIRONMENT'), # Uncomment in production and development
         )
 
+        location_id = os.getenv("SQUARE_LOCATION_ID") # uncomment in production and development
+        location = client.locations.retrieve_location(location_id=location_id).body['location']
+        currency = location['currency']
+
         # Assemble the body for the create_payment() api function
         idempotency_key = str(uuid.uuid1())
-        amount = {'amount': total, 'currency': 'USD'}
+        amount = {'amount': total, 'currency': currency}
 
         # Create the note depending on what the user is paying for....
         payment_note = ''
@@ -132,15 +146,18 @@ def process_payment(request, **kwargs):
             if v != 0:
                 payment_note += f'({k} ${v}) '
 
-        body = {'idempotency_key': idempotency_key, 'source_id': nonce, 'amount_money': amount, 'autocomplete': True, 'note': payment_note}
+        body = {
+            'idempotency_key': idempotency_key, 
+            'source_id': token, 'amount_money': amount, 
+            'autocomplete': True, 
+            'note': payment_note
+            }
 
-        # Send info to square api and react the the response
+        # Send info to square api and react to the response
         api_response = client.payments.create_payment(body)
 
         if api_response.is_success():
             res = api_response.body['payment']
-            # Construct context for result page.
-            context = {'message': True}
             # Add payment record to Payment Model
             model = models.Payment
             payer = request.user
@@ -156,16 +173,16 @@ def process_payment(request, **kwargs):
                 # open_hockey_sessions_model.objects.filter(skater=request.user, date__gte=today).update(paid=True)
                 stick_and_puck_sessions_model.objects.filter(guardian=request.user, session_date__gte=today).update(paid=True)
                 # open_hockey_member_model.objects.filter(member=request.user).update(active=True)
-                thane_storck_sessions_model.objects.filter(skater=request.user).update(paid=True)
+                # thane_storck_sessions_model.objects.filter(skater=request.user).update(paid=True)
                 figure_skating_sessions_model.objects.filter(guardian=request.user, session__skate_date__gte=today).update(paid=True)
                 adult_skills_sessions_model.objects.filter(skater=request.user).update(paid=True)
-                mike_schultz_sessions_model.objects.filter(user=request.user).update(paid=True)
+                # mike_schultz_sessions_model.objects.filter(user=request.user).update(paid=True)
                 yeti_sessions_model.objects.filter(skater=request.user).update(paid=True)
                 womens_hockey_sessions_model.objects.filter(user=request.user).update(paid=True)
                 bald_eagles_sessions_model.objects.filter(skater=request.user).update(paid=True)
                 lady_hawks_sessions_model.objects.filter(user=request.user).update(paid=True)
-                chs_alumni_sessions_model.objects.filter(skater=request.user).update(paid=True)
-                open_roller_sessions_model.objects.filter(user=request.user).update(paid=True)
+                # chs_alumni_sessions_model.objects.filter(skater=request.user).update(paid=True)
+                # open_roller_sessions_model.objects.filter(user=request.user).update(paid=True)
                 private_skate_sessions_model.objects.filter(user=request.user).update(paid=True)
                 owhl_sessions_model.objects.filter(skater=request.user, paid=False).update(paid=True)
                 kranich_sessions_model.objects.filter(skater=request.user, paid=False).update(paid=True)
@@ -185,6 +202,9 @@ def process_payment(request, **kwargs):
 
             # Clear items from the Cart Model if the payment was successful
             Cart.objects.filter(customer=request.user).delete()
+
+            # Construct context for result page.
+            context = {'message': True, 'amount': amount, 'note': note}
         elif api_response.is_error():
             # Save the error in PaymentError model for debugging.
             model = models.PaymentError
@@ -194,6 +214,12 @@ def process_payment(request, **kwargs):
             
             # Create response context and send to template for display.
             error_message = api_response.errors[0]['detail']
-            context = {'error': True, 'error_message': error_message}
-        
+            error_messages = {
+                "Authorization error: 'ADDRESS_VERIFICATION_FAILURE'": "The zip code you entered was incorrect.",
+                "Authorization error: 'CVV_FAILURE'": "The three digit security code you entered was incorrect.",
+                "Authorization error: 'GENERIC_DECLINE'": "The credit card number you entered has been declined.",
+            }
+            error = error_messages.get(error_message, error_message) # Retrieve error msg, else return raw error_message
+            context = {'error': True, 'error_message': error}
+
         return render(request, template_name, context)
