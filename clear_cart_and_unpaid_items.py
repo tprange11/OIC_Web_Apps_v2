@@ -22,6 +22,7 @@ from lady_hawks.models import LadyHawksSkateSession
 from private_skates.models import PrivateSkateSession
 from kranich.models import KranichSkateSession
 from nacho_skate.models import NachoSkateSession
+from ament.models import AmentSkateSession
 from accounts.models import UserCredit
 
 from datetime import date
@@ -45,6 +46,7 @@ def clear_cart_and_unpaid_items():
     PrivateSkateSession.objects.filter(paid=False, skate_date__date__gte=todays_date).delete()
     KranichSkateSession.objects.filter(paid=False, skate_date__skate_date__gte=todays_date).delete()
     NachoSkateSession.objects.filter(paid=False, skate_date__skate_date__gte=todays_date).delete()
+    AmentSkateSession.objects.filter(paid=False, skate_date__skate_date__gte=todays_date).delete()
     UserCredit.objects.filter(pending__gt=0).update(pending=0)
     return
 

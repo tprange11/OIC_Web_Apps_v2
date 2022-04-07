@@ -27,6 +27,7 @@ from private_skates.models import PrivateSkateSession, PrivateSkate
 from owhl.models import OWHLSkateSession
 from kranich.models import KranichSkateSession
 from nacho_skate.models import NachoSkateSession
+from ament.models import AmentSkateSession
 from accounts.models import UserCredit
 
 # Create your views here.
@@ -98,6 +99,7 @@ def process_payment(request, **kwargs):
     owhl_sessions_model = OWHLSkateSession
     kranich_sessions_model = KranichSkateSession
     nacho_skate_sessions_model = NachoSkateSession
+    ament_sessions_model = AmentSkateSession
     user_credit_model = UserCredit
     today = date.today()
 
@@ -187,6 +189,7 @@ def process_payment(request, **kwargs):
                 owhl_sessions_model.objects.filter(skater=request.user, paid=False).update(paid=True)
                 kranich_sessions_model.objects.filter(skater=request.user, paid=False).update(paid=True)
                 nacho_skate_sessions_model.objects.filter(skater=request.user, paid=False).update(paid=True)
+                ament_sessions_model.objects.filter(skater=request.user, paid=False).update(paid=True)
             except IntegrityError:
                 pass
 

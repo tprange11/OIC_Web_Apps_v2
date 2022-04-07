@@ -73,6 +73,9 @@
                             {% if in_group_adult_skills %}
                             <a class="dropdown-item" href="{% url 'adult_skills:adult-skills' %}">Adult Skills</a>
                             {% endif %}
+                            {% if in_group_ament %}
+                            <a class="dropdown-item" href="{% url 'ament:skate-dates' %}">Ament Skate</a>
+                            {% endif %}
                             {% if in_group_yeti_skate %}
                             <a class="dropdown-item" href="{% url 'yeti_skate:yeti-skate' %}">Yeti Skate</a>
                             {% endif %}

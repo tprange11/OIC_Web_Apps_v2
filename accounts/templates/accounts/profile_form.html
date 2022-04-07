@@ -80,6 +80,9 @@
     <input type="submit" value="Update Preferences" class="btn btn-success btn-sm">
 </form>
 <script>
+    {% if not in_group_ament %}
+    document.querySelector('#id_ament_email').parentNode.parentNode.style.display = 'none';
+    {% endif %}
     {% if not in_group_thane_storck %}
     document.querySelector('#id_thane_storck_email').parentNode.parentNode.style.display = 'none';
     {% endif %}

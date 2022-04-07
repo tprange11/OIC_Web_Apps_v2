@@ -22,6 +22,7 @@ from open_roller.models import OpenRollerSkateDate, OpenRollerSkateSession
 from owhl.models import OWHLSkateDate, OWHLSkateSession
 from kranich.models import KranichSkateDate, KranichSkateSession
 from nacho_skate.models import NachoSkateDate, NachoSkateSession
+from ament.models import AmentSkateDate, AmentSkateSession
 from accounts.models import UserCredit
 
 # Create your views here.
@@ -90,6 +91,8 @@ class RemoveItemFromCartView(LoginRequiredMixin, DeleteView):
     kranich_skate_date_model = KranichSkateDate
     nacho_skate_model = NachoSkateSession
     nacho_skate_date_model = NachoSkateDate
+    ament_skate_model = AmentSkateSession
+    ament_skate_date_model = AmentSkateDate
 
     user_credit_model = UserCredit
     success_url = reverse_lazy('cart:shopping-cart')
@@ -157,6 +160,9 @@ class RemoveItemFromCartView(LoginRequiredMixin, DeleteView):
         elif cart_item.item == Program.objects.all().get(id=15).program_name: # Nacho Skate
             skate_date = self.nacho_skate_date_model.objects.filter(skate_date=cart_item.event_date)
             self.nacho_skate_model.objects.filter(skater=request.user, skate_date=skate_date[0]).delete()
+        elif cart_item.item == Program.objects.all().get(id=16).program_name: # Ament Skate
+            skate_date = self.ament_skate_date_model.objects.filter(skate_date=cart_item.event_date)
+            self.ament_skate_model.objects.filter(skater=request.user, skate_date=skate_date[0]).delete()
         # elif cart_item.item == 'OH Membership':
         #     self.oh_member_model.objects.filter(member=request.user).delete()
         elif cart_item.item == 'User Credits':

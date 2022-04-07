@@ -65,6 +65,7 @@ urlpatterns = [
     path('web_apps/how_to_videos/', include('how_to_videos.urls')),
     path('web_apps/kranich/', include('kranich.urls')),
     path('web_apps/nacho_skate/', include('nacho_skate.urls')),
+    path('web_apps/ament/', include('ament.urls')),
     path('serviceworker.js', (TemplateView.as_view(
         template_name='serviceworker.js',
         content_type='application/javascript'
