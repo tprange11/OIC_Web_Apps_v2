@@ -19,5 +19,5 @@ class CHSAlumniSessionAdmin(admin.ModelAdmin):
     def date_display(self, obj):
         return f"{obj.date.skate_date} {obj.date.start_time} to {obj.date.end_time}"
 
-admin.site.register(CHSAlumniDate, CHSAlumniDateAdmin)
-admin.site.register(CHSAlumniSession, CHSAlumniSessionAdmin)
+# admin.site.register(CHSAlumniDate, CHSAlumniDateAdmin)
+# admin.site.register(CHSAlumniSession, CHSAlumniSessionAdmin)

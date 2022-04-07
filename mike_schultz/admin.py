@@ -17,5 +17,5 @@ class MikeSchultzSkateSessionAdmin(admin.ModelAdmin):
         return f"{obj.user.first_name} {obj.user.last_name}"
 
 
-admin.site.register(MikeSchultzSkateDate, MikeSchultzSkateDateAdmin)
-admin.site.register(MikeSchultzSkateSession, MikeSchultzSkateSessionAdmin)
+# admin.site.register(MikeSchultzSkateDate, MikeSchultzSkateDateAdmin)
+# admin.site.register(MikeSchultzSkateSession, MikeSchultzSkateSessionAdmin)

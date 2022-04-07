@@ -19,5 +19,5 @@ class SkateSessionAdmin(admin.ModelAdmin):
         return f"{obj.skate_date.skate_date} {obj.skate_date.start_time} to {obj.skate_date.end_time}"
 
 
-admin.site.register(SkateDate, SkateDateAdmin)
-admin.site.register(SkateSession, SkateSessionAdmin)
+# admin.site.register(SkateDate, SkateDateAdmin)
+# admin.site.register(SkateSession, SkateSessionAdmin)

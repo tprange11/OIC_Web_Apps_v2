@@ -17,6 +17,6 @@ class PostAdmin(admin.ModelAdmin):
     list_display = ['topic', 'created_by']
 
 
-admin.site.register(Board, BoardAdmin)
-admin.site.register(Topic, TopicAdmin)
-admin.site.register(Post, PostAdmin)
+# admin.site.register(Board, BoardAdmin)
+# admin.site.register(Topic, TopicAdmin)
+# admin.site.register(Post, PostAdmin)

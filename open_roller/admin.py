@@ -17,5 +17,5 @@ class OpenRollerSkateSessionAdmin(admin.ModelAdmin):
         return f"{obj.user.first_name} {obj.user.last_name}"
 
 
-admin.site.register(OpenRollerSkateDate, OpenRollerSkateDateAdmin)
-admin.site.register(OpenRollerSkateSession, OpenRollerSkateSessionAdmin)
+# admin.site.register(OpenRollerSkateDate, OpenRollerSkateDateAdmin)
+# admin.site.register(OpenRollerSkateSession, OpenRollerSkateSessionAdmin)
