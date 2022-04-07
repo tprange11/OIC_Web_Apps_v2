@@ -139,7 +139,7 @@ def scrape_schedule(request):
         # team_events.clear()
 
         # If it is Friday, scrape Saturday and Sunday too
-        if date.weekday(date.today()) == 3:
+        if date.weekday(date.today()) == 4:
             saturday = (date.today() + timedelta(days=1)).strftime("%m/%d/%Y")
             # print(saturday)
             process_data(data, saturday)
