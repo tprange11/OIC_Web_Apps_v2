@@ -15,12 +15,7 @@ schedule/views_original.py
 open_roller/scrape_open_roller_dates.py
 static/reports/
 ##############################
-# This section stays till payment updates have been tested.
-payment/templates/sq-payment-form_orig.html
-payment/views_original.py
-static/css/sq-payment-form.css
-static/js/sq-payment-form.js
-##############################
+
 
 # Django stuff:
 *.log
