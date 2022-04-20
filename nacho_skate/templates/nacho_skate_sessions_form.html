@@ -2,9 +2,16 @@
 {% block title %}<title>Nacho Skate Session Register</title>{% endblock title %}
 {% block content %}
 <h5>Register for {{skate_info.skate_date}} {{skate_info.start_time}} to {{skate_info.end_time}} Skate</h5>
+{% if error %}
+<div class="alert alert-danger alert-link" role="alert">
+    The skate you are trying to register for does not exist.  
+    Go to the <a href="{% url 'nacho_skate:index' %}">Nacho Skate page</a> to view available skate sessions.
+</div>
+{% else %}
     <form method="POST" action="{% url 'nacho_skate:register' %}">
         {% csrf_token %}
         {% bootstrap_form form %}
         <p><input type="submit" value="Register" class="btn btn-success btn-sm"></p>
     </form>
+{% endif %}
 {% endblock content %}

@@ -113,7 +113,10 @@ class CreateNachoSkateSessionView(LoginRequiredMixin, CreateView):
         context =  super().get_context_data(**kwargs)
         # Get skate date info to display on the template
         if self.request.method =='GET':
-            context['skate_info'] = self.skate_date_model.objects.get(pk=self.kwargs['pk'])
+            try:
+                context['skate_info'] = self.skate_date_model.objects.get(pk=self.kwargs['pk'])
+            except ObjectDoesNotExist:
+                context['error'] = {'error': True}
         return context
 
     def form_valid(self, form):
