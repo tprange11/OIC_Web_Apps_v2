@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}<title>OIC Web Apps Revenue Report</title>{% endblock title %}
+{% block content %}
+<h4>OIC Web Apps Revenue Report</h4>
+<p>Revenue totals for the last 12 months by category.</p>
+<div class="row">
+    <div class="col-md-6 col-sm-12 my-3">
+        <ul class="list-group">
+            {% for k, v in payment_totals.items %}
+            <li class="list-group-item">
+                {{k}}: ${{v}}<br>
+            </li>
+            {% endfor %}
+            <li class="list-group-item font-weight-bold">
+                Total Revenue: ${{total_revenue}}
+            </li>
+        </ul>
+    </div>
+</div>
+{% endblock content %}

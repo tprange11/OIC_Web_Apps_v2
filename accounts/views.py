@@ -273,3 +273,42 @@ class FigureSkatingRevenueReport(TemplateView, LoginRequiredMixin):
         f.close()
 
         return context
+
+class RevenueReportView(TemplateView, LoginRequiredMixin):
+    template_name = 'accounts/revenue_report.html'
+    payment_summary = {}
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        today = timezone.now()
+        today = today.replace(hour=0, minute=0, second=0)
+        offset = -365
+        if calendar.isleap(today.year):
+            offset = -366
+        start_date = today + timedelta(days=offset)
+
+        payment_records = Payment.objects.all().filter(date__gte=start_date)
+        # f = open(settings.STATICFILES_DIRS[0] + path_to_file, 'w', newline='')
+        # writer = csv.writer(f)
+        # writer.writerow(['User', 'Amount', 'Payment Breakdown', 'Date'])
+
+        payments = []
+        totals = {}
+        total_revenue = 0
+        for record in payment_records:
+            payments.append(record.note.replace(' $', ', ').replace(') (', ')#(').split('#'))
+        for payment in payments:
+            for each_item in payment:
+                s = each_item.strip('(').strip(')').strip(') ').split(', ')
+                current_total = totals.get(s[0], 0)
+                if current_total == 0:
+                    totals.update({s[0]: int(s[1])})
+                else:
+                    totals.update({s[0]: int(s[1]) + current_total})
+                total_revenue += int(s[1])
+ 
+        context['payment_totals'] = totals
+        context['total_revenue'] = total_revenue
+
+        return context

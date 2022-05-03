@@ -3,9 +3,12 @@
 {% block content %}
 <h4>OIC Web Apps Reports</h4>
 <div>
-    <a href="{% url 'outstanding-credits-report' %}" class="btn btn-info my-4">Outstanding User Credits Report</a>
+    <a href="{% url 'outstanding-credits-report' %}" class="btn btn-info my-2">Outstanding User Credits Report</a>
 </div>
 <div>
-    <a href="{% url 'fs-revenue-report' %}" class="btn btn-info my-4">Figure Skating Revenue Report</a>
+    <a href="{% url 'fs-revenue-report' %}" class="btn btn-info my-2">Figure Skating Revenue Report</a>
+</div>
+<div>
+    <a href="{% url 'revenue-report' %}" class="btn btn-info my-2">Revenue Report</a>
 </div>
 {% endblock content %}
