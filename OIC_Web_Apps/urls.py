@@ -17,7 +17,8 @@ from django.contrib import admin
 from django.urls import path, include
 from . import views
 from django.views.generic import TemplateView
-from accounts.views import FigureSkatingRevenueReport, ReportView, OutstandingUserCreditsView, RevenueReportView
+from accounts.views import FigureSkatingRevenueReport, ReportView, OutstandingUserCreditsView, \
+                    revenue_report
 
 handler404 = 'OIC_Web_Apps.views.handler404'
 handler500 = 'OIC_Web_Apps.views.handler500'
@@ -44,7 +45,8 @@ urlpatterns = [
     path('web_apps/reports/', ReportView.as_view(), name='reports'),
     path('web_apps/reports/outstanding-user-credits/', OutstandingUserCreditsView.as_view(), name='outstanding-credits-report'),
     path('web_apps/reports/figure-skating-revenue/', FigureSkatingRevenueReport.as_view(), name='fs-revenue-report'),
-    path('web_apps/reports/revenue-report/', RevenueReportView.as_view(), name='revenue-report'),
+    path('web_apps/reports/revenue-report/', revenue_report, name='revenue-report'),
+    path('web_apps/reports/revenue-report-form/', revenue_report, name='revenue-report-form'),
     path('web_apps/thane_storck/', include('thane_storck.urls')),
     path('web_apps/', views.WebAppsPage.as_view(), name='web_apps'),
     path('web_apps/shopping_cart/', include('cart.urls')),

@@ -1,4 +1,3 @@
-from re import template
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy, reverse
 from django.views.generic import CreateView, UpdateView, DeleteView
@@ -9,6 +8,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.views.generic.base import TemplateView
 from django.utils import timezone
 from django.conf import settings
+from django.contrib.auth.decorators import login_required
 from . import forms
 from accounts.models import Profile, ReleaseOfLiability, ChildSkater, UserCredit
 from cart.models import Cart
@@ -274,25 +274,20 @@ class FigureSkatingRevenueReport(TemplateView, LoginRequiredMixin):
 
         return context
 
-class RevenueReportView(TemplateView, LoginRequiredMixin):
-    template_name = 'accounts/revenue_report.html'
-    payment_summary = {}
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
+@login_required
+def revenue_report(request, **kwargs):
+    '''View that renders the revenue report form template of the revenue report results template.'''
 
-        today = timezone.now()
-        today = today.replace(hour=0, minute=0, second=0)
-        offset = -365
-        if calendar.isleap(today.year):
-            offset = -366
-        start_date = today + timedelta(days=offset)
+    context = None
 
-        payment_records = Payment.objects.all().filter(date__gte=start_date)
-        # f = open(settings.STATICFILES_DIRS[0] + path_to_file, 'w', newline='')
-        # writer = csv.writer(f)
-        # writer.writerow(['User', 'Amount', 'Payment Breakdown', 'Date'])
+    if request.method == 'GET':
+        return render(request, 'accounts/revenue_report_form.html')
+    else:
+        start_date = request.POST['start_date']
+        end_date = request.POST['end_date']
 
+        payment_records = Payment.objects.all().filter(date__gte=start_date, date__lte=end_date)
         payments = []
         totals = {}
         total_revenue = 0
@@ -308,7 +303,6 @@ class RevenueReportView(TemplateView, LoginRequiredMixin):
                     totals.update({s[0]: int(s[1]) + current_total})
                 total_revenue += int(s[1])
  
-        context['payment_totals'] = totals
-        context['total_revenue'] = total_revenue
+        context = {'payment_totals': totals, 'total_revenue': total_revenue, 'start_date': start_date, 'end_date': end_date}
 
-        return context
+    return render(request, 'accounts/revenue_report.html', context)
