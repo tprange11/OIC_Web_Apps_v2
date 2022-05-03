@@ -34,7 +34,7 @@ class YetiSkateDateListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         # Join the Yeti Skate Group
-        self.join_yeti_skate_group()
+        # self.join_yeti_skate_group()
         # Get all skaters signed up for each session to display the list of skaters for each session
         skate_sessions = self.session_model.objects.filter(skate_date__skate_date__gte=date.today())
         context['skate_sessions'] = skate_sessions
@@ -76,24 +76,24 @@ class YetiSkateDateListView(LoginRequiredMixin, ListView):
                     continue
         return queryset
 
-    def join_yeti_skate_group(self, join_group='Yeti Skate'):
-        '''Adds user to Yeti Skate group "behind the scenes", for communication purposes.'''
+    # def join_yeti_skate_group(self, join_group='Yeti Skate'):
+    #     '''Adds user to Yeti Skate group "behind the scenes", for communication purposes.'''
         
-        try:
-            group = self.group_model.objects.get(name=join_group)
-            self.request.user.groups.add(group)
-        except IntegrityError:
-            pass
+    #     try:
+    #         group = self.group_model.objects.get(name=join_group)
+    #         self.request.user.groups.add(group)
+    #     except IntegrityError:
+    #         pass
 
-        try:
-            # If a profile already exists, do nothing
-            profile = self.profile_model.objects.get(user=self.request.user)
-        except ObjectDoesNotExist:
-            # If no profile exists, create one and set yeti_skate_email to True
-            profile = self.profile_model(user=self.request.user, yeti_skate_email=True, slug=self.request.user.id)
-            profile.save()
+    #     try:
+    #         # If a profile already exists, do nothing
+    #         profile = self.profile_model.objects.get(user=self.request.user)
+    #     except ObjectDoesNotExist:
+    #         # If no profile exists, create one and set yeti_skate_email to True
+    #         profile = self.profile_model(user=self.request.user, yeti_skate_email=True, slug=self.request.user.id)
+    #         profile.save()
 
-        return
+    #     return
 
 class CreateYetiSkateSessionView(LoginRequiredMixin, CreateView):
     '''Page that displays form for user to register for skate sessions.'''
