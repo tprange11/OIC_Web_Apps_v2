@@ -15,7 +15,8 @@ from cart.models import Cart
 from programs.models import UserCreditIncentive
 from payment.models import Payment
 
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, tzinfo
+from time import strptime
 import csv
 import os
 import calendar
@@ -284,8 +285,8 @@ def revenue_report(request, **kwargs):
     if request.method == 'GET':
         return render(request, 'accounts/revenue_report_form.html')
     else:
-        start_date = request.POST['start_date']
-        end_date = request.POST['end_date']
+        start_date = timezone.make_aware(datetime.strptime(request.POST['start_date'], '%Y-%m-%d'))
+        end_date = timezone.make_aware(datetime.strptime(request.POST['end_date'], '%Y-%m-%d'))
 
         payment_records = Payment.objects.all().filter(date__gte=start_date, date__lte=end_date)
         payments = []
