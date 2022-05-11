@@ -15,8 +15,7 @@ from cart.models import Cart
 from programs.models import UserCreditIncentive
 from payment.models import Payment
 
-from datetime import date, datetime, timedelta, tzinfo
-from time import strptime
+from datetime import date, datetime, timedelta
 import csv
 import os
 import calendar

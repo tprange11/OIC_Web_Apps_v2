@@ -1,5 +1,5 @@
 from django.views.generic import TemplateView
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.contrib.auth.mixins import LoginRequiredMixin
 # from open_hockey.models import OpenHockeyMemberType
 from programs.models import Program
@@ -47,11 +47,11 @@ class ThanksPage(TemplateView):
 
 
 def handler404(request, exception, template_name='404.html'):
-    response = render_to_response(template_name)
+    response = render(None, template_name)
     response.status_code = 404
     return response
 
 def handler500(request, template_name='500.html'):
-    response = render_to_response(template_name)
+    response = render(None, template_name)
     response.status_code = 500
     return response

@@ -1,4 +1,4 @@
-from django.shortcuts import render, render_to_response
+from django.shortcuts import render
 from django.views.generic import CreateView, TemplateView, ListView, DeleteView, FormView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User, Group
@@ -138,7 +138,7 @@ class CreateStickAndPuckSession(LoginRequiredMixin, CreateView):
             if self.model.objects.filter(session_date=self.object.session_date, session_time=self.object.session_time).count() >= max_skaters:
                 context = {'user': self.request.user,
                         'message': "Sorry, this session of stick and puck is full!"}
-                return render_to_response('stickandpuck_error.html', context)
+                return render(None, 'stickandpuck_error.html', context)
             # Else save the object to the model
             else:
                 self.join_stick_and_puck_group()

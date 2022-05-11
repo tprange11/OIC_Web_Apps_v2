@@ -1,10 +1,10 @@
-from django.shortcuts import render, render_to_response, get_object_or_404
+from django.shortcuts import render
 from django.views.generic import TemplateView, CreateView, ListView, DeleteView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import Group, User
 from django.db import IntegrityError
 from django.core.exceptions import ObjectDoesNotExist
-from django.urls import reverse_lazy, reverse
+from django.urls import reverse_lazy
 from django.contrib import messages
 from datetime import date, timedelta, datetime
 from . import models
@@ -91,12 +91,12 @@ class CreateOpenHockeySessions(LoginRequiredMixin, CreateView):
             if self.model.objects.goalie_count(self.object.date) == 2 and self.object.goalie == True:
                 context = { 'user': self.request.user, 
                     'message': "Sorry, goalie spots are full for that session!" }
-                return render_to_response('open_hockey_error.html', context)
+                return render(None, 'open_hockey_error.html', context)
             # If the user has signed up as a skater and the skater spots are full, redirect to error page
             if self.model.objects.skater_count(self.object.date) == 22 and self.object.goalie == False:
                 context = { 'user': self.request.user,
                     'message': "Sorry, skater spots are full for that session!"}
-                return render_to_response('open_hockey_error.html', context)
+                return render(None, 'open_hockey_error.html', context)
             # If spots are available, try and save the object to the model
             else:
                 self.object.skater = self.request.user
