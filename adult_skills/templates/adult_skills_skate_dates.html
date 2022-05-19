@@ -30,6 +30,11 @@
                 <li class="list-group-item" style="padding: 5px 15px;"><a href="{% url 'adult_skills:register' pk=date.pk %}" class="btn btn-warning btn-sm mb-2 mb-sm-0">
                 {{ date.skate_date }} {{date.start_time}} to {{date.end_time}}</a>
             {% endif %}
+            <button type="button" class="btn btn-primary btn-sm" data-toggle="modal"
+            data-target="#skaterModalCenter{{forloop.counter}}">Skaters <span
+                class="number-of-skaters">{{date.registered_skaters.num_skaters}}</span> Goalies <span
+                class="number-of-skaters">{{date.registered_skaters.num_goalies}}</span>
+            </button>
             {% if date.session_pk != None and date.paid == False %}
             <a href="{% url 'cart:shopping-cart' %}" class="btn btn-sm btn-primary">Pay Now</a>
             <form method="POST" action="{% url 'adult_skills:session-remove' pk=date.session_pk %}">
@@ -37,14 +42,39 @@
                 <input type="hidden" name="pk" value="{{date.session_pk}}">
                 <input type="submit" value="Remove Me From This Skate" class="btn btn-danger btn-sm mt-2">
             </form>
-            {% endif %}</li>
+            {% endif %}
+            <div class="modal fade" id="skaterModalCenter{{forloop.counter}}" tabindex="-1" role="dialog"
+                aria-labelledby="skaterModalCenterTitle" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header text-light bg-secondary">
+                            <h5 class="modal-title" id="skaterModalLongTitle{{forloop.counter}}">{{date.skate_date}} Registered
+                                Skaters</h5>
+                            <button type="button" class="close text-light" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <ul class="list-group">
+                                {% for skater in skate_sessions %}
+                                {% if skater.skate_date.pk == date.pk %}<li class="list-group-item">
+                                    {{skater.skater.first_name}} {{skater.skater.last_name}}
+                                    {% if skater.goalie %}<b>(Goalie)</b>{% endif %}
+                                    {% if user.is_superuser %}
+                                    {% if skater.paid %}<b>(Paid)</b>{% else %}<b>(Not Paid)</b>{% endif %}
+                                    {% endif %}
+                                </li>{% endif %}{% endfor %}
+                            </ul>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </li>
         {% empty %}
         <li class="list-group-item" style="padding: 5px 15px;">Sorry, no skates are available at this time.</li>
         {% endfor %}
     </ul>
-    {% comment %} User.id 54 is for Josh Sulsberger user.id 57 is for Leslie French to monitor registered skaters {% endcomment %}
-    {% if user.is_superuser or user.id == 54 or user.id == 57 %}
-        <p><a href="{% url 'adult_skills:adult-skills-sessions' %}" class="btn btn-primary btn-sm m-3">
-            View Registered Skaters</a></p>
-    {% endif %}
 {% endblock content %}

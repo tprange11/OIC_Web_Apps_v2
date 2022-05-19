@@ -33,6 +33,10 @@ class AdultSkillsSkateDateListView(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         self.join_adult_skills_group()
         
+        # Get all skaters signed up for each session to display the list of skaters for each session
+        skate_sessions = self.session_model.objects.filter(skate_date__skate_date__gte=date.today())
+        context['skate_sessions'] = skate_sessions
+
         # Create a user credit object if one does not exist
         try:
             credit = self.credit_model.objects.get(user=self.request.user)
@@ -48,6 +52,7 @@ class AdultSkillsSkateDateListView(LoginRequiredMixin, ListView):
         skater_sessions = self.session_model.objects.filter(skater=self.request.user).values_list('skate_date', 'pk', 'paid')
         # If user is already signed up for the skate, add key value pair to disable button
         for item in queryset:
+            item['registered_skaters'] = self.model.registered_skaters(skate_date=item['pk'])
             for session in skater_sessions:
                 # If the session date and skate date match and paid is True, add disabled = True to queryset
                     if item['pk'] == session[0] and session[2] == True:
