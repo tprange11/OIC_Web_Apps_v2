@@ -27,7 +27,7 @@ def get_schedule_data(from_date, to_date):
     data = json.loads(response.text)
 
     for item in data:
-        if "Open FS" in item["text"]:
+        if "Open Figure" in item["usg"]:
             skate_date = item["start_date"].split(" ")[0]
             skate_date = f"{skate_date[6:]}-{skate_date[:2]}-{skate_date[3:5]}"
             start_time = item["st"].replace("P", " PM").replace("A", " AM")
@@ -94,7 +94,7 @@ if __name__ == "__main__":
     # the_date = date.today()
     send_email = False
 
-    get_schedule_data("03/01/2022", "05/30/2022")
+    get_schedule_data("06/01/2022", "07/26/2022")
 
     if len(skate_dates) != 0:
         # send_email = add_skate_dates(skate_dates)
