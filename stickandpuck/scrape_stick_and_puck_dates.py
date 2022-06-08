@@ -18,10 +18,10 @@ from accounts.models import Profile
 
 skate_dates = []
 
-def get_schedule_data(date):
+def get_schedule_data(from_date, to_date):
     '''Scrapes Ozaukee Ice Center schedule website for stick and puck session dates.'''
 
-    url = f"https://ozaukeeicecenter.schedulewerks.com/public/ajax/swCalGet?tid=-1&from={date}&to={date}&Complex=-1"
+    url = f"https://ozaukeeicecenter.schedulewerks.com/public/ajax/swCalGet?tid=-1&from={from_date}&to={to_date}&Complex=-1"
 
     try:
         response = requests.get(url)
@@ -95,14 +95,16 @@ def send_stick_and_puck_dates_email():
 if __name__ == "__main__":
     
     the_date = date.today()
-    from_date = the_date + timedelta(days=5)
+    from_date = the_date
+    to_date = the_date + timedelta(days=5)
     from_date = from_date.strftime("%m/%d/%Y")
+    to_date = to_date.strftime("%m/%d/%Y")
     send_email = False
 
-    # Every Thursday request schedule data for following week and parse for Stick n Puck dates
-    if the_date.weekday() == 3:
-        get_schedule_data(from_date)
-                
+    # Every Wednesday request schedule data for following current and following week and parse for Stick n Puck dates
+    if the_date.weekday() == 2:
+        get_schedule_data(from_date, to_date)
+
         if len(skate_dates) != 0:
             # for item in skate_dates:
             #     print(item)
