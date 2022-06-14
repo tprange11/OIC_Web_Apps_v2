@@ -10,7 +10,7 @@ class AdultSkillsSkateDateAdmin(admin.ModelAdmin):
 
 class AdultSkillsSkateSessionAdmin(admin.ModelAdmin):
     list_display = ['skater_name', 'skate_date_display', 'goalie', 'paid']
-    search_fields = ['skater__first_name', 'skater__last_name']
+    search_fields = ['skater__first_name', 'skater__last_name', 'skate_date__skate_date']
     list_filter = ['skate_date']
 
     def skater_name(self, obj):

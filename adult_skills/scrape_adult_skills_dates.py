@@ -33,7 +33,7 @@ def get_schedule_data(from_date, to_date):
         return
 
     for item in data:
-        if "Adlt Skill" or "Adult Skills" in item["text"]:
+        if "Adlt Skill" in item["text"]:
             skate_date = item["start_date"].split(" ")[0]
             skate_date = f"{skate_date[6:]}-{skate_date[:2]}-{skate_date[3:5]}"
             start_time = item["st"].replace("P", " PM").replace("A", " AM")
