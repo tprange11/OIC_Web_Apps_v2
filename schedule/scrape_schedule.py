@@ -22,7 +22,7 @@ from schedule.models import RinkSchedule
 
 oic_schedule = []  # list that will hold the day's events
 schedule_notes = [] # list that will hold notes if any
-team_events = [] # list that will hold OYHA, OCHL and OWHL teams to merge with oic_schedule[]
+# team_events = [] # list that will hold OYHA, OCHL and OWHL teams to merge with oic_schedule[]
 north_locker_rooms = [[1, 3], [2, 4]]  # Locker room numbers in North
 south_locker_rooms = [[5, 7], [6, 8], 7]  # Locker room numbers in South
 
@@ -95,62 +95,62 @@ def process_data(data, from_date):
     return
 
 
-def scrape_ochl_teams():
-    '''Scrapes OCHL Schedule website for teams.'''
+# def scrape_ochl_teams():
+#     '''Scrapes OCHL Schedule website for teams.'''
 
-    url = "https://www.ozaukeeicecenter.org/schedule/day/league_instance/150944?subseason=773253"
-    response = requests.get(url)
+#     url = "https://www.ozaukeeicecenter.org/schedule/day/league_instance/150944?subseason=773253"
+#     response = requests.get(url)
 
-    soup = BeautifulSoup(response.text, "html.parser")
-    # Get game schedule table
-    table = soup.find(class_="statTable")
-    # Get table body which contains game or practice rows
-    tbody = table.find_next("tbody")
+#     soup = BeautifulSoup(response.text, "html.parser")
+#     # Get game schedule table
+#     table = soup.find(class_="statTable")
+#     # Get table body which contains game or practice rows
+#     tbody = table.find_next("tbody")
 
-    # Get the rows
-    rows = tbody.find_all("tr")
+#     # Get the rows
+#     rows = tbody.find_all("tr")
 
-    # Get the data from the pertinent table cells: home, visitor, rink, start time
-    for row in rows:
-        cols = row.find_all("td")
-        team_events.append([cols[5].find("span").get_text().strip(" CST").strip(" CDT"), cols[2].find("a").get_text(), cols[0].find("a").get_text(), cols[4].find("div").get_text().strip()])
+#     # Get the data from the pertinent table cells: home, visitor, rink, start time
+#     for row in rows:
+#         cols = row.find_all("td")
+#         team_events.append([cols[5].find("span").get_text().strip(" CST").strip(" CDT"), cols[2].find("a").get_text(), cols[0].find("a").get_text(), cols[4].find("div").get_text().strip()])
     
-    # Convert start time to 24 hour time to match oic_schedule time format
-    for row in team_events:
-        time = row[0].strip(" PM")
-        time = time.split(":")
-        time[0] = str(int(time[0]) + 12)
-        time = ":".join(time)
-        row[0] = time
+#     # Convert start time to 24 hour time to match oic_schedule time format
+#     for row in team_events:
+#         time = row[0].strip(" PM")
+#         time = time.split(":")
+#         time[0] = str(int(time[0]) + 12)
+#         time = ":".join(time)
+#         row[0] = time
 
 
-def scrape_owhl_teams():
-    '''Scrapes OCHL Schedule website for teams.'''
+# def scrape_owhl_teams():
+#     '''Scrapes OCHL Schedule website for teams.'''
 
-    url = "https://www.ozaukeeicecenter.org/schedule/day/league_instance/153383?subseason=781038"
-    response = requests.get(url)
+#     url = "https://www.ozaukeeicecenter.org/schedule/day/league_instance/153383?subseason=781038"
+#     response = requests.get(url)
 
-    soup = BeautifulSoup(response.text, "html.parser")
-    # Get game schedule table
-    table = soup.find(class_="statTable")
-    # Get table body which contains game or practice rows
-    tbody = table.find_next("tbody")
+#     soup = BeautifulSoup(response.text, "html.parser")
+#     # Get game schedule table
+#     table = soup.find(class_="statTable")
+#     # Get table body which contains game or practice rows
+#     tbody = table.find_next("tbody")
 
-    # Get the rows
-    rows = tbody.find_all("tr")
+#     # Get the rows
+#     rows = tbody.find_all("tr")
 
-    # Get the data from the pertinent table cells: home, visitor, rink, start time
-    for row in rows:
-        cols = row.find_all("td")
-        team_events.append([cols[5].find("span").get_text().strip(" CST").strip(" CDT"), cols[2].find("a").get_text(), cols[0].find("a").get_text(), cols[4].find("div").get_text().strip()])
+#     # Get the data from the pertinent table cells: home, visitor, rink, start time
+#     for row in rows:
+#         cols = row.find_all("td")
+#         team_events.append([cols[5].find("span").get_text().strip(" CST").strip(" CDT"), cols[2].find("a").get_text(), cols[0].find("a").get_text(), cols[4].find("div").get_text().strip()])
     
-    # Convert start time to 24 hour time to match oic_schedule time format
-    for row in team_events:
-        time = row[0].strip(" PM")
-        time = time.split(":")
-        time[0] = str(int(time[0]) + 12)
-        time = ":".join(time)
-        row[0] = time
+#     # Convert start time to 24 hour time to match oic_schedule time format
+#     for row in team_events:
+#         time = row[0].strip(" PM")
+#         time = time.split(":")
+#         time[0] = str(int(time[0]) + 12)
+#         time = ":".join(time)
+#         row[0] = time
     
 
 def add_locker_rooms_to_schedule():
@@ -159,7 +159,7 @@ def add_locker_rooms_to_schedule():
     south_lr_flag = 0
     north_lr_flag = 0
     x = 0  # index of rink list for appending locker room numbers
-    no_locker_room = ("Public Skate", "LTS", "Open FS", "Kettle Moraine Figure Skating Club", "GRIT Hockey Club")
+    no_locker_room = ("Public", "LTS", "Open FS", "Kettle Moraine Figure Skating Club", "GRIT Hockey Club")
     need_game_locker_rooms = (
         # "Cedarburg", 
         # "Homestead", 
@@ -174,7 +174,7 @@ def add_locker_rooms_to_schedule():
         "Concordia Women CUW": "Concordia Women",
         "Concordia ACHA CUW": "Concordia ACHA",
         "Team Wisconsin Girls 14U TWG":"Team Wisconsin Girls 14U",
-        "Yeti Yeti": "Yeti",
+        "Yeti Yeti": "Yeti Skate",
         "Lady Hawks Lady Hawks": "Lady Hawks",
         "Open Figure Open FS": "Open FS",
         "Kranich Kranich": "Kranich",
@@ -183,7 +183,8 @@ def add_locker_rooms_to_schedule():
         "Lakeshore Lightning LSL": "Lakeshore Lightning",
         "Kettle Moraine Figure Skating Club": "KM Figure Skating Club",
         "Womens Open Hockey Women Open": "Womens Open Hockey",
-        "Milwaukee Power MKE Power": "Milwaukee Power",
+        "Stick&Puck": "Stick & Puck",
+        "Public": "Public Skate",
     }
 
     # Replace long customer name with short name
@@ -195,11 +196,6 @@ def add_locker_rooms_to_schedule():
         # if 'Practice' in event_type or customer in no_locker_room: # Used for Covid-19
         if customer in no_locker_room:
             oic_schedule[x].append("")
-            oic_schedule[x].append("")
-            x += 1
-            continue
-        elif 'MKE Power' in customer:
-            oic_schedule[x].append(south_locker_rooms[1][1])
             oic_schedule[x].append("")
             x += 1
             continue
@@ -285,34 +281,34 @@ if __name__ == "__main__":
     data_removed = False # used to check if the database table has been cleared once
 
 
-    def swap_team_names():
-        ''' Replace schedule event with team names if they match times'''
-        if len(team_events) != 0:
-            for item in team_events:
-                for oic in oic_schedule:
-                    if item[0] == oic[1] and item[3] == oic[3]:
-                        if item[2] == "":
-                            oic[4] = f"{item[1]}"
-                        else:
-                            oic[4] = f"{item[1]} vs {item[2]}"
+    # def swap_team_names():
+    #     ''' Replace schedule event with team names if they match times'''
+    #     if len(team_events) != 0:
+    #         for item in team_events:
+    #             for oic in oic_schedule:
+    #                 if item[0] == oic[1] and item[3] == oic[3]:
+    #                     if item[2] == "":
+    #                         oic[4] = f"{item[1]}"
+    #                     else:
+    #                         oic[4] = f"{item[1]} vs {item[2]}"
 
     # If it's not Saturday or Sunday, scrape oic schedule
     if date.weekday(date.today()) not in [5, 6]:
         data = get_schedule_data(from_date, to_date)
 
-        if date.weekday(date.today()) == 4:
-            try:
-                scrape_owhl_teams()
-            except Exception as e:
-                print(f"{e}, scrape_owhl_teams()")
+        # if date.weekday(date.today()) == 4:
+            # try:
+            #     scrape_owhl_teams()
+            # except Exception as e:
+            #     print(f"{e}, scrape_owhl_teams()")
 
-            swap_team_names()
+            # swap_team_names()
 
         add_locker_rooms_to_schedule()
         add_schedule_to_model(oic_schedule, data_removed)
         data_removed = True
         oic_schedule.clear()
-        team_events.clear()
+        # team_events.clear()
 
         # If it is Friday, process Saturday and Sunday too
         if date.weekday(date.today()) == 4:
@@ -323,13 +319,13 @@ if __name__ == "__main__":
             # print(sunday)
             process_data(data, sunday)
 
-            try:
-                scrape_ochl_teams()
-            except Exception as e:
-                print(f"{e}, scrape_ochl_teams()")
+            # try:
+            #     scrape_ochl_teams()
+            # except Exception as e:
+            #     print(f"{e}, scrape_ochl_teams()")
 
-            swap_team_names()
+            # swap_team_names()
             add_locker_rooms_to_schedule()
             add_schedule_to_model(oic_schedule, data_removed)
             oic_schedule.clear()
-            team_events.clear()
+            # team_events.clear()

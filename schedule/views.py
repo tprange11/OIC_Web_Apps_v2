@@ -5,7 +5,8 @@ from django.contrib import messages
 from . import models
 from datetime import datetime, date, timedelta
 from .scrape_schedule import get_schedule_data, process_data, add_locker_rooms_to_schedule, \
-        add_schedule_to_model, scrape_ochl_teams, team_events, oic_schedule
+        add_schedule_to_model, oic_schedule
+        # add_schedule_to_model, scrape_ochl_teams, team_events, oic_schedule
 
 from rest_framework.generics import ListAPIView
 from .serializers import RinkScheduleSerializer
@@ -117,16 +118,16 @@ def scrape_schedule(request):
     data_removed = False # used to check if the database table has been cleared once
 
 
-    def swap_team_names():
-        ''' Replace schedule event with team names if they match times'''
-        if len(team_events) != 0:
-            for item in team_events:
-                for oic in oic_schedule:
-                    if item[0] == oic[1] and item[3] == oic[3]:
-                        if item[2] == "":
-                            oic[4] = f"{item[1]}"
-                        else:
-                            oic[4] = f"{item[1]} vs {item[2]}"
+    # def swap_team_names():
+    #     ''' Replace schedule event with team names if they match times'''
+    #     if len(team_events) != 0:
+    #         for item in team_events:
+    #             for oic in oic_schedule:
+    #                 if item[0] == oic[1] and item[3] == oic[3]:
+    #                     if item[2] == "":
+    #                         oic[4] = f"{item[1]}"
+    #                     else:
+    #                         oic[4] = f"{item[1]} vs {item[2]}"
 
     # If it's not Saturday or Sunday, scrape oic schedule
     if date.weekday(date.today()) not in [5, 6]:
@@ -151,16 +152,16 @@ def scrape_schedule(request):
             # oic_schedule.clear()
             # team_events.clear()
 
-            try:
-                scrape_ochl_teams()
-            except Exception as e:
-                print(f"{e}, scrape_ochl_teams()")
+            # try:
+            #     scrape_ochl_teams()
+            # except Exception as e:
+            #     print(f"{e}, scrape_ochl_teams()")
 
-            swap_team_names()
+            # swap_team_names()
             add_locker_rooms_to_schedule()
             add_schedule_to_model(oic_schedule, data_removed)
             oic_schedule.clear()
-            team_events.clear()
+            # team_events.clear()
 
     messages.add_message(request, messages.SUCCESS, 'Rink Resurface Schedule has been updated.')
     return redirect('schedule:choose-rink')
