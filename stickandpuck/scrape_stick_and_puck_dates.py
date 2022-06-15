@@ -36,8 +36,14 @@ def get_schedule_data(from_date, to_date):
             skate_date = f"{skate_date[6:]}-{skate_date[:2]}-{skate_date[3:5]}"
             start_time = item["st"].replace("P", " PM").replace("A", " AM")
             end_time = item["et"].replace("P", " PM").replace("A", " AM")
+            if "13 and Under" in item["text"]:
+                notes = "13 & Under"
+            elif "14 & Older" in item["text"]:
+                notes = "14 & Older"
+            else:
+                notes = ""
 
-            skate_dates.append([skate_date, start_time, end_time, ''])
+            skate_dates.append([skate_date, start_time, end_time, notes])
 
     return
 
