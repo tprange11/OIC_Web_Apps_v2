@@ -300,7 +300,6 @@ if __name__ == "__main__":
                 print(f"{e}, scrape_ochl_teams()")
 
             swap_team_names()
-            print(team_events)
             add_locker_rooms_to_schedule()
             add_schedule_to_model(oic_schedule, data_removed)
             oic_schedule.clear()
