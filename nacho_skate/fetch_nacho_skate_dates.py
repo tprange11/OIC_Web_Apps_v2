@@ -14,8 +14,9 @@ django.setup()
 from django.db import IntegrityError
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
-from nacho_skate.models import NachoSkateDate
-from accounts.models import Profile
+from nacho_skate.models import NachoSkateDate, NachoSkateSession, NachoSkateRegular
+from accounts.models import Profile, UserCredit
+from programs.models import Program
 
 skate_dates = []
 
@@ -56,6 +57,27 @@ def add_skate_dates(sessions):
             continue
     # print(new_dates)
     return new_dates
+
+def add_regulars():
+    '''Adds regulars to the session if they have enough credit balance to cover the price of the skate.'''
+
+    regulars = NachoSkateRegular.objects.all().select_related('regular')
+    skate_dates = NachoSkateDate.objects.filter(skate_date__gt=date.today())
+    price = Program.objects.get(id=15).skater_price
+
+    for skate_date in skate_dates:
+        for regular in regulars:
+            user_credit = UserCredit.objects.get(user=regular.regular)
+            if user_credit.balance >= price:
+                data = NachoSkateSession(skater=regular.regular, skate_date=skate_date, paid=True)
+                try:
+                    data.save()
+                    user_credit.balance -= price
+                    if user_credit.balance == 0:
+                        user_credit.paid = False
+                    user_credit.save()
+                except IntegrityError:
+                    pass
 
 def send_skate_dates_email():
     '''Sends email to Users who opted in letting them know when Nacho Skate dates are added.'''
@@ -108,4 +130,5 @@ if __name__ == "__main__":
             send_email = add_skate_dates(skate_dates)
         
         if send_email:
+            add_regulars()
             send_skate_dates_email()

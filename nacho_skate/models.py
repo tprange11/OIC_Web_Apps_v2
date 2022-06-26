@@ -41,3 +41,10 @@ class NachoSkateSession(models.Model):
         unique_together = ['skater', 'skate_date']
         # Default ordering date descending
         ordering = ['-skate_date']
+
+
+class NachoSkateRegular(models.Model):
+    '''Model that stores skaters who are automatically registered for skates.\n
+    They must maintain a credit balance.'''
+
+    regular = models.ForeignKey(User, on_delete=models.CASCADE)
