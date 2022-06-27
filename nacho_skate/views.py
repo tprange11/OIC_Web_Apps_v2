@@ -3,6 +3,7 @@ from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import Group
+from django.contrib.auth import get_user_model
 from django.contrib import messages
 from django.db import IntegrityError
 from django.core.exceptions import ObjectDoesNotExist
@@ -14,6 +15,8 @@ from programs.models import Program
 from cart.models import Cart
 
 from datetime import date
+
+User = get_user_model()
 
 # Create your views here.
 
@@ -47,7 +50,7 @@ class NachoSkateDateListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         queryset = super().get_queryset()
         queryset = queryset.filter(skate_date__gte=date.today()).values('pk', 'skate_date', 'start_time', 'end_time')
-        skater_sessions = self.session_model.objects.filter(skater=self.request.user).values_list('skate_date','pk', 'paid')
+        skater_sessions = self.session_model.objects.filter(skater=self.request.user).values_list('skate_date','pk', 'paid', 'goalie')
         # If user is already signed up for the skate, add key value pair to disable button
         for item in queryset:
             item['registered_skaters'] = self.model.registered_skaters(skate_date=item['pk'])
@@ -57,11 +60,13 @@ class NachoSkateDateListView(LoginRequiredMixin, ListView):
                     item['disabled'] = True
                     item['session_pk'] = session[1]
                     item['paid'] = session[2]
+                    item['goalie'] = session[3]
                     break
                 elif item['pk'] == session[0] and session[2] == False:
                     item['disabled'] = True
                     item['session_pk'] = session[1]
                     item['paid'] = session[2]
+                    item['goalie'] = session[3]
                     break
                 else:
                     item['disabled'] = False
@@ -83,7 +88,7 @@ class NachoSkateDateListView(LoginRequiredMixin, ListView):
             # If a profile already exists, do nothing
             profile = self.profile_model.objects.get(user=self.request.user)
         except ObjectDoesNotExist:
-            # If no profile exists, create one and set nacho_skate_email to True
+            # If no profile exists, create one and set nacho_skate_email to False
             profile = self.profile_model(user=self.request.user, nacho_skate_email=False, slug=self.request.user.id)
             profile.save()
 
@@ -183,18 +188,31 @@ class DeleteNachoSkateSessionView(LoginRequiredMixin, DeleteView):
     '''Allows user to remove themself from a skate session'''
     model = NachoSkateSession
     skate_date_model = NachoSkateDate
+    credit_model = UserCredit
     success_url = reverse_lazy('nacho_skate:index')
 
     def delete(self, *args, **kwargs):
         '''Things that need doing once a session is removed.'''
 
-        # Clear session from the cart
-        skate_date = self.model.objects.filter(id=kwargs['pk']).values_list('skate_date', flat=True)
-        cart_date = self.skate_date_model.objects.filter(id=skate_date[0])
-        # print(cart_date[0])
-        cart_item = Cart.objects.filter(item=Program.objects.all().get(id=15).program_name, event_date=cart_date[0].skate_date)
-        cart_item.delete()
+        user = User.objects.get(pk=kwargs['skater_pk'])
+
+        if kwargs['paid'] == 'True':
+            # If the session is paid for, issue credit to the user
+            price = Program.objects.get(id=15).skater_price
+            user_credit = self.credit_model.objects.get(slug=user)
+            old_balance = user_credit.balance
+            user_credit.balance += price
+            user_credit.paid = True
+            success_msg = f'{user.get_full_name()} has been removed from the session. The Users credit balance has been increased from ${old_balance} to ${user_credit.balance}.'
+            user_credit.save()
+        else:
+            # Clear session from the cart, user hasn't paid yet
+            skate_date = self.model.objects.filter(id=kwargs['pk']).values_list('skate_date', flat=True)
+            cart_date = self.skate_date_model.objects.filter(id=skate_date[0])
+            cart_item = Cart.objects.filter(item=Program.objects.all().get(id=15).program_name, event_date=cart_date[0].skate_date)
+            cart_item.delete()
+            success_msg = 'You have been removed from that skate session!'
 
         # Set success message and return
-        messages.add_message(self.request, messages.SUCCESS, 'You have been removed from that skate session!')
+        messages.add_message(self.request, messages.SUCCESS, success_msg)
         return super().delete(*args, **kwargs)
