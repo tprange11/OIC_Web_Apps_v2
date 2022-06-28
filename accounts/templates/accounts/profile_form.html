@@ -107,5 +107,8 @@
     {% if not in_group_nacho_skate %}
     document.querySelector('#id_nacho_skate_email').parentNode.parentNode.style.display = 'none';
     {% endif %}
+    {% if not in_group_open_roller_hockey %}
+    document.querySelector('#id_open_roller_email').parentNode.parentNode.style.display = 'none';
+    {% endif %}
 </script>
 {% endblock content %}

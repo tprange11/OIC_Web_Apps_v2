@@ -23,7 +23,7 @@ from bald_eagles.models import BaldEaglesSession
 from lady_hawks.models import LadyHawksSkateSession
 # from chs_alumni.models import CHSAlumniSession
 from private_skates.models import PrivateSkateSession, PrivateSkate
-# from open_roller.models import OpenRollerSkateSession
+from open_roller.models import OpenRollerSkateSession
 from owhl.models import OWHLSkateSession
 from kranich.models import KranichSkateSession
 from nacho_skate.models import NachoSkateSession
@@ -48,9 +48,7 @@ class PaymentView(LoginRequiredMixin, TemplateView):
         context['app_id'] = os.getenv("SQUARE_APP_ID") # uncomment in production and development
         context['loc_id'] = os.getenv("SQUARE_LOCATION_ID") # uncomment in production and development
         access_token = os.getenv('SQUARE_API_ACCESS_TOKEN') # uncomment in production and development
-        # context['app_id'] = 'sandbox-sq0idb-Rbc4KuE-WwQ2C3nT0RodQA' # uncomment on local machine
-        # context['loc_id'] = 'BSPYH5AEJGW8C' # uncomment on local machine
-        # access_token = 'EAAAEEfoRSmtj9WaKOOwhm4fcit-hzrtJ9SdYnsUS9WIs9UrV2ljbe9Ryj49pq7r' # uncomment on local machine
+
         client = Client(
             access_token=access_token,
             environment=os.getenv('SQUARE_API_ENVIRONMENT'), # Uncomment in production and development
@@ -95,7 +93,7 @@ def process_payment(request, **kwargs):
     lady_hawks_sessions_model = LadyHawksSkateSession
     # chs_alumni_sessions_model = CHSAlumniSession
     private_skate_sessions_model = PrivateSkateSession
-    # open_roller_sessions_model = OpenRollerSkateSession
+    open_roller_sessions_model = OpenRollerSkateSession
     owhl_sessions_model = OWHLSkateSession
     kranich_sessions_model = KranichSkateSession
     nacho_skate_sessions_model = NachoSkateSession
@@ -110,7 +108,6 @@ def process_payment(request, **kwargs):
         token = request.POST['payment-token']
         # print(f"Token: {token}")
         access_token = os.getenv('SQUARE_API_ACCESS_TOKEN') # uncomment in production and development
-        # access_token = 'EAAAEEfoRSmtj9WaKOOwhm4fcit-hzrtJ9SdYnsUS9WIs9UrV2ljbe9Ryj49pq7r' # uncomment on local machine
         cart_items = cart_model.objects.filter(customer=request.user).values_list('item', 'amount')
         total = 0
         programs = program_model.objects.all().values_list('program_name', flat=True)
@@ -184,7 +181,7 @@ def process_payment(request, **kwargs):
                 bald_eagles_sessions_model.objects.filter(skater=request.user, paid=False).update(paid=True)
                 lady_hawks_sessions_model.objects.filter(user=request.user, paid=False).update(paid=True)
                 # chs_alumni_sessions_model.objects.filter(skater=request.user).update(paid=True)
-                # open_roller_sessions_model.objects.filter(user=request.user).update(paid=True)
+                open_roller_sessions_model.objects.filter(user=request.user).update(paid=True)
                 private_skate_sessions_model.objects.filter(user=request.user, paid=False).update(paid=True)
                 owhl_sessions_model.objects.filter(skater=request.user, paid=False).update(paid=True)
                 kranich_sessions_model.objects.filter(skater=request.user, paid=False).update(paid=True)

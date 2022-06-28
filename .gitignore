@@ -12,7 +12,6 @@ schedule/scrape_schedule_original.py
 schedule/scrape_schedule_old.py
 schedule/request_schedule.py
 schedule/views_original.py
-open_roller/scrape_open_roller_dates.py
 static/reports/
 ##############################
 
