@@ -102,8 +102,8 @@ if __name__ == "__main__":
     send_email = False
     # print(f'From: {from_date} to {to_date}')
 
-    # Every Monday request two weeks of schedule data and parse for Adult Skills dates
-    if date.today().weekday() == 0:
+    # Every Thursday request two weeks of schedule data and parse for Adult Skills dates
+    if date.today().weekday() == 3:
         get_schedule_data(from_date, to_date)
 
     if len(skate_dates) != 0:
