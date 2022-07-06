@@ -127,7 +127,11 @@
                 {% if date.available_spots <= date.num_skaters %}
                 <a href="{% url 'figure_skating:session-register' session=date.pk %}" class="btn btn-success btn-sm disabled">Session Full</a></li>
                     {% else %}
-                    <a href="{% url 'figure_skating:session-register' session=date.pk %}" class="btn btn-success btn-sm">Sign Up</a></li>
+                    <a href="{% url 'figure_skating:session-register' session=date.pk %}" class="btn btn-success btn-sm">Sign Up</a>
+                  {% if date.low_level %}
+                    <br /><small class="font-weight-bold">Low Level/LTS Practice</small>
+                  {% endif %}
+                </li>
                 {% endif %}
             {% empty %}
                 <li class="list-group-item">No upcoming figure skating sessions found!</li>

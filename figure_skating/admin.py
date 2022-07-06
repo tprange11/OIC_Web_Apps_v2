@@ -9,7 +9,7 @@ class FigureSkaterAdmin(admin.ModelAdmin):
 
 class FigureSkatingDateAdmin(admin.ModelAdmin):
     search_fields = ['skate_date']
-    list_display = ['skate_date', 'start_time', 'end_time', 'available_spots', 'up_down_charge']
+    list_display = ['skate_date', 'start_time', 'end_time', 'available_spots', 'up_down_charge', 'low_level']
 
 
 class FigureSkatingSessionAdmin(admin.ModelAdmin):
