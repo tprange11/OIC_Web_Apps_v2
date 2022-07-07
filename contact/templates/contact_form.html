@@ -1,5 +1,13 @@
 {% extends 'base.html' %}{% load bootstrap4 static %}
-{% block title %}<title>Send Message to OICWebApps.com Support</title>{% endblock title %}
+{% block title %}
+<title>Send Message to OICWebApps.com Support</title>
+<script type="text/javascript">
+    const disableBtn = () => {
+        document.getElementById("submit").disabled = true;
+    }
+</script>
+
+{% endblock title %}
 {% block content %}
 <h5>Send Email Message OICWebApps.com Support</h5>
 {% for message in messages %}
@@ -16,10 +24,10 @@
 {% endif %}
 {% empty %}
 {% endfor %}
-<form method="POST">
+<form method="POST" onsubmit="disableBtn()">
     {% csrf_token %}
     {% bootstrap_form form %}
-    <p><input type="submit" value="Send Message" class="btn btn-secondary btn-sm"></p>
+    <p><input type="submit" id="submit" value="Send Message" class="btn btn-secondary btn-sm"></p>
 </form>
 {% endblock content %}
     
