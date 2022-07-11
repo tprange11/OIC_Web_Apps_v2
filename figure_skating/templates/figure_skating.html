@@ -24,9 +24,11 @@
     <button type="button" class="btn btn-warning" data-toggle="modal" data-target="#myskaters">
         My Skaters</button>
     <a class="btn btn-success" href="{% url 'figure_skating:add-skater' %}">Add Skater</a></li>
-    <li class="list-group-item"><!-- Button trigger mysessions modal -->
+    <li class="list-group-item d-flex justify-content-between"><!-- Button trigger mysessions modal -->
         <button type="button" class="btn btn-warning" data-toggle="modal" data-target="#mysessions">
-        My Sessions</button></li>
+        My Sessions</button>
+        <a class="btn btn-success" href="{% url 'figure_skating:past-sessions' %}">My Past Sessions</a>
+    </li>
     <li class="list-group-item"><!-- Button trigger upcomingsessions modal -->
         <button type="button" class="btn btn-warning" data-toggle="modal" data-target="#upcomingsessions">
         Upcoming Figure Skating Sessions</button></li>

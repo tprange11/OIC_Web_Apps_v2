@@ -228,10 +228,24 @@ class DeleteFigureSkatingSessionView(LoginRequiredMixin, DeleteView):
         return super().delete(*args, **kwargs)
 
 
+class FigureSkatingPastSessionsListView(LoginRequiredMixin, ListView):
+    '''Displays past figure skating sessions.'''
+
+    model = FigureSkatingSession
+    context_object_name = 'past_sessions'
+    template_name = 'past_figure_skating_sessions_list.html'
+    paginate_by = 20
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        queryset = queryset.filter(guardian=self.request.user, session__skate_date__lt=date.today()).order_by('-session__skate_date')
+        return queryset
+
+
 #################### The following view is for staff only ##########################
 
 class FigureSkatingStaffListView(LoginRequiredMixin, ListView):
-    '''Displays page for staff that lists upcoming adult skills skate sessions.'''
+    '''Displays page for staff that lists upcoming figure skating sessions.'''
 
     model = FigureSkatingDate
     sessions_model = FigureSkatingSession
