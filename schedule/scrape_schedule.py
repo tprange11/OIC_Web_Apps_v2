@@ -155,11 +155,13 @@ def add_locker_rooms_to_schedule():
         "Kranich Kranich": "Kranich",
         "Cedarburg CHS": "Cedarburg",
         "Homestead HHS": "Homestead",
-        "Lakeshore Lightning LSL": "Lakeshore Lightning",
+        "LSL": "Lakeshore Lightning",
         "Kettle Moraine Figure Skating Club": "KM Figure Skating Club",
         "Womens Open Hockey Women Open": "Womens Open Hockey",
         "Stick&Puck": "Stick & Puck",
         "Public": "Public Skate",
+        "PC": "Playerz Choice",
+        "Nacho": "Nacho Skate",
     }
 
     # Replace long customer name with short name
