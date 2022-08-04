@@ -155,7 +155,7 @@ class CreateStickAndPuckSession(LoginRequiredMixin, CreateView):
             self.object.paid = True
             user_credit.balance -= cost
             if user_credit.balance == 0:
-                user_credit.paid == False
+                user_credit.paid = False
             user_credit.save()
             credit_used = True
         else:
@@ -185,7 +185,7 @@ class CreateStickAndPuckSession(LoginRequiredMixin, CreateView):
             return
         # If no profile exists, add one and set stick_and_puck_email to True
         except ObjectDoesNotExist:
-            profile = self.profile_model(user=self.request.user, slug=self.request.user.id, stick_and_puck_email=True)
+            profile = self.profile_model(user=self.request.user, slug=self.request.user.id, stick_and_puck_email=False)
             profile.save()
             return
 

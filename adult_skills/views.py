@@ -140,16 +140,14 @@ class CreateAdultSkillsSkateSessionView(LoginRequiredMixin, CreateView):
                 price = goalie_cost
             else:
                 price = skater_cost
-            
-            # If the user credit balance is 0, set paid = False
-            if user_credit.balance == 0:
-                # User is paying with credit card, add item to cart
-                user_credit.paid = False
 
             # If the user has enough credits, deduct credits and set session as paid
             if user_credit.balance >= price:
                 self.object.paid = True
                 user_credit.balance -= price
+                # If the user credit balance is 0, set paid = False
+                if user_credit.balance == 0:
+                    user_credit.paid = False
                 credit_used = True
             # If the user doesn't have enough credits
             else:
