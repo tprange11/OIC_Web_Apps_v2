@@ -127,6 +127,8 @@ class RemoveItemFromCartView(LoginRequiredMixin, DeleteView):
             self.yeti_skate_model.objects.filter(skater=request.user, skate_date=skate_date[0]).delete()
         elif cart_item.item == Program.objects.all().get(id=3).program_name: #'Figure Skating':
             skater_name = cart_item.skater_name.split(' ')
+            if len(skater_name) == 3:
+                skater_name = [' '.join([skater_name[0], skater_name[1]]), skater_name[2]]
             skater_id = self.fs_skater_model.objects.filter(guardian=request.user, first_name=skater_name[0], last_name=skater_name[1])
             skate_date_id = self.fs_date_model.objects.filter(skate_date=cart_item.event_date, start_time=cart_item.event_start_time)
             self.fs_model.objects.filter(skater=skater_id[0], session=skate_date_id[0].id).delete()
