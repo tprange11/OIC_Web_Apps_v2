@@ -41,3 +41,9 @@ class YetiSkateSession(models.Model):
         unique_together = ['skater', 'skate_date']
         # Default ordering date descending
         ordering = ['-skate_date']
+
+
+class YetiSkateNewSkater(models.Model):
+    '''Model that stores new skaters to limit their ability to register for skates.'''
+
+    skater = models.ForeignKey(User, on_delete=models.CASCADE)

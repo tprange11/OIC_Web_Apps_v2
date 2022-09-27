@@ -30,25 +30,6 @@
 {% include 'accounts/user_credits_include.html' %}
 {% include 'accounts/user_credits_modal_include.html' %}
 {% include 'brian_gone_modal.html' %}
-<!-- <div class="row mb-4 d-flex align-content-center">
-    <div class="col-lg-3 col-md-6 col-12 pr-md-0 pr-3 pl-3 mb-0 d-flex" style="height: 50px;">
-        <div class="bg-primary d-flex flex-fill align-content-center">
-            <a href="{% url 'group_message:group-message' group=7 %}" class="text-white m-auto">Send Group Message</a>
-        </div>
-    </div>
-    <div class="col-lg-3 col-md-6 col-12 px-md-0 pr-lg-0 pr-md-3 px-3 mb-0 p-0 d-flex" style="height: 50px;">
-        <div class="bg-secondary d-flex flex-fill align-content-center">
-            <a href="{% url 'message_boards:board-topics' slug='yeti-skate' %}" class="text-white m-auto">Start a
-                Conversation</a>
-        </div>
-    </div>
-    <div class="col-lg-6 col-12 px-3 pl-md-3 pl-lg-0 mb-0 d-flex" style="height: 50px;">
-        <div class="bg-success d-flex flex-fill text-center">
-            <a href="{% url 'message_boards:topic-post-list' slug=latest_topic.board.slug pk=latest_topic.pk %}"
-                class="text-white m-auto">Latest Topic: {{latest_topic.subject}}</a>
-        </div>
-    </div>
-</div> -->
 <ul class="list-group mb-3 d-inline-block">
     {% for date in skate_dates %}
     {% if date.disabled %}
@@ -56,9 +37,14 @@
             class="btn btn-warning btn-sm mb-2 mb-sm-0 disabled">
             {{ date.skate_date }} {{date.start_time}} to {{date.end_time}}</a>
         {% else %}
-    <li class="list-group-item" style="padding: 5px 15px;"><a href="{% url 'yeti_skate:register' pk=date.pk %}"
-            class="btn btn-warning btn-sm mb-2 mb-sm-0">
-            {{ date.skate_date }} {{date.start_time}} to {{date.end_time}}</a>
+    <li class="list-group-item" style="padding: 5px 15px;">
+            {% if day_of_week != 3 and new_skater and date.skate_date.weekday == 4 %} 
+            {% comment %}Check for new skaters.{% endcomment %}
+                Check back on Thursday!
+            {% else %}
+            <a href="{% url 'yeti_skate:register' pk=date.pk %}" class="btn btn-warning btn-sm mb-2 mb-sm-0">
+                {{ date.skate_date }} {{date.start_time}} to {{date.end_time}}</a>
+            {% endif %}
         {% endif %}
         <button type="button" class="btn btn-primary btn-sm" data-toggle="modal"
             data-target="#skaterModalCenter{{forloop.counter}}">Skaters <span

@@ -5,15 +5,14 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import Group
 from django.contrib import messages
 from django.db import IntegrityError
-from django.db.models import Count
 from django.core.exceptions import ObjectDoesNotExist
 
-from .models import YetiSkateDate, YetiSkateSession
+from .models import YetiSkateDate, YetiSkateSession, YetiSkateNewSkater
 from .forms import CreateYetiSkateSessionForm
 from accounts.models import Profile, UserCredit
 from programs.models import Program
 from cart.models import Cart
-from message_boards.models import Topic
+# from message_boards.models import Topic
 
 from datetime import date
 
@@ -24,7 +23,7 @@ class YetiSkateDateListView(LoginRequiredMixin, ListView):
 
     template_name = 'yeti_skate_dates.html'
     model = YetiSkateDate
-    topic_model = Topic
+    # topic_model = Topic
     session_model = YetiSkateSession
     credit_model = UserCredit
     group_model = Group
@@ -38,8 +37,19 @@ class YetiSkateDateListView(LoginRequiredMixin, ListView):
         # Get all skaters signed up for each session to display the list of skaters for each session
         skate_sessions = self.session_model.objects.filter(skate_date__skate_date__gte=date.today())
         context['skate_sessions'] = skate_sessions
-        latest_topic = Topic.objects.filter(board=2).order_by('-last_updated').first()
-        context['latest_topic'] = latest_topic
+        # latest_topic = Topic.objects.filter(board=2).order_by('-last_updated').first()
+        # context['latest_topic'] = latest_topic
+        
+        # new_skater check to hide Friday signup till Thursday
+        context['day_of_week'] = date.today().weekday() # 0-6
+        try:
+            YetiSkateNewSkater.objects.get(skater=self.request.user)
+        except ObjectDoesNotExist:
+            new_skater = False
+        else:
+            new_skater = True
+        context['new_skater'] = new_skater
+
         # Create a user credit object if one does not exist
         try:
             credit = self.credit_model.objects.get(user=self.request.user)
