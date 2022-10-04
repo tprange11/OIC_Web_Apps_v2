@@ -58,47 +58,11 @@ def add_skate_dates(sessions):
     # print(new_dates)
     return new_dates
 
-# def send_skate_dates_email():
-#     '''Sends email to Users letting them know when OWHL Hockey skate dates are added.'''
-#     recipients = Profile.objects.filter(open_roller_email=True).select_related('user')
-
-#     for recipient in recipients:
-#         if recipient.user.is_active:
-#             to_email = [recipient.user.email]
-#             from_email = 'no-reply@mg.oicwebapps.com'
-#             subject = 'New OWHL Hockey Skate Date Added'
-
-#             # Build the plain text message
-#             text_message = f'Hi {recipient.user.first_name},\n\n'
-#             text_message += f'New OWHL Hockey skate dates are now available online. Sign up at the url below.\n\n'
-#             text_message += f'https://www.oicwebapps.com/web_apps/open_roller/\n\n'
-#             text_message += f'If you no longer wish to receive these emails, log in to your account,\n'
-#             text_message += f'click on your username and change the email settings in your profile.\n\n'
-#             text_message += f'Thank you for using OICWebApps.com!\n\n'
-
-#             # Build the html message
-#             html_message = render_to_string(
-#                 'open_roller_skate_dates_email.html',
-#                 {
-#                     'recipient_name': recipient.user.first_name,
-#                 }
-#             )
-
-#             # Send email to each recipient separately
-#             try:
-#                 mail = EmailMultiAlternatives(
-#                     subject, text_message, from_email, to_email
-#                 )
-#                 mail.attach_alternative(html_message, 'text/html')
-#                 mail.send()
-#             except:
-#                 return
-
 
 if __name__ == "__main__":
 
-    from_date = "06/17/2022"
-    to_date = "08/26/2022"
+    from_date = "10/04/2022"
+    to_date = "02/03/2023"
     
     get_schedule_data(from_date, to_date)
     # print(skate_dates)
