@@ -102,7 +102,8 @@ def send_skate_dates_email():
 if __name__ == "__main__":
 
     from_date = (date.today() + timedelta(days=7)).strftime("%m/%d/%Y")
-    to_date = from_date
+    to_date = (date.today() + timedelta(days=28)).strftime("%m/%d/%Y")
+    # to_date = from_date
     send_email = False
 
     # Every Sunday request the next week for Sunday Womens Hockey
