@@ -155,7 +155,7 @@ def add_locker_rooms_to_schedule():
         "Kranich Kranich": "Kranich",
         "Cedarburg CHS": "Cedarburg",
         "Homestead HHS": "Homestead",
-        "LSL": "Lakeshore Lightning",
+        "Lakeshore Lightning LSL": "Lakeshore Lightning",
         "Kettle Moraine Figure Skating Club": "KM Figure Skating Club",
         "Womens Open Hockey Women Open": "Womens Open Hockey",
         "Stick&Puck": "Stick & Puck",
@@ -197,6 +197,11 @@ def add_locker_rooms_to_schedule():
                 if 'Concordia ACHA' in customer:
                     oic_schedule[x].append(south_locker_rooms[2]) # Concordia ACHA Locker Room ##### Dono said only locker room 7
                     oic_schedule[x].append("") # Visiting team doesn't need a locker room
+                elif 'Lakeshore Lightning' in customer:
+                    oic_schedule[x].append('9')
+                    oic_schedule[x].append(south_locker_rooms[0][0])
+                    if south_lr_flag == 1:
+                        south_lr_flag = 0
                 else:
                     oic_schedule[x].append("") # Home Team does not need a locker room assigned
                     oic_schedule[x].append(south_locker_rooms[south_lr_flag][0])
@@ -205,9 +210,11 @@ def add_locker_rooms_to_schedule():
                     oic_schedule[x].append(south_locker_rooms[2]) # Concordia ACHA Locker Room
                     oic_schedule[x].append("")
                     # oic_schedule[x].append(south_locker_rooms[south_lr_flag][0])
-                # elif 'Yeti' in customer:
-                #     oic_schedule[x].append('Jaden 8')
-                #     oic_schedule[x].append('5 & 6')
+                elif 'Lakeshore Lightning' in customer:
+                    oic_schedule[x].append('9')
+                    oic_schedule[x].append('')
+                    if south_lr_flag == 1:
+                        south_lr_flag = 0
                 elif customer in need_game_locker_rooms:
                     oic_schedule[x].append('')
                     oic_schedule[x].append('')
