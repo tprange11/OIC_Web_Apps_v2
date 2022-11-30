@@ -14,8 +14,11 @@ django.setup()
 from django.db import IntegrityError
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
-from kranich.models import KranichSkateDate
+from django.contrib.auth import get_user_model
+from kranich.models import KranichSkateDate, KranichSkateSession
 from accounts.models import Profile
+
+User = get_user_model()
 
 skate_dates = []
 
@@ -56,6 +59,18 @@ def add_skate_dates(sessions):
             continue
     # print(new_dates)
     return new_dates
+
+def add_john_to_skate():
+    '''Adds John Kranich to skate.'''
+    skate_dates = KranichSkateDate.objects.filter(skate_date__gt=date.today())
+    user = User.objects.get(pk=870)
+    print(user)
+
+    for skate_date in skate_dates:
+        try:
+            KranichSkateSession(skater=user, skate_date=skate_date, paid=True).save()
+        except IntegrityError:
+            pass
 
 def send_skate_dates_email():
     '''Sends email to Users letting them know when Kranich Skate dates are added.'''
@@ -108,4 +123,5 @@ if __name__ == "__main__":
         send_email = add_skate_dates(skate_dates)
 
     if send_email:
+        add_john_to_skate()
         send_skate_dates_email()
