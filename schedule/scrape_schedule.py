@@ -35,7 +35,7 @@ def get_schedule_data(from_date, to_date):
     try:
         response = requests.get(url)
         data = json.loads(response.text)
-        process_data(data, from_date)
+        # process_data(data, from_date)
         return data
     except requests.exceptions.RequestException as e:
         # print(e)
@@ -168,7 +168,7 @@ def add_locker_rooms_to_schedule():
     for item in oic_schedule:
         if item[4] in short_name:
             item[4] = short_name[item[4]]
-        if item[4].count("Mite") > 2:
+        if item[4].count("Mite") >= 2:
             item[4] =  "Mites"
 
     for (_, _, _, rink, customer, event_type) in oic_schedule:
@@ -281,6 +281,7 @@ if __name__ == "__main__":
     # If it's not Saturday or Sunday, scrape oic schedule
     if date.weekday(date.today()) not in [5, 6]:
         data = get_schedule_data(from_date, to_date)
+        process_data(data, from_date)
 
         if date.weekday(date.today()) == 4:
             try:
