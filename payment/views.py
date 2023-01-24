@@ -4,6 +4,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.mail import send_mail
 import uuid, os
 from datetime import date
 from square.client import Client
@@ -166,6 +167,15 @@ def process_payment(request, **kwargs):
             note = res['note']
             payment_record = model(payer=payer, square_id=square_id, square_receipt=square_receipt, amount=amount, note=note)
             payment_record.save()
+
+            if "User Credits" in note:
+                send_mail(
+                    "User Credits Purchased",
+                    f"{payer.get_full_name()} has purchased credits.",
+                    "no-reply@mg.oicwebapps.com",
+                    ['brianc@wi.rr.com'],
+                    fail_silently=True
+                )
 
             # Update model(s) to mark items as paid.
             try:
