@@ -171,7 +171,7 @@ def process_payment(request, **kwargs):
             if "User Credits" in note:
                 send_mail(
                     "User Credits Purchased",
-                    f"{payer.get_full_name()} has purchased credits.",
+                    f"{payer.get_full_name()} has purchased credits.  {note}",
                     "no-reply@mg.oicwebapps.com",
                     ['brianc@wi.rr.com'],
                     fail_silently=True
