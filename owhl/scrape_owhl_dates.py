@@ -61,8 +61,8 @@ def add_skate_dates(sessions):
 
 if __name__ == "__main__":
 
-    from_date = "10/04/2022"
-    to_date = "02/03/2023"
+    from_date = "02/16/2023"
+    to_date = "03/15/2023"
     
     get_schedule_data(from_date, to_date)
     # print(skate_dates)
