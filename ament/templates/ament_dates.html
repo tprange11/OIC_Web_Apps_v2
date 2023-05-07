@@ -77,7 +77,7 @@
                             <div>
                                 {{skater.skater.first_name}} {{skater.skater.last_name}}
                                 {% if skater.goalie %}<b>(G)</b>{% endif %}
-                                {% if user.is_superuser %}
+                                {% if user.is_superuser or user.id == 21 %}
                                 {% if skater.paid %}<b>(Paid)</b>{% else %}<b>(Not Paid)</b>{% endif %}
                             </div>
                             <div>
