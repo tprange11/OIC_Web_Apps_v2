@@ -168,14 +168,6 @@ def process_payment(request, **kwargs):
             payment_record = model(payer=payer, square_id=square_id, square_receipt=square_receipt, amount=amount, note=note)
             payment_record.save()
 
-            if "User Credits" in note:
-                send_mail(
-                    "User Credits Purchased",
-                    f"{payer.get_full_name()} has purchased credits.  {note}",
-                    "no-reply@mg.oicwebapps.com",
-                    ['brianc@wi.rr.com'],
-                    fail_silently=True
-                )
 
             # Update model(s) to mark items as paid.
             try:
@@ -209,6 +201,16 @@ def process_payment(request, **kwargs):
                     user_credit.save() # Save user credit model
             except ObjectDoesNotExist:
                 pass
+
+            if "User Credits" in note:
+                new_user_credit = user_credit.balance
+                send_mail(
+                    "User Credits Purchased",
+                    f"{payer.get_full_name()} has purchased credits.  {note}\n\n Credit Balance: {new_user_credit}",
+                    "no-reply@mg.oicwebapps.com",
+                    ['brianc@wi.rr.com'],
+                    fail_silently=True
+                )
 
             # Clear items from the Cart Model if the payment was successful
             Cart.objects.filter(customer=request.user).delete()
