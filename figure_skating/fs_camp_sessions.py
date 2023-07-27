@@ -14,7 +14,7 @@ django.setup()
 from django.db import IntegrityError
 from figure_skating.models import FigureSkatingDate
 
-skate_dates = ['2022-08-03', '2202-08-04', '2022-08-05', '2022-08-06']
+skate_dates = ['2023-08-01', '2023-08-02', '2023-08-03', '2023-08-04', '2023-08-05']
 
 sessions = [
     ["8:00 AM", "9:00 AM", 5],
