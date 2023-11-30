@@ -91,14 +91,18 @@ def send_skate_dates_email():
 
 if __name__ == "__main__":
 
-    # the_date = date.today()
-    send_email = False
+    the_date = date.today()
 
-    get_schedule_data("12/01/2023", "12/25/2023")
+    # If it's the 28th of the month, get next months figure skating dates
+    if the_date.day == 28:
+        next_month_date = the_date + timedelta(days=5)
+        send_email = False
 
-    if len(skate_dates) != 0:
-        # send_email = add_skate_dates(skate_dates)
-        add_skate_dates(skate_dates)
+        get_schedule_data(f"{next_month_date.month}/01/{next_month_date.year}", f"{next_month_date.month}/25/{next_month_date.year}")
+        
+        if len(skate_dates) != 0:
+            send_email = add_skate_dates(skate_dates)
+            add_skate_dates(skate_dates)
 
-    # if send_email:
-    #     send_skate_dates_email()
+        if send_email:
+            send_skate_dates_email()
