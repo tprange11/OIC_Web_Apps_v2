@@ -94,15 +94,14 @@ if __name__ == "__main__":
     the_date = date.today()
 
     # If it's the 28th of the month, get next months figure skating dates
-    if the_date.day == 28:
-        next_month_date = the_date + timedelta(days=5)
-        send_email = False
+    send_email = False
 
-        get_schedule_data(f"{next_month_date.month}/01/{next_month_date.year}", f"{next_month_date.month}/25/{next_month_date.year}")
+    # get_schedule_data(f"{next_month_date.month}/01/{next_month_date.year}", f"{next_month_date.month}/25/{next_month_date.year}")
+    get_schedule_data("01/01/2024", "01/25/2024")
         
-        if len(skate_dates) != 0:
-            send_email = add_skate_dates(skate_dates)
-            add_skate_dates(skate_dates)
+    if len(skate_dates) != 0:
+        send_email = add_skate_dates(skate_dates)
+        add_skate_dates(skate_dates)
 
-        if send_email:
-            send_skate_dates_email()
+    if send_email:
+        send_skate_dates_email()
