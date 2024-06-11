@@ -5,6 +5,16 @@
 <h5>Register for {{skate_info.date}} {{skate_info.start_time}} to
     {{skate_info.end_time}} {{skate_info.private_skate.name}} Skate
 </h5>
+<div class="alert alert-info" role="alert">
+    <div class="row">
+        <div class="col-lg-4 col-12 mb-lg-0 mb-2">
+            <a href="{% url 'accounts:profile' slug=user.id %}" class="btn btn-info btn-sm d-block text-nowrap">Manage skaters in your profile</a>
+        </div>
+        <div class="col-lg-8 col-12">
+            <span class="font-weight-bold small d-block text-center">You must first add yourself and/or your dependent skaters before registering for a skate session!</span>
+        </div>
+    </div>
+  </div>
 <form method="POST">
     {% csrf_token %}
     {% bootstrap_form form %}
