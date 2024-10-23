@@ -14,8 +14,11 @@ django.setup()
 from django.db import IntegrityError
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
-from yeti_skate.models import YetiSkateDate
+from django.contrib.auth import get_user_model
+from yeti_skate.models import YetiSkateDate, YetiSkateSession
 from accounts.models import Profile
+
+User = get_user_model()
 
 skate_dates = []
 
@@ -56,6 +59,18 @@ def add_skate_dates(sessions):
             continue
     # print(new_dates)
     return new_dates
+
+def add_nick_to_skate():
+    '''Adds Nick Antonie to skate.'''
+    skate_dates = YetiSkateDate.objects.filter(skate_date__gt=date.today())
+    user = User.objects.get(pk=359)
+    print(user)
+
+    for skate_date in skate_dates:
+        try:
+            YetiSkateSession(skater=user, skate_date=skate_date, paid=True).save()
+        except IntegrityError:
+            pass
 
 def send_skate_dates_email():
     '''Sends email to Users letting them know when Yeti Skate dates are added.'''
@@ -109,4 +124,5 @@ if __name__ == "__main__":
         send_email = add_skate_dates(skate_dates)
 
     if send_email:
+        add_nick_to_skate()
         send_skate_dates_email()

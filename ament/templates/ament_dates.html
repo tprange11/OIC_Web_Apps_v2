@@ -81,7 +81,7 @@
                                 {% if skater.paid %}<b>(Paid)</b>{% else %}<b>(Not Paid)</b>{% endif %}
                             </div>
                             <div>
-                                {% if not skater.goalie and skater.paid %}
+                                {% if skater.paid %}
                                 {% comment %}
                                     This form is for superusers to remove/refund people from the skate.
                                 {% endcomment %}

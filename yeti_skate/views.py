@@ -3,6 +3,7 @@ from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import Group
+from django.contrib.auth import get_user_model
 from django.contrib import messages
 from django.db import IntegrityError
 from django.core.exceptions import ObjectDoesNotExist
@@ -15,6 +16,8 @@ from cart.models import Cart
 # from message_boards.models import Topic
 
 from datetime import date
+
+User = get_user_model()
 
 # Create your views here.
 
@@ -212,19 +215,30 @@ class DeleteYetiSkateSessionView(LoginRequiredMixin, DeleteView):
     '''Allows user to remove themself from a skate session'''
     model = YetiSkateSession
     skate_date_model = YetiSkateDate
+    credit_model = UserCredit
     success_url = reverse_lazy('yeti_skate:yeti-skate')
 
     def delete(self, *args, **kwargs):
         '''Things that need doing once a session is removed.'''
 
-        # Clear session from the cart
-        skate_date = self.model.objects.filter(id=kwargs['pk']).values_list('skate_date', flat=True)
-        if len(skate_date) == 0:
-           return redirect('yeti_skate:yeti-skate')
+        user = User.objects.get(pk=kwargs['skater_pk'])
+
+        if kwargs['paid'] == 'True':
+            # If the session is paid for, issue credit to the user
+            price = Program.objects.get(id=7).skater_price
+            user_credit = self.credit_model.objects.get(slug=user)
+            old_balance = user_credit.balance
+            user_credit.balance += price
+            user_credit.paid = True
+            success_msg = f'{user.get_full_name()} has been removed from the session. The Users credit balance has been increased from ${old_balance} to ${user_credit.balance}.'
+            user_credit.save()
         else:
+            # Clear session from the cart
+            skate_date = self.model.objects.filter(id=kwargs['pk']).values_list('skate_date', flat=True)
             cart_date = self.skate_date_model.objects.filter(id=skate_date[0])
-            # print(cart_date[0])
             cart_item = Cart.objects.filter(item=Program.objects.all().get(id=7).program_name, event_date=cart_date[0].skate_date).delete()
+            cart_item.delete()
+            success_msg = 'You have been removed from that skate session!'
 
         # Set success message and return
         messages.add_message(self.request, messages.SUCCESS, 'You have been removed from that skate session!')

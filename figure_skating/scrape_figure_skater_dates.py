@@ -21,7 +21,7 @@ skate_dates = []
 
 def get_schedule_data(from_date, to_date):
     '''Request schedule data from Schedule Werks for the specified period.'''
-    
+
     url = f"https://ozaukeeicecenter.schedulewerks.com/public/ajax/swCalGet?tid=-1&from={from_date}&to={to_date}&Complex=-1"
     response = requests.get(url)
     data = json.loads(response.text)
@@ -97,8 +97,8 @@ if __name__ == "__main__":
     send_email = False
 
     # get_schedule_data(f"{next_month_date.month}/01/{next_month_date.year}", f"{next_month_date.month}/25/{next_month_date.year}")
-    get_schedule_data("09/04/2024", "09/30/2024")
-        
+    get_schedule_data("10/13/2024", "10/31/2024")
+
     if len(skate_dates) != 0:
         send_email = add_skate_dates(skate_dates)
         add_skate_dates(skate_dates)
