@@ -97,7 +97,7 @@ if __name__ == "__main__":
     send_email = False
 
     # get_schedule_data(f"{next_month_date.month}/01/{next_month_date.year}", f"{next_month_date.month}/25/{next_month_date.year}")
-    get_schedule_data("10/13/2024", "10/31/2024")
+    get_schedule_data("11/01/2024", "11/30/2024")
 
     if len(skate_dates) != 0:
         send_email = add_skate_dates(skate_dates)
