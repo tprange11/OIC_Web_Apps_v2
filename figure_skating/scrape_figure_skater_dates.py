@@ -1,8 +1,9 @@
 from datetime import date, timedelta
 import os, sys, json, requests
+from calendar import monthrange
 
 if os.name == 'nt':
-    sys.path.append("C:\\Users\\brian\\Documents\\Python\\OIC_Web_Apps\\")
+    sys.path.append("C:\\Users\\2990wx\\Documents\\workspaces\\OIC_Web_Apps_v2")
 else:
     # sys.path.append("/home/BrianC68/oicdev/OIC_Web_Apps/") # Uncomment in development
     sys.path.append("/home/OIC/OIC_Web_Apps/") # Uncomment in production
@@ -90,18 +91,25 @@ def send_skate_dates_email():
 
 
 if __name__ == "__main__":
+    from datetime import date
+    from calendar import monthrange
 
-    the_date = date.today()
+    today = date.today()
+    # Calculate the first day of next month
+    next_month = date(today.year + (today.month % 12 == 0), 
+                      (today.month % 12) + 1, 
+                      1)
+    
+    # Calculate the last day of next month
+    _, last_day = monthrange(next_month.year, next_month.month)
+    last_day_of_next_month = next_month.replace(day=last_day)
 
-    # If it's the 28th of the month, get next months figure skating dates
     send_email = False
 
-    # get_schedule_data(f"{next_month_date.month}/01/{next_month_date.year}", f"{next_month_date.month}/25/{next_month_date.year}")
-    get_schedule_data("11/01/2024", "11/30/2024")
+    get_schedule_data(next_month.strftime("%m/%d/%Y"), last_day_of_next_month.strftime("%m/%d/%Y"))
 
-    if len(skate_dates) != 0:
+    if skate_dates:
         send_email = add_skate_dates(skate_dates)
-        add_skate_dates(skate_dates)
 
     if send_email:
         send_skate_dates_email()
