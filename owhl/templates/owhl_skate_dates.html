@@ -43,7 +43,7 @@
         {% comment %}
             The following form is for the user to remove themselves prior to paying for the skate.
         {% endcomment %}
-        <form method="POST" action="{% url 'nacho_skate:session-remove' pk=date.session_pk paid=date.paid skater_pk=user.id %}">
+        <form method="POST" action="{% url 'owhl:session-remove' pk=date.session_pk paid=date.paid skater_pk=user.id %}">
             {% csrf_token %}
             <input type="hidden" name="pk" value="{{date.session_pk}}">
             <input type="submit" value="Remove Me From This Skate" class="btn btn-danger btn-sm mt-2">
