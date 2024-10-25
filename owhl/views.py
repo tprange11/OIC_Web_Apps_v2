@@ -54,7 +54,29 @@ class OWHLSkateDateListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         queryset = super().get_queryset()
         queryset = queryset.filter(skate_date__gte=date.today()).values('pk', 'skate_date', 'start_time', 'end_time').annotate(num_skaters=Count('session_skaters'))
-        # skater_sessions = self.session_model.objects.filter(user=self.request.user).values_list('skate_date','pk', 'paid')
+        skater_sessions = self.session_model.objects.filter(skater=self.request.user).values_list('skate_date','pk', 'paid', 'goalie')
+        # If user is already signed up for the skate, add key value pair to disable button
+        for item in queryset:
+            item['registered_skaters'] = self.model.registered_skaters(skate_date=item['pk'])
+            for session in skater_sessions:
+                # If the session date and skate date match and paid is True, add disabled = True to queryset
+                if item['pk'] == session[0] and session[2] == True:
+                    item['disabled'] = True
+                    item['session_pk'] = session[1]
+                    item['paid'] = session[2]
+                    item['goalie'] = session[3]
+                    break
+                elif item['pk'] == session[0] and session[2] == False:
+                    item['disabled'] = True
+                    item['session_pk'] = session[1]
+                    item['paid'] = session[2]
+                    item['goalie'] = session[3]
+                    break
+                else:
+                    item['disabled'] = False
+                    item['session_pk'] = None
+                    item['paid'] = False
+                    continue
         return queryset
 
 
@@ -102,11 +124,11 @@ class CreateOWHLSkateSessionView(LoginRequiredMixin, CreateView):
             # If goalie spots are full, do not save object
             if self.object.goalie == True and self.model.objects.filter(goalie=True, skate_date=self.object.skate_date).count() == Program.objects.get(pk=13).max_goalies:
                 messages.add_message(self.request, messages.ERROR, 'Sorry, goalie spots are full!')
-                return redirect('owhl:owhl')
+                return redirect('owhl:index')
             # If skater spots are full, do not save object
             elif self.object.goalie == False and self.model.objects.filter(goalie=False, skate_date=self.object.skate_date).count() == Program.objects.get(pk=13).max_skaters:
                 messages.add_message(self.request, messages.ERROR, 'Sorry, skater spots are full!')
-                return redirect('owhl:owhl')
+                return redirect('owhl:index')
 
             # If spots are not full do the following
             skater_cost = self.program_model.objects.get(program_name='OWHL Hockey').skater_price
