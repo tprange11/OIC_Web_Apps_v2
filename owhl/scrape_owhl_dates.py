@@ -14,8 +14,10 @@ django.setup()
 from django.db import IntegrityError
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
-from owhl.models import OWHLSkateDate
-from accounts.models import Profile
+from owhl.models import OWHLSkateDate, OWHLSkateSession
+from accounts.models import Profile, UserCredit
+from programs.models import Program
+
 
 skate_dates = []
 

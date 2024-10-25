@@ -48,11 +48,12 @@ class OWHLSkateDateListView(LoginRequiredMixin, ListView):
         except ObjectDoesNotExist:
             credit = self.credit_model.objects.create(user=self.request.user, slug=self.request.user.username)
         context['credit'] = credit
+
         return context
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        queryset = queryset.filter(skate_date__gte=date.today()).values('pk', 'skate_date', 'start_time', 'end_time').annotate(num_skaters=Count('session_skaters'))
+        queryset = queryset.filter(skate_date__gte=date.today()).values('pk', 'skate_date', 'start_time', 'end_time','goalie').annotate(num_skaters=Count('session_skaters'))
         # skater_sessions = self.session_model.objects.filter(user=self.request.user).values_list('skate_date','pk', 'paid')
         return queryset
 
