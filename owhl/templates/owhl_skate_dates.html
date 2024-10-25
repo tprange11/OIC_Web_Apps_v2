@@ -21,7 +21,7 @@
     {% endfor %}
     {% include 'accounts/user_credits_include.html' %}
     {% include 'accounts/user_credits_modal_include.html' %}
-    <ul class="list-group" style="display: inline-block; margin-bottom: 10px;">
+    <ul class="list-group mb-3 d-inline-block">
         {% for date in skate_dates %}
             {% if date.disabled %}
                 <li class="list-group-item" style="padding: 5px 15px;"><a href="{% url 'owhl:register' pk=date.pk %}" class="btn btn-warning btn-sm mb-2 mb-sm-0 disabled">
@@ -30,7 +30,23 @@
                 <li class="list-group-item" style="padding: 5px 15px;"><a href="{% url 'owhl:register' pk=date.pk %}" class="btn btn-warning btn-sm mb-2 mb-sm-0">
                 {{ date.skate_date }} {{date.start_time}} to {{date.end_time}}</a>
             {% endif %}
-            <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#skaterModalCenter{{forloop.counter}}">Registered Skaters  <span class="number-of-skaters">{{ date.num_skaters }}</span></button>
+            <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#skaterModalCenter{{forloop.counter}}">Registered Skaters  <span class="number-of-skaters">{{ date.num_skaters }}</span> Goalies <span
+                class="number-of-skaters">{{date.num_goalies}}</span></button>
+                {% if date.registered_skaters.num_skaters >= 10 %}
+        <span class="text-success text-nowrap" style="font-size: 1.2rem;"><i class="far fa-thumbs-up"></i></span>
+        {% else %}
+        <span class="text-danger text-nowrap" style="font-size: 1.2rem;"><i class="far fa-thumbs-down"></i></span>
+        {% endif %}
+        {% if date.session_pk != None and date.paid == False %}
+        {% comment %}
+            The following form is for the user to remove themselves prior to paying for the skate.
+        {% endcomment %}
+        <form method="POST" action="{% url 'nacho_skate:session-remove' pk=date.session_pk paid=date.paid skater_pk=user.id %}">
+            {% csrf_token %}
+            <input type="hidden" name="pk" value="{{date.session_pk}}">
+            <input type="submit" value="Remove Me From This Skate" class="btn btn-danger btn-sm mt-2">
+        </form>
+        {% endif %}
             </li>
             <div class="modal fade" id="skaterModalCenter{{forloop.counter}}" tabindex="-1" role="dialog" aria-labelledby="skaterModalCenterTitle" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered" role="document">
@@ -44,8 +60,13 @@
                     <div class="modal-body">
                         <ul class="list-group">
                             {% for skater in skate_sessions %}
-                            {% if skater.skate_date.pk == date.pk %}<li class="list-group-item">{{skater.skater.first_name}} {{skater.skater.last_name}} {{skater.user}}
+                            {% if skater.skate_date.pk == date.pk %}
+                            <li class="list-group-item d-inline-flex justify-content-between">
+                            <div>
+                                {{skater.skater.first_name}} {{skater.skater.last_name}} {{skater.user}}
                                 {% if skater.goalie %}<b>(Goalie)</b>{% endif %}
+                                {% if skater.paid %}<b>(Paid)</b>{% else %}<b>(Not Paid)</b>{% endif %}
+                            </div>
                             {% if skater.skate_date.pk == date.pk and skater.paid == False and user == skater.skater %}
                             <a href="{% url 'cart:shopping-cart' %}" class="btn btn-sm btn-primary">Pay Now</a>
                             <form method="POST" action="{% url 'owhl:session-remove' pk=skater.pk %}">
