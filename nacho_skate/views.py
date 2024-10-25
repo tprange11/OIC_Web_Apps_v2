@@ -168,7 +168,7 @@ class CreateNachoSkateSessionView(LoginRequiredMixin, CreateView):
         if cost == 0:
             messages.add_message(self.request, messages.INFO, 'You have successfully registered for the skate!')
         elif credit_used:
-            messages.add_message(self.request, messages.INFO, f'You have successfully registered for the skate! {cost} credits have been deducted from your balance.')
+            messages.add_message(self.request, messages.INFO, f'You have successfully registered for the skate! {cost} credits has been deducted from your balance.')
         else:
             messages.add_message(self.request, messages.ERROR, 'To complete your registration, you must view your cart and pay for your item(s)!')
         return super().form_valid(form)
