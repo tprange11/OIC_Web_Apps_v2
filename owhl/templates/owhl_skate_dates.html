@@ -64,19 +64,30 @@
                             {% for skater in skate_sessions %}
                             {% if skater.skate_date.pk == date.pk %}
                             <li class="list-group-item d-inline-flex justify-content-between">
-                            <div>
-                                {{skater.skater.first_name}} {{skater.skater.last_name}} {{skater.user}}
-                                {% if skater.goalie %}<b>(Goalie)</b>{% endif %}
-                                {% if skater.paid %}<b>(Paid)</b>{% else %}<b>(Not Paid)</b>{% endif %}
-                            </div>
-                            {% if skater.skate_date.pk == date.pk and skater.paid == False and user == skater.skater %}
+                                <div>
+                                  {{skater.skater.first_name}} {{skater.skater.last_name}}
+                                  {% if skater.goalie %}<b>(Goalie)</b>{% endif %}
+                                  {% if user.is_superuser %}
+                                  {% if skater.paid %}<b>(Paid)</b>{% else %}<b>(Not Paid)</b>{% endif %}
+                            
+                                 {% if skater.skate_date.pk == date.pk and skater.paid == False and user == skater.skater %}
                             <a href="{% url 'cart:shopping-cart' %}" class="btn btn-sm btn-primary">Pay Now</a>
-                            <form method="POST" action="{% url 'owhl:session-remove' pk=skater.pk %}">
-                                {% csrf_token %}
+                            {% endif %}
+                            </div>
+                            <div>
+                                {% if skater.paid == True %}
+                                {% comment %}
+                                This form is for superusers to remove/refund people from the skate.
+                                {% endcomment %}
+                                <form method="POST" action="{% url 'owhl:session-remove' pk=skater.pk paid=skater.paid skater_pk=skater.skater.pk %}">
+                                 {% csrf_token %}
                                 <input type="hidden" name="pk" value="{{date.session_pk}}">
-                                <input type="submit" value="Remove Skater" class="btn btn-danger btn-sm mt-2">
-                            </form>
-                            {% endif %}</li>
+                                    <input type="submit" value="Remove/Refund" class="btn btn-danger btn-sm">
+                                </form>
+                                {% endif %}
+                                {% endif %}{% comment %}{{ endif for superuser }}{% endcomment %}
+                            </div>
+                            </li>
                             {% endif %}{% endfor %}
                         </ul>
                     </div>
