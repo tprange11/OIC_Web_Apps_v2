@@ -6,11 +6,11 @@ from django.contrib.auth.models import Group
 from django.contrib.auth import get_user_model
 from django.contrib import messages
 from django.db import IntegrityError
-from django.db.models import Count
 from django.core.exceptions import ObjectDoesNotExist
 
-from . import models, forms
-from accounts.models import Profile,UserCredit
+from .models import OWHLSkateDate, OWHLSkateSession
+from .forms import CreateOWHLSkateSessionForm
+from accounts.models import Profile, UserCredit
 from programs.models import Program
 from cart.models import Cart
 
@@ -18,29 +18,23 @@ from datetime import date
 
 User = get_user_model()
 
+# Create your views here.
+
 class OWHLSkateDateListView(LoginRequiredMixin, ListView):
     '''Page that displays upcoming OWHL Hockey skates.'''
 
     template_name = 'owhl_skate_dates.html'
-    model = models.OWHLSkateDate
-    session_model = models.OWHLSkateSession
-    group_model = Group
+    model = OWHLSkateDate
+    session_model = OWHLSkateSession
     credit_model = UserCredit
+    group_model = Group
+    profile_model = Profile
     context_object_name = 'skate_dates'
-
-    def get(self, request, *args, **kwargs):
-        '''Adds user to OWHL Hockey group "behind the scenes", for communication purposes.'''
-        
-        try:
-            group = self.group_model.objects.get(name='OWHL Hockey')
-            self.request.user.groups.add(group)
-        except IntegrityError:
-            pass
-
-        return super().get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        # Join the OWHL Group
+        self.join_owhl_skate_group()
         # Get all skaters signed up for each session to display the list of skaters for each session
         skate_sessions = self.session_model.objects.filter(skate_date__skate_date__gte=date.today())
         context['skate_sessions'] = skate_sessions
@@ -55,7 +49,7 @@ class OWHLSkateDateListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        queryset = queryset.filter(skate_date__gte=date.today()).values('pk', 'skate_date', 'start_time', 'end_time').annotate(num_skaters=Count('session_skaters'))
+        queryset = queryset.filter(skate_date__gte=date.today()).values('pk', 'skate_date', 'start_time', 'end_time')
         skater_sessions = self.session_model.objects.filter(skater=self.request.user).values_list('skate_date','pk', 'paid', 'goalie')
         # If user is already signed up for the skate, add key value pair to disable button
         for item in queryset:
@@ -85,20 +79,15 @@ class OWHLSkateDateListView(LoginRequiredMixin, ListView):
 class CreateOWHLSkateSessionView(LoginRequiredMixin, CreateView):
     '''Page that displays form for user to register for skate sessions.'''
 
-    model = models.OWHLSkateSession
-    form_class = forms.CreateOWHLSkateSessionForm
-    group_model = Group
+    model = OWHLSkateSession
+    form_class = CreateOWHLSkateSessionForm
+    profile_model = Profile
     program_model = Program
-    session_model = models.OWHLSkateDate
+    session_model = OWHLSkateDate
     cart_model = Cart
     credit_model = UserCredit
     template_name = 'owhl_skate_sessions_form.html'
-    success_url = '/web_apps/owhl/'
-
-    # def get_form_kwargs(self):
-    #     kwargs = super().get_form_kwargs()
-    #     kwargs.update({'user': self.request.user})
-    #     return kwargs
+    success_url = reverse_lazy('owhl:owhl')
 
     def get_initial(self, *args, **kwargs):
         initial = super().get_initial()
@@ -111,7 +100,10 @@ class CreateOWHLSkateSessionView(LoginRequiredMixin, CreateView):
         context =  super().get_context_data(**kwargs)
         # Get skate date info to display on the template
         if self.request.method =='GET':
-            context['skate_info'] = self.session_model.objects.get(pk=self.kwargs['pk'])
+            try:
+                context['skate_info'] = self.session_model.objects.get(pk=self.kwargs['pk'])
+            except ObjectDoesNotExist:
+                context['error'] = {'error': True}
         return context
 
     def form_valid(self, form):
@@ -122,70 +114,62 @@ class CreateOWHLSkateSessionView(LoginRequiredMixin, CreateView):
 
         self.object = form.save(commit=False)
 
+        # Get the program skater/goalie cost
+        if self.object.goalie == True:
+            cost = self.program_model.objects.get(id=13).goalie_price
+        else:
+            cost = self.program_model.objects.get(id=13).skater_price
+        # print(f'Cost: {cost}')
         try:
             # If goalie spots are full, do not save object
             if self.object.goalie == True and self.model.objects.filter(goalie=True, skate_date=self.object.skate_date).count() == Program.objects.get(pk=13).max_goalies:
                 messages.add_message(self.request, messages.ERROR, 'Sorry, goalie spots are full!')
-                return redirect('owhl:index')
+                return redirect('owhl:owhl')
             # If skater spots are full, do not save object
             elif self.object.goalie == False and self.model.objects.filter(goalie=False, skate_date=self.object.skate_date).count() == Program.objects.get(pk=13).max_skaters:
                 messages.add_message(self.request, messages.ERROR, 'Sorry, skater spots are full!')
-                return redirect('owhl:index')
-
+                return redirect('owhl:owhl')
             # If spots are not full do the following
-            skater_cost = self.program_model.objects.get(program_name='OWHL Hockey').skater_price
-            goalie_cost = self.program_model.objects.get(program_name='OWHL Hockey').goalie_price
-
-            # Set the appropriate price
-            if self.object.goalie:
-                price = goalie_cost
-            else:
-                price = skater_cost
-
-            if user_credit.balance == 0:
-                # If user credit has been depleted, make sure user credit paid is set to False
-                user_credit.paid = False
-                
-            # If the user has enough credits, deduct credits and set session as paid
-            if user_credit.balance >= price:
+            
+            if cost == 0: # Employees skate for free
                 self.object.paid = True
-                user_credit.balance -= price
-                credit_used = True
-            # If the user doesn't have enough credits
+            elif user_credit.balance >= cost and user_credit.paid:
+                self.object.paid = True
+                user_credit.balance -= cost
+                # Check to see if there's a $0 balance, if so, set paid to false
+                if user_credit.balance == 0:
+                    user_credit.paid = False
+                user_credit.save()
+                credit_used = True # Used to set the message
             else:
-                if price == 0:
-                    self.object.paid = True
-                else:
-                    self.add_to_cart(price)
-
-            # Save the user credit model
-            user_credit.save()
+                credit_used = self.add_to_cart(cost)
             self.object.save()
         except IntegrityError:
             pass
         # If all goes well set success message and return
-        if price == 0:
+        if cost == 0:
             messages.add_message(self.request, messages.INFO, 'You have successfully registered for the skate!')
         elif credit_used:
-            messages.add_message(self.request, messages.INFO, f'You have successfully registered for the skate!  ${price} in credit has been deducted from your balance.')
+            messages.add_message(self.request, messages.INFO, f'You have successfully registered for the skate! {cost} credits has been deducted from your balance.')
         else:
-            messages.add_message(self.request, messages.INFO, 'To complete your registration, you must view your cart and pay for your item(s)!')
+            messages.add_message(self.request, messages.ERROR, 'To complete your registration, you must view your cart and pay for your item(s)!')
         return super().form_valid(form)
 
-    def add_to_cart(self, price):
+    def add_to_cart(self, cost):
         '''Adds OWHL Hockey session to shopping cart.'''
-
+        price = cost
+        item_name = self.program_model.objects.get(id=15).program_name
         start_time = self.session_model.objects.filter(skate_date=self.object.skate_date.skate_date).values_list('start_time', flat=True)
-        cart = self.cart_model(customer=self.request.user, item='OWHL Hockey', skater_name=self.object.skater, 
-            event_date=self.object.skate_date.skate_date, event_start_time=start_time[0], amount=price)
+        cart = self.cart_model(customer=self.request.user, item=item_name, skater_name=self.request.user.get_full_name(), 
+        event_date = self.object.skate_date.skate_date, event_start_time=start_time[0], amount=price)
         cart.save()
         return False
 
 
 class DeleteOWHLSkateSessionView(LoginRequiredMixin, DeleteView):
     '''Allows user to remove skaters from a skate session'''
-    model = models.OWHLSkateSession
-    skate_date_model = models.OWHLSkateDate
+    model = OWHLSkateSession
+    skate_date_model = OWHLSkateDate
     credit_model = UserCredit
     success_url = reverse_lazy('owhl:owhl')
 
@@ -204,18 +188,15 @@ class DeleteOWHLSkateSessionView(LoginRequiredMixin, DeleteView):
             success_msg = f'{user.get_full_name()} has been removed from the session. The Users credit balance has been increased from ${old_balance} to ${user_credit.balance}.'
             user_credit.save()
         else:
-        # Clear session from the cart
+        # Clear session from the cart, user hasn't paid yet
         skate_date = self.model.objects.filter(id=kwargs['pk']).values_list('skate_date', flat=True)
-        # skater_id = self.model.objects.filter(id=kwargs['pk']).values_list('skater', flat=True)
-        # skater = ChildSkater.objects.get(id=skater_id[0])
-        # print(skater_id[0])
-        # print(skater)
         cart_date = self.skate_date_model.objects.filter(id=skate_date[0])
-        cart_item = Cart.objects.filter(item=Program.objects.all().get(program_name='OWHL Hockey'), event_date=cart_date[0].skate_date)
+        cart_item = Cart.objects.filter(item=Program.objects.all().get(id='13'), event_date=cart_date[0].skate_date)
         cart_item.delete()
+        success_msg = 'You have been removed from that skate session!'
 
         # Set success message and return
-        messages.add_message(self.request, messages.SUCCESS, 'Skater has been removed from that skate session!')
+        messages.add_message(self.request, messages.SUCCESS, success_msg)
         return super().delete(*args, **kwargs)
 
 ################ The following views are for staff only ##########################################################
@@ -223,8 +204,8 @@ class DeleteOWHLSkateSessionView(LoginRequiredMixin, DeleteView):
 class OWHLSkateDateStaffListView(LoginRequiredMixin, ListView):
     '''Displays page with list of upcoming OWHL Hockey skates with buttons for viewing registered skaters.'''
 
-    model = models.OWHLSkateDate
-    sessions_model = models.OWHLSkateSession
+    model = OWHLSkateDate
+    sessions_model = OWHLSkateSession
     context_object_name = 'skate_dates'
     template_name = 'owhl_skate_sessions_list.html'
 
