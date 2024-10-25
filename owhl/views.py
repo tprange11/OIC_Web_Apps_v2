@@ -3,18 +3,20 @@ from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import Group
+from django.contrib.auth import get_user_model
 from django.contrib import messages
 from django.db import IntegrityError
 from django.db.models import Count
 from django.core.exceptions import ObjectDoesNotExist
 
 from . import models, forms
-from accounts.models import UserCredit
+from accounts.models import Profile,UserCredit
 from programs.models import Program
 from cart.models import Cart
 
 from datetime import date
 
+User = get_user_model()
 
 class OWHLSkateDateListView(LoginRequiredMixin, ListView):
     '''Page that displays upcoming OWHL Hockey skates.'''
@@ -184,11 +186,24 @@ class DeleteOWHLSkateSessionView(LoginRequiredMixin, DeleteView):
     '''Allows user to remove skaters from a skate session'''
     model = models.OWHLSkateSession
     skate_date_model = models.OWHLSkateDate
+    credit_model = UserCredit
     success_url = reverse_lazy('owhl:owhl')
 
     def delete(self, *args, **kwargs):
         '''Things that need doing once a session is removed.'''
 
+        user = User.objects.get(pk=kwargs['skater_pk'])
+
+        if kwargs['paid'] == 'True':
+            # If the session is paid for, issue credit to the user
+            price = Program.objects.get(id=13).skater_price
+            user_credit = self.credit_model.objects.get(slug=user)
+            old_balance = user_credit.balance
+            user_credit.balance += price
+            user_credit.paid = True
+            success_msg = f'{user.get_full_name()} has been removed from the session. The Users credit balance has been increased from ${old_balance} to ${user_credit.balance}.'
+            user_credit.save()
+        else:
         # Clear session from the cart
         skate_date = self.model.objects.filter(id=kwargs['pk']).values_list('skate_date', flat=True)
         # skater_id = self.model.objects.filter(id=kwargs['pk']).values_list('skater', flat=True)
