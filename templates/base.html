@@ -165,9 +165,9 @@
                                 <a class="dropdown-item" href="{% url 'open_roller:open-roller-sessions' %}">Roller Hockey</a>
                                 <a class="dropdown-item" href="{% url 'stickandpuck:print-list' %}">Stick &amp; Puck</a>
                                 <a class="dropdown-item" href="{% url 'womens_hockey:womens-hockey-sessions' %}">Women's Hockey</a>
-                                <a class="dropdown-item" href="{% url 'schedule:choose-rink' %}">Zam Schedule</a>
                                 <a class="dropdown-item" href="{% url 'yeti_skate:yeti-skate-sessions' %}">Yeti Skate</a>
                                 <a class="dropdown-item" href="https://schedule.oicwebapps.com">Facility Schedule</a>
+                                <a class="dropdown-item" href="{% url 'schedule:choose-rink' %}">Zam Schedule</a>
                                 <a class="dropdown-item" href="{% url 'how_to_videos:index' %}">How To Videos</a>
                                 {% if user.is_superuser %}
                                 <a class="dropdown-item" href="{% url 'reports' %}">Reports</a>
