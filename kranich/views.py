@@ -204,6 +204,12 @@ class DeleteKranichSkateSessionView(LoginRequiredMixin, DeleteView):
             user_credit.paid = True
             success_msg = f'{user.get_full_name()} has been removed from the session. The Users credit balance has been increased from ${old_balance} to ${user_credit.balance}.'
             user_credit.save()
+
+            # Send email to user about the credit
+            skate_date = self.model.objects.get(id=kwargs['pk']).skate_date.skate_date
+            subject = 'Credit Issued for Kranich Skate Session'
+            message = f'Dear {user.get_full_name()},\n\nYou have been removed from the Kranich Skate session on {skate_date}. Your credit balance has been increased from ${old_balance} to ${user_credit.balance}.\n\nThank you.'
+            user.email_user(subject, message, bcc='tprange@gmail.com,kranichj3@gmail.com,ozicecenter@gmail.com')
         else:
             # Clear session from the cart, user hasn't paid yet.
             skate_date = self.model.objects.filter(id=kwargs['pk']).values_list('skate_date', flat=True)
