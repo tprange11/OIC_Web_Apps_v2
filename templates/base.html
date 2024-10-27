@@ -92,9 +92,11 @@
                             {% if in_group_owhl_hockey %}
                             <a class="dropdown-item" href="{% url 'owhl:owhl' %}">OWHL</a>
                             {% endif %}
+                            <a class="dropdown-item" href="{% url 'private_skates:private-skates' %}">Private Skates</a>
                             {% if in_group_open_roller_hockey %}
                             <a class="dropdown-item" href="{% url 'open_roller:open-roller' %}">Roller Hockey</a>
                             {% endif %}
+                            <a class="dropdown-item" href="{% url 'stickandpuck:stick-and-puck' %}">Stick &amp; Puck</a>
                             {% if in_group_womens_hockey %}
                             <a class="dropdown-item" href="{% url 'womens_hockey:womens-hockey' %}">Women's Hockey</a>
                             {% endif %}
@@ -102,8 +104,6 @@
                             <a class="dropdown-item" href="{% url 'yeti_skate:yeti-skate' %}">Yeti Skate</a>
                             {% endif %}
                             <a class="dropdown-item" href="https://schedule.oicwebapps.com">Facility Schedule</a>
-                            <a class="dropdown-item" href="{% url 'private_skates:private-skates' %}">Private Skates</a>
-                            <a class="dropdown-item" href="{% url 'stickandpuck:stick-and-puck' %}">Stick &amp; Puck</a>
                         </div>
                     </li>
                     {% endif %}
