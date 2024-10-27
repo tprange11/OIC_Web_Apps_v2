@@ -89,21 +89,21 @@
                             {% if in_group_nacho_skate %}
                             <a class="dropdown-item" href="{% url 'nacho_skate:index' %}">Nacho Skate</a>
                             {% endif %}
+                            {% if in_group_owhl_hockey %}
+                            <a class="dropdown-item" href="{% url 'owhl:owhl' %}">OWHL</a>
+                            {% endif %}
                             {% if in_group_open_roller_hockey %}
                             <a class="dropdown-item" href="{% url 'open_roller:open-roller' %}">Roller Hockey</a>
                             {% endif %}
-                            <a class="dropdown-item" href="{% url 'private_skates:private-skates' %}">Private Skates</a>
-                            <a class="dropdown-item" href="https://schedule.oicwebapps.com">Facility Schedule</a>
-                            <a class="dropdown-item" href="{% url 'stickandpuck:stick-and-puck' %}">Stick &amp; Puck</a>
                             {% if in_group_womens_hockey %}
                             <a class="dropdown-item" href="{% url 'womens_hockey:womens-hockey' %}">Women's Hockey</a>
                             {% endif %}
                             {% if in_group_yeti_skate %}
                             <a class="dropdown-item" href="{% url 'yeti_skate:yeti-skate' %}">Yeti Skate</a>
                             {% endif %}
-                            {% if in_group_owhl_hockey %}
-                            <a class="dropdown-item" href="{% url 'owhl:owhl' %}">OWHL</a>
-                            {% endif %}
+                            <a class="dropdown-item" href="https://schedule.oicwebapps.com">Facility Schedule</a>
+                            <a class="dropdown-item" href="{% url 'private_skates:private-skates' %}">Private Skates</a>
+                            <a class="dropdown-item" href="{% url 'stickandpuck:stick-and-puck' %}">Stick &amp; Puck</a>
                         </div>
                     </li>
                     {% endif %}
@@ -160,15 +160,15 @@
                                 <a class="dropdown-item" href="{% url 'adult_skills:adult-skills-sessions' %}">Adult Skills</a>
                                 <a class="dropdown-item" href="{% url 'bald_eagles:bald-eagles-skate-sessions' %}">Bald Eagles</a>
                                 <a class="dropdown-item" href="{% url 'figure_skating:figure-skating-sessions' %}">Figure Skating</a>
-                                <a class="dropdown-item" href="{% url 'how_to_videos:index' %}">How To Videos</a>
                                 <a class="dropdown-item" href="{% url 'lady_hawks:lady-hawks-sessions' %}">Lady Hawks</a>
+                                <a class="dropdown-item" href="{% url 'owhl:owhl-sessions' %}">OWHL Hockey</a>
                                 <a class="dropdown-item" href="{% url 'open_roller:open-roller-sessions' %}">Roller Hockey</a>
-                                <a class="dropdown-item" href="{% url 'schedule:choose-rink' %}">Zam Schedule</a>
                                 <a class="dropdown-item" href="{% url 'stickandpuck:print-list' %}">Stick &amp; Puck</a>
                                 <a class="dropdown-item" href="{% url 'womens_hockey:womens-hockey-sessions' %}">Women's Hockey</a>
-                                <a class="dropdown-item" href="{% url 'owhl:owhl-sessions' %}">OWHL Hockey</a>
+                                <a class="dropdown-item" href="{% url 'schedule:choose-rink' %}">Zam Schedule</a>
                                 <a class="dropdown-item" href="{% url 'yeti_skate:yeti-skate-sessions' %}">Yeti Skate</a>
                                 <a class="dropdown-item" href="https://schedule.oicwebapps.com">Facility Schedule</a>
+                                <a class="dropdown-item" href="{% url 'how_to_videos:index' %}">How To Videos</a>
                                 {% if user.is_superuser %}
                                 <a class="dropdown-item" href="{% url 'reports' %}">Reports</a>
                                 {% endif %}
