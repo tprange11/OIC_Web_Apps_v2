@@ -232,12 +232,6 @@ class DeleteYetiSkateSessionView(LoginRequiredMixin, DeleteView):
             user_credit.paid = True
             success_msg = f'{user.get_full_name()} has been removed from the session. The Users credit balance has been increased from ${old_balance} to ${user_credit.balance}.'
             user_credit.save()
-            
-            ## Send email to user about the credit
-            #skate_date = self.model.objects.get(id=kwargs['pk']).skate_date.skate_date
-            #subject = 'Credit Issued for Yeti Skate Session'
-            #message = f'Dear {user.get_full_name()},\n\nYou have been removed from the Yeti Skate session on {skate_date}. Your credit balance has been increased from ${old_balance} to ${user_credit.balance}.\n\nThank you.'
-            #user.email_user(subject, message, bcc='tprange@gmail.com,antonie_n@yahoo.com,ozicecenter@gmail.com')
         else:
             # Clear session from the cart
             skate_date = self.model.objects.filter(id=kwargs['pk']).values_list('skate_date', flat=True)
@@ -245,6 +239,14 @@ class DeleteYetiSkateSessionView(LoginRequiredMixin, DeleteView):
             cart_item = Cart.objects.filter(item=Program.objects.all().get(id=7).program_name, event_date=cart_date[0].skate_date).delete()
             cart_item.delete()
             success_msg = 'You have been removed from that skate session!'
+
+
+
+            
+        # Send email to user about the credit
+        subject = 'Credit Issued for Yeti Skate Session'
+        message = f'Dear {user.get_full_name()},\n\nYou have been removed from the Yeti Skate session on {skate_date}. Your credit balance has been increased from ${old_balance} to ${user_credit.balance}.\n\nThank you.'
+        user.email_user(subject, message, bcc='tprange@gmail.com,antonie_n@yahoo.com,ozicecenter@gmail.com')
 
         # Set success message and return
         messages.add_message(self.request, messages.SUCCESS, 'You have been removed from that skate session!')
