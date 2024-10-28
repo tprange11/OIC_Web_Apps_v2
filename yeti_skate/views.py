@@ -245,9 +245,9 @@ class DeleteYetiSkateSessionView(LoginRequiredMixin, DeleteView):
             
         # Send email to user about the credit
         subject = 'Credit Issued for Yeti Skate Session'
-        skate_date_str = cart_date[0].skate_date.strftime('%B %d, %Y')
-        message = f'Dear {user.get_full_name()},\n\nYou have been removed from the Yeti Skate session on {skate_date_str}. Your credit balance has been increased from ${old_balance} to ${user_credit.balance}.\n\nThank you.'
-        user.email_user(subject, message)
+        #skate_date_str = cart_date[0].skate_date.strftime('%B %d, %Y')
+        #message = f'Dear {user.get_full_name()},\n\nYou have been removed from the Yeti Skate session on {skate_date_str}. Your credit balance has been increased from ${old_balance} to ${user_credit.balance}.\n\nThank you.'
+        user.email_user(subject, success_msg)
 
         # Set success message and return
         messages.add_message(self.request, messages.SUCCESS, 'You have been removed from that skate session!')
