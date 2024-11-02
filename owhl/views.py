@@ -4,6 +4,7 @@ from django.views.generic import ListView, CreateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import Group, User
 from django.contrib import messages
+from django.utils.html import clean_data
 from django.core.mail import send_mail
 from django.db import IntegrityError
 from django.db.models import Count
@@ -211,12 +212,13 @@ class DeleteOWHLSkateSessionView(LoginRequiredMixin, DeleteView):
             success_msg = 'You have been removed from that skate session!'
     
         # Send email to user about the credit
-        recipients = User.objects.filter(id__in=['1', '2', user_credit.user.id]).values_list('email', flat=True)
+        recipients = User.objects.filter(id__in=['1', '2']).values_list('email', flat=True)
         subject = 'Credit Issued for OWHL Skate Session'
+        msg = clean_data(success_msg)
         from_email = 'donotreply@oicwebapps.com'
-        #user.email_user(subject, success_msg)
+        
         try:
-            send_mail(subject, success_msg, from_email, recipients)
+            send_mail(subject, msg, from_email, recipients)
             messages.add_message(self.request, messages.INFO, 'Your message has been sent! Someone will contact you shortly.')
             self.success_url = reverse_lazy('owhl:owhl')
         except:
