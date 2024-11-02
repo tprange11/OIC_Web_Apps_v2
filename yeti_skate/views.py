@@ -240,9 +240,6 @@ class DeleteYetiSkateSessionView(LoginRequiredMixin, DeleteView):
             cart_item = Cart.objects.filter(item=Program.objects.all().get(id=7).program_name, event_date=cart_date[0].skate_date).delete()
             cart_item.delete()
             success_msg = 'You have been removed from that skate session!'
-
-
-
             
         # Send email to user about the credit
         recipients = User.objects.filter(id__in=['1', '2', User.objects.get(pk=kwargs['skater_pk']).id]).values_list('email', flat=True)
@@ -252,7 +249,7 @@ class DeleteYetiSkateSessionView(LoginRequiredMixin, DeleteView):
         try:
             send_mail(subject, success_msg, from_email, recipients)
             messages.add_message(self.request, messages.INFO, 'Your message has been sent! Someone will contact you shortly.')
-            self.success_url = reverse('contact:contact-form')
+            self.success_url = reverse_lazy('contact:contact-form')
         except:
             messages.add_message(self.request, messages.ERROR, 'Oops, something went wrong!  Please try again.')
             #return reverse('contact:contact-form', kwargs={ 'form': form.cleaned_data })

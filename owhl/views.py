@@ -2,8 +2,9 @@ from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, User
 from django.contrib import messages
+from django.core.mail import send_mail
 from django.db import IntegrityError
 from django.db.models import Count
 from django.core.exceptions import ObjectDoesNotExist
@@ -184,20 +185,43 @@ class DeleteOWHLSkateSessionView(LoginRequiredMixin, DeleteView):
     '''Allows user to remove skaters from a skate session'''
     model = models.OWHLSkateSession
     skate_date_model = models.OWHLSkateDate
+    credit_model = UserCredit
     success_url = reverse_lazy('owhl:owhl')
 
     def delete(self, *args, **kwargs):
         '''Things that need doing once a session is removed.'''
 
-        # Clear session from the cart
-        skate_date = self.model.objects.filter(id=kwargs['pk']).values_list('skate_date', flat=True)
-        # skater_id = self.model.objects.filter(id=kwargs['pk']).values_list('skater', flat=True)
-        # skater = ChildSkater.objects.get(id=skater_id[0])
-        # print(skater_id[0])
-        # print(skater)
-        cart_date = self.skate_date_model.objects.filter(id=skate_date[0])
-        cart_item = Cart.objects.filter(item=Program.objects.all().get(program_name='OWHL Hockey'), event_date=cart_date[0].skate_date)
-        cart_item.delete()
+        user = User.objects.get(pk=kwargs['skater_pk'])
+
+        if kwargs['paid'] == 'True':
+            # If the session is paid for, issue credit to the user
+            price = Program.objects.get(id=13).skater_price
+            user_credit = self.credit_model.objects.get(slug=user)
+            old_balance = user_credit.balance
+            user_credit.balance += price
+            user_credit.paid = True
+            success_msg = f'{user.get_full_name()} has been removed from the session. The Users credit balance has been increased from ${old_balance} to ${user_credit.balance}.'
+            user_credit.save()
+        else:
+            # Clear session from the cart
+            skate_date = self.model.objects.filter(id=kwargs['pk']).values_list('skate_date', flat=True)
+            cart_date = self.skate_date_model.objects.filter(id=skate_date[0])
+            cart_item = Cart.objects.filter(item=Program.objects.all().get(id=13).program_name, event_date=cart_date[0].skate_date).delete()
+            cart_item.delete()
+            success_msg = 'You have been removed from that skate session!'
+    
+        # Send email to user about the credit
+        recipients = User.objects.filter(id__in=['1', '2', User.objects.get(pk=kwargs['skater_pk']).id]).values_list('email', flat=True)
+        subject = 'Credit Issued for OWHL Skate Session'
+        from_email = 'donotreply@oicwebapps.com'
+        #user.email_user(subject, success_msg)
+        try:
+            send_mail(subject, success_msg, from_email, recipients)
+            messages.add_message(self.request, messages.INFO, 'Your message has been sent! Someone will contact you shortly.')
+            self.success_url = reverse_lazy('owhl:owhl')
+        except:
+            messages.add_message(self.request, messages.ERROR, 'Oops, something went wrong!  Please try again.')
+            #return reverse('contact:contact-form', kwargs={ 'form': form.cleaned_data })
 
         # Set success message and return
         messages.add_message(self.request, messages.SUCCESS, 'Skater has been removed from that skate session!')
