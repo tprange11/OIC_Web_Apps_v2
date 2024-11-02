@@ -214,10 +214,10 @@ class DeleteOWHLSkateSessionView(LoginRequiredMixin, DeleteView):
         recipients = User.objects.filter(id__in=['1', '2']).values_list('email', flat=True)
         subject = 'Credit Issued for OWHL Skate Session'
         msg = 'test email'
-        from_email = 'donotreply@oicwebapps.com'
+        from_email = self.request.user.email #'donotreply@oicwebapps.com'
         
         try:
-            send_mail(subject, msg, from_email, recipients)
+            send_mail(subject, msg, from_email, recipients, )
             messages.add_message(self.request, messages.INFO, 'Your message has been sent! Someone will contact you shortly.')
             self.success_url = reverse_lazy('owhl:owhl')
         except:
