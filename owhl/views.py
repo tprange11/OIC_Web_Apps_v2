@@ -217,7 +217,7 @@ class DeleteOWHLSkateSessionView(LoginRequiredMixin, DeleteView):
         from_email = 'donotreply@oicwebapps.com'
         
         try:
-            send_mail(subject, msg, from_email, recipients)
+            #send_mail(subject, msg, from_email, recipients)
             messages.add_message(self.request, messages.INFO, 'Your message has been sent! Someone will contact you shortly.')
             #self.success_url = reverse_lazy('owhl:owhl')
         except:
