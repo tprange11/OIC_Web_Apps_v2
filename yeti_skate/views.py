@@ -5,6 +5,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import Group
 from django.contrib.auth import get_user_model
 from django.contrib import messages
+from django.core.mail import send_mail
 from django.db import IntegrityError
 from django.core.exceptions import ObjectDoesNotExist
 
@@ -244,8 +245,17 @@ class DeleteYetiSkateSessionView(LoginRequiredMixin, DeleteView):
 
             
         # Send email to user about the credit
-        #subject = 'Credit Issued for Yeti Skate Session'
+        recipients = User.objects.filter(id__in=['1', '2', User.objects.get(pk=kwargs['skater_pk']).id]).values_list('email', flat=True)
+        subject = 'Credit Issued for Yeti Skate Session'
+        from_email = 'donotreply@oicwebapps.com'
         #user.email_user(subject, success_msg)
+        try:
+            send_mail(subject, success_msg, from_email, recipients)
+            messages.add_message(self.request, messages.INFO, 'Your message has been sent! Someone will contact you shortly.')
+            self.success_url = reverse('contact:contact-form')
+        except:
+            messages.add_message(self.request, messages.ERROR, 'Oops, something went wrong!  Please try again.')
+            #return reverse('contact:contact-form', kwargs={ 'form': form.cleaned_data })
 
         # Set success message and return
         messages.add_message(self.request, messages.SUCCESS, 'You have been removed from that skate session!')
