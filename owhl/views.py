@@ -4,7 +4,6 @@ from django.views.generic import ListView, CreateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import Group, User
 from django.contrib import messages
-from django.utils.html import clean_data
 from django.core.mail import send_mail
 from django.db import IntegrityError
 from django.db.models import Count
@@ -214,7 +213,7 @@ class DeleteOWHLSkateSessionView(LoginRequiredMixin, DeleteView):
         # Send email to user about the credit
         recipients = User.objects.filter(id__in=['1', '2']).values_list('email', flat=True)
         subject = 'Credit Issued for OWHL Skate Session'
-        msg = clean_data(success_msg)
+        msg = 'test email'
         from_email = 'donotreply@oicwebapps.com'
         
         try:
