@@ -25,7 +25,7 @@ class ContactFormView(LoginRequiredMixin, FormView):
         from_email = self.request.user.email
 
         try:
-            #send_mail(subject, message, from_email, recipients)
+            send_mail(subject, message, from_email, recipients)
             messages.add_message(self.request, messages.INFO, 'Your message has been sent! Someone will contact you shortly.')
             self.success_url = reverse('contact:contact-form')
         except:
