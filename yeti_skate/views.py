@@ -262,7 +262,7 @@ class DeleteYetiSkateSessionView(LoginRequiredMixin, DeleteView):
         try:
             send_mail(subject, success_msg, from_email, recipients)
             messages.add_message(self.request, messages.INFO, 'Email message has been sent to the skater!')
-            self.success_url = reverse_lazy('owhl:owhl')
+            self.success_url = reverse_lazy('yeti_skate:yeti-skate')
         #except:
             #messages.add_message(self.request, messages.ERROR, 'Oops, something went wrong!  Please try again.')
             #return reverse('contact:contact-form', kwargs={ 'form': form.cleaned_data })
