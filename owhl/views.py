@@ -214,7 +214,7 @@ class DeleteOWHLSkateSessionView(LoginRequiredMixin, DeleteView):
         recipients = User.objects.filter(id__in=['1', '2', user.id]).values_list('email', flat=True)
         subject = 'Credit Issued for OWHL Skate Session'
         msg = 'test email'
-        from_email = 'donotreply@oicwebapps.com'
+        from_email = 'no-reply@oicwebapp.com'
         
         try:
             send_mail(subject, success_msg, from_email, recipients)
