@@ -187,20 +187,23 @@ class DeleteOWHLSkateSessionView(LoginRequiredMixin, DeleteView):
     model = models.OWHLSkateSession
     skate_date_model = models.OWHLSkateDate
     credit_model = UserCredit
+    program_model = Program
     success_url = reverse_lazy('owhl:owhl')
 
     def delete(self, *args, **kwargs):
         '''Things that need doing once a session is removed.'''
 
         user = User.objects.get(pk=kwargs['skater_pk'])
-
+        
         if kwargs['paid'] == 'True':
             # If the session is paid for, issue credit to the user
             # Get the program skater/goalie cost
-            if get_user_model.objects.get(pk=kwargs['skater_pk']).goalie == True:
+            session = self.model.objects.get(pk=kwargs['pk'])
+            if session.goalie:
                 price = self.program_model.objects.get(id=15).goalie_price
             else:
                 price = self.program_model.objects.get(id=15).skater_price
+            
             user_credit = self.credit_model.objects.get(slug=user)
             old_balance = user_credit.balance
             user_credit.balance += price
