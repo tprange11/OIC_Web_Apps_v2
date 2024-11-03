@@ -43,7 +43,8 @@
         {% comment %}
             The following form is for the user to remove themselves prior to paying for the skate.
         {% endcomment %}
-        <form method="POST" action="{% url 'owhl:session-remove' pk=date.session_pk paid=date.paid skater_pk=user.id %}">
+        <form method="POST" action="{% url 'owhl:session-remove' pk=date.session_pk paid=date.paid skater_pk=user.id %}" 
+              onsubmit="return confirm('Are you sure you want to remove yourself from this skate session?')">
             {% csrf_token %}
             <input type="hidden" name="pk" value="{{date.session_pk}}">
             <input type="submit" value="Remove Me From This Skate" class="btn btn-danger btn-sm mt-2">
@@ -79,7 +80,8 @@
                                 {% comment %}
                                 This form is for superusers to remove/refund people from the skate.
                                 {% endcomment %}
-                                <form method="POST" action="{% url 'owhl:session-remove' pk=skater.pk paid=skater.paid skater_pk=skater.skater.pk %}">
+                                <form method="POST" action="{% url 'owhl:session-remove' pk=skater.pk paid=skater.paid skater_pk=skater.skater.pk %}"
+                                      onsubmit="return confirm('Are you sure you want to remove this skater and issue a refund?')">
                                  {% csrf_token %}
                                 <input type="hidden" name="pk" value="{{date.session_pk}}">
                                     <input type="submit" value="Remove/Refund" class="btn btn-danger btn-sm">
