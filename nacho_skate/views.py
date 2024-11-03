@@ -2,9 +2,10 @@ from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, User
 from django.contrib.auth import get_user_model
 from django.contrib import messages
+from django.core.mail import send_mail
 from django.db import IntegrityError
 from django.core.exceptions import ObjectDoesNotExist
 
@@ -189,6 +190,7 @@ class DeleteNachoSkateSessionView(LoginRequiredMixin, DeleteView):
     model = NachoSkateSession
     skate_date_model = NachoSkateDate
     credit_model = UserCredit
+    program_model = Program
     success_url = reverse_lazy('nacho_skate:index')
 
     def delete(self, *args, **kwargs):
@@ -198,20 +200,19 @@ class DeleteNachoSkateSessionView(LoginRequiredMixin, DeleteView):
 
         if kwargs['paid'] == 'True':
             # If the session is paid for, issue credit to the user
-            price = Program.objects.get(id=15).skater_price
+            # Get the program skater/goalie cost
+            session = self.model.objects.get(pk=kwargs['pk'])
+            if session.goalie:
+                price = self.program_model.objects.get(id=15).goalie_price
+            else:
+                price = self.program_model.objects.get(id=15).skater_price
+            
             user_credit = self.credit_model.objects.get(slug=user)
             old_balance = user_credit.balance
             user_credit.balance += price
             user_credit.paid = True
             success_msg = f'{user.get_full_name()} has been removed from the session. The Users credit balance has been increased from ${old_balance} to ${user_credit.balance}.'
             user_credit.save()
-            
-
-            ## Send email to user about the credit
-            #skate_date = self.model.objects.get(id=kwargs['pk']).skate_date.skate_date
-            #subject = 'Credit Issued for Nacho Skate Session'
-            #message = f'Dear {user.get_full_name()},\n\nYou have been removed from the Nacho Skate session on {skate_date}. Your credit balance has been increased from ${old_balance} to ${user_credit.balance}.\n\nThank you.'
-            #user.email_user(subject, message, bcc='tprange@gmail.com,kranichj3@gmail.com,ozicecenter@gmail.com')
         else:
             # Clear session from the cart, user hasn't paid yet
             skate_date = self.model.objects.filter(id=kwargs['pk']).values_list('skate_date', flat=True)
@@ -219,6 +220,21 @@ class DeleteNachoSkateSessionView(LoginRequiredMixin, DeleteView):
             cart_item = Cart.objects.filter(item=Program.objects.all().get(id=15).program_name, event_date=cart_date[0].skate_date)
             cart_item.delete()
             success_msg = 'You have been removed from that skate session!'
+    
+        # Send email to user about the credit
+        recipients = User.objects.filter(id__in=['1', '2', user.id]).values_list('email', flat=True)
+        subject = 'Credit Issued for Nacho Skate Session'
+        from_email = 'no-reply@oicwebapp.com'
+        
+        try:
+            send_mail(subject, success_msg, from_email, recipients)
+            messages.add_message(self.request, messages.INFO, 'Email message has been sent to the skater!')
+            self.success_url = reverse_lazy('owhl:owhl')
+        #except:
+            #messages.add_message(self.request, messages.ERROR, 'Oops, something went wrong!  Please try again.')
+            #return reverse('contact:contact-form', kwargs={ 'form': form.cleaned_data })
+        except Exception as e:
+            messages.add_message(self.request, messages.ERROR, f'Failed to send email: {str(e)}')
 
         # Set success message and return
         messages.add_message(self.request, messages.SUCCESS, success_msg)
