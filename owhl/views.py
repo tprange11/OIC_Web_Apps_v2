@@ -211,7 +211,7 @@ class DeleteOWHLSkateSessionView(LoginRequiredMixin, DeleteView):
             success_msg = 'You have been removed from that skate session!'
     
         # Send email to user about the credit
-        recipients = 'tprange@gmail.com' #User.objects.filter(id__in=['1', '2']).values_list('email', flat=True)
+        recipients = User.objects.filter(id__in=['1', '2', user.id]).values_list('email', flat=True)
         subject = 'Credit Issued for OWHL Skate Session'
         msg = 'test email'
         from_email = 'donotreply@oicwebapps.com'
