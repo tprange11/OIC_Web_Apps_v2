@@ -142,9 +142,13 @@ class CreateYetiSkateSessionView(LoginRequiredMixin, CreateView):
         # Get the user credit model instance
         user_credit = UserCredit.objects.get(user=self.request.user)
         credit_used = False # Used to set the message
-        # Get the program skater cost
-        cost = self.program_model.objects.get(id=7).skater_price        
         self.object = form.save(commit=False)
+
+        # Get the program skater/goalie cost
+        if self.object.goalie == True:
+            cost = self.program_model.objects.get(id=7).goalie_price
+        else:
+            cost = self.program_model.objects.get(id=7).skater_price
 
         try:
             # If goalie spots are full, do not save object
@@ -157,8 +161,9 @@ class CreateYetiSkateSessionView(LoginRequiredMixin, CreateView):
                 return redirect('yeti_skate:yeti-skate')
             # If spots are not full do the following
             
-            if self.request.user.is_staff or self.object.goalie: # Employees and goalies skate for free
+            if self.request.user.is_staff or self.object.goalie or self.request.user.id == 359: # Employees and goalies skate for free
                 self.object.paid = True
+                cost = 0 # Set cost = 0 for correct message
             elif user_credit.balance >= cost and user_credit.paid:
                 self.object.paid = True
                 user_credit.balance -= cost
@@ -217,6 +222,7 @@ class DeleteYetiSkateSessionView(LoginRequiredMixin, DeleteView):
     model = YetiSkateSession
     skate_date_model = YetiSkateDate
     credit_model = UserCredit
+    program_model = Program
     success_url = reverse_lazy('yeti_skate:yeti-skate')
 
     def delete(self, *args, **kwargs):
@@ -224,9 +230,16 @@ class DeleteYetiSkateSessionView(LoginRequiredMixin, DeleteView):
 
         user = User.objects.get(pk=kwargs['skater_pk'])
 
-        if kwargs['paid'] == 'True':
+        if user.is_staff or user.id == 359: # Employees and goalies skate for free
+            success_msg = 'Skater has been removed from that skate session!'
+        elif kwargs['paid'] == 'True':
             # If the session is paid for, issue credit to the user
-            price = Program.objects.get(id=7).skater_price
+            # Get the program skater/goalie cost
+            session = self.model.objects.get(pk=kwargs['pk'])
+            if session.goalie:
+                price = self.program_model.objects.get(id=7).goalie_price
+            else:
+                price = self.program_model.objects.get(id=7).skater_price
             user_credit = self.credit_model.objects.get(slug=user)
             old_balance = user_credit.balance
             user_credit.balance += price
@@ -242,18 +255,19 @@ class DeleteYetiSkateSessionView(LoginRequiredMixin, DeleteView):
             success_msg = 'You have been removed from that skate session!'
             
         # Send email to user about the credit
-        recipients = User.objects.filter(id__in=['1', '2', User.objects.get(pk=kwargs['skater_pk']).id]).values_list('email', flat=True)
+        recipients = User.objects.filter(id__in=['1', '2','359', user.id]).values_list('email', flat=True)
         subject = 'Credit Issued for Yeti Skate Session'
-        from_email = 'donotreply@oicwebapps.com'
-        #user.email_user(subject, success_msg)
+        from_email = 'no-reply@oicwebapp.com'
+        
         try:
             send_mail(subject, success_msg, from_email, recipients)
-            messages.add_message(self.request, messages.INFO, 'Your message has been sent! Someone will contact you shortly.')
-            self.success_url = reverse_lazy('contact:contact-form')
-        except:
-            messages.add_message(self.request, messages.ERROR, 'Oops, something went wrong!  Please try again.')
+            messages.add_message(self.request, messages.INFO, 'Email message has been sent to the skater!')
+            self.success_url = reverse_lazy('owhl:owhl')
+        #except:
+            #messages.add_message(self.request, messages.ERROR, 'Oops, something went wrong!  Please try again.')
             #return reverse('contact:contact-form', kwargs={ 'form': form.cleaned_data })
-
+        except Exception as e:
+            messages.add_message(self.request, messages.ERROR, f'Failed to send email: {str(e)}')
         # Set success message and return
         messages.add_message(self.request, messages.SUCCESS, 'You have been removed from that skate session!')
         return super().delete(*args, **kwargs)
