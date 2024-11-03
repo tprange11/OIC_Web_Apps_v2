@@ -3,6 +3,7 @@ from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import Group, User
+from django.contrib.auth import get_user_model
 from django.contrib import messages
 from django.core.mail import send_mail
 from django.db import IntegrityError
@@ -196,7 +197,7 @@ class DeleteOWHLSkateSessionView(LoginRequiredMixin, DeleteView):
         if kwargs['paid'] == 'True':
             # If the session is paid for, issue credit to the user
             # Get the program skater/goalie cost
-            if User.objects.get(pk=kwargs['skater_pk']).goalie == True:
+            if get_user_model.objects.get(pk=kwargs['skater_pk']).goalie == True:
                 price = self.program_model.objects.get(id=15).goalie_price
             else:
                 price = self.program_model.objects.get(id=15).skater_price
