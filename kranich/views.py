@@ -222,7 +222,7 @@ class DeleteKranichSkateSessionView(LoginRequiredMixin, DeleteView):
             success_msg = 'You have been removed from that skate session!'
                 
         # Send email to user about the credit
-        recipients = User.objects.filter(id__in=['1', '2', user.id]).values_list('email', flat=True)
+        recipients = User.objects.filter(id__in=['1', '2', '870', user.id]).values_list('email', flat=True)
         subject = 'Credit Issued for Kranich Skate Session'
         from_email = 'no-reply@oicwebapp.com'
         
