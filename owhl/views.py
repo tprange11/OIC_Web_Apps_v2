@@ -200,9 +200,9 @@ class DeleteOWHLSkateSessionView(LoginRequiredMixin, DeleteView):
             # Get the program skater/goalie cost
             session = self.model.objects.get(pk=kwargs['pk'])
             if session.goalie:
-                price = self.program_model.objects.get(id=15).goalie_price
+                price = self.program_model.objects.get(id=13).goalie_price
             else:
-                price = self.program_model.objects.get(id=15).skater_price
+                price = self.program_model.objects.get(id=13).skater_price
             
             user_credit = self.credit_model.objects.get(slug=user)
             old_balance = user_credit.balance
