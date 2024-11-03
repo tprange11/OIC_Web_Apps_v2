@@ -195,7 +195,11 @@ class DeleteOWHLSkateSessionView(LoginRequiredMixin, DeleteView):
 
         if kwargs['paid'] == 'True':
             # If the session is paid for, issue credit to the user
-            price = Program.objects.get(id=13).skater_price
+            # Get the program skater/goalie cost
+            if User.objects.get(pk=kwargs['skater_pk']).goalie == True:
+                price = self.program_model.objects.get(id=15).goalie_price
+            else:
+                price = self.program_model.objects.get(id=15).skater_price
             user_credit = self.credit_model.objects.get(slug=user)
             old_balance = user_credit.balance
             user_credit.balance += price
