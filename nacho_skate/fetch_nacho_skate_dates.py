@@ -60,24 +60,27 @@ def add_skate_dates(sessions):
 
 def add_regulars():
     '''Adds regulars to the session if they have enough credit balance to cover the price of the skate.'''
-
     regulars = NachoSkateRegular.objects.all().select_related('regular')
     skate_dates = NachoSkateDate.objects.filter(skate_date__gt=date.today())
     price = Program.objects.get(id=15).skater_price
 
     for skate_date in skate_dates:
         for regular in regulars:
-            user_credit = UserCredit.objects.get(user=regular.regular)
-            if user_credit.balance >= price:
-                data = NachoSkateSession(skater=regular.regular, skate_date=skate_date, paid=True)
-                try:
-                    data.save()
-                    user_credit.balance -= price
-                    if user_credit.balance == 0:
-                        user_credit.paid = False
-                    user_credit.save()
-                except IntegrityError:
-                    pass
+            try:
+                user_credit = UserCredit.objects.get(user=regular.regular)
+                if user_credit.pk == 870 or user_credit.balance >= price:
+                    data = NachoSkateSession(skater=regular.regular, skate_date=skate_date, paid=True)
+                    data.save()  # Will raise IntegrityError if duplicate
+                    
+                    if user_credit.pk != 870:  # Skip credit deduction for special account
+                        user_credit.balance -= price
+                        if user_credit.balance == 0:
+                            user_credit.paid = False
+                        user_credit.save()
+            except UserCredit.DoesNotExist:
+                continue  # Skip if no credit record
+            except IntegrityError:
+                continue  # Skip duplicates
 
 def send_skate_dates_email():
     '''Sends email to Users who opted in letting them know when Nacho Skate dates are added.'''
