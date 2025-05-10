@@ -63,22 +63,25 @@
                                         {{skater.skater.first_name}} {{skater.skater.last_name}}
                                         {% if skater.goalie %}<b>(Goalie)</b>{% endif %}
                                         {% if user.is_superuser %}
-                                        {% if skater.paid %}<b>(Paid)</b>{% else %}<b>(Not Paid)</b>{% endif %}
+                                            {% if skater.paid %}<b>(Paid)</b>{% else %}<b>(Not Paid)</b>{% endif %}
+                                        {% endif %}
                                     </div>
                                     <div>
-                                        {% if skater.paid == True %}
-                                        {% comment %}
-                                This form is for superusers to remove/refund people from the skate.
-                                {% endcomment %}
-                                <form method="POST" action="{% url 'adult_skills:session-remove' pk=skater.pk paid=skater.paid skater_pk=skater.skater.pk %}"
-                                onsubmit="return confirm('Are you sure you want to remove this skater and issue a refund?')">
-                              {% csrf_token %}
-                              <input type="hidden" name="pk" value="{{skater.skater.pk}}">
-                              <input type="submit" value="Remove/Refund" class="btn btn-danger btn-sm">
-                          </form>
-                                            {% endif %}
-                                        </div>
-                                </li>{% endif %}{% endfor %}
+                                        {% if skater.paid == True and user.is_superuser %}
+                                            {% comment %}
+                                            This form is for superusers to remove/refund people from the skate.
+                                            {% endcomment %}
+                                            <form method="POST" action="{% url 'adult_skills:session-remove' pk=skater.pk paid=skater.paid skater_pk=skater.skater.pk %}"
+                                                onsubmit="return confirm('Are you sure you want to remove this skater and issue a refund?')">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="pk" value="{{skater.skater.pk}}">
+                                                <input type="submit" value="Remove/Refund" class="btn btn-danger btn-sm">
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                </li>
+                                {% endif %}
+                                {% endfor %}
                             </ul>
                         </div>
                         <div class="modal-footer">
