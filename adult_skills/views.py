@@ -207,7 +207,7 @@ class DeleteAdultSkillsSkateSessionView(LoginRequiredMixin, DeleteView):
     program_model = Program
     success_url = reverse_lazy('adult_skills:adult-skills')
 
-   def delete(self, *args, **kwargs):
+    def delete(self, *args, **kwargs):
         '''Things that need doing once a session is removed.'''
 
         user = User.objects.get(pk=kwargs['skater_pk'])
@@ -245,10 +245,7 @@ class DeleteAdultSkillsSkateSessionView(LoginRequiredMixin, DeleteView):
         try:
             send_mail(subject, success_msg, from_email, recipients)
             messages.add_message(self.request, messages.INFO, 'Email message has been sent to the skater!')
-            self.success_url = reverse_lazy('kranich:kranich')
-        #except:
-            #messages.add_message(self.request, messages.ERROR, 'Oops, something went wrong!  Please try again.')
-            #return reverse('contact:contact-form', kwargs={ 'form': form.cleaned_data })
+            self.success_url = reverse_lazy('adult_skills:adult-skills')
         except Exception as e:
             messages.add_message(self.request, messages.ERROR, f'Failed to send email: {str(e)}')
 
