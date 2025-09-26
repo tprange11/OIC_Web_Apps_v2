@@ -103,9 +103,9 @@ def scrape_teams(league):
     '''Scrapes League Schedule website for teams.'''
 
     if league == 'OCHL':
-        url = "https://www.ozaukeeicecenter.org/schedule/day/league_instance/207245?subseason=906900"
+        url = "https://www.ozaukeeicecenter.org/schedule/day/league_instance/222928?subseason=945079"
     elif league == 'OWHL':
-        url = "https://www.ozaukeeicecenter.org/schedule/day/league_instance/207289?subseason=907036"
+        url = "https://www.ozaukeeicecenter.org/schedule/day/league_instance/226296?subseason=953087"
     else:
         return
     
