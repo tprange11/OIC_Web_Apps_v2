@@ -4,6 +4,7 @@
 
 from bs4 import BeautifulSoup
 from datetime import date, timedelta
+from html import unescape
 import os, requests, sys
 import json
 
@@ -47,14 +48,18 @@ def process_data(data, from_date):
             schedule_date = item["start_date"].split(" ")[0]
             start_time = item["start_date"].split(" ")[1]
             end_time = item["end_date"].split(" ")[1]
-            if "South Rink" in item["text"]:
+
+            # Clean up text: decode HTML entities and strip printer emoji
+            text_clean = unescape(item["text"]).replace("🖨️", "")
+
+            if "South Rink" in text_clean:
                 rink = "South Rink"
-                event = item["text"][30:].strip().replace("(", "").replace(")", "")
+                event = text_clean[30:].strip().replace("(", "").replace(")", "")
                 if " OYHA" in event:
                     event = event[:-5]
-            elif "North Rink" in item["text"]:
+            elif "North Rink" in text_clean:
                 rink = "North Rink"
-                event = item["text"][30:].strip().replace("(", "").replace(")", "")
+                event = text_clean[30:].strip().replace("(", "").replace(")", "")
                 if " OYHA" in event:
                     event = event[:-5]
             else:
