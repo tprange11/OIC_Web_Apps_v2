@@ -7,7 +7,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
 import uuid, os
 from datetime import date
-from square_legacy.client import Client as SquareClient
+from square.client import Square,SquareEnvironment
+from django.conf import settings
 
 from . import models
 from cart.models import Cart
@@ -50,9 +51,9 @@ class PaymentView(LoginRequiredMixin, TemplateView):
         context['loc_id'] = os.getenv("SQUARE_LOCATION_ID") # uncomment in production and development
         access_token = os.getenv('SQUARE_API_ACCESS_TOKEN') # uncomment in production and development
 
-        client = SquareClient(
+        client = Square(
             access_token=settings.SQUARE_API_ACCESS_TOKEN,
-            environment=os.getenv('SQUARE_API_ENVIRONMENT'), # Uncomment in production and development
+            environment=SquareEnvironment.os.getenv('SQUARE_API_ENVIRONMENT'), # Uncomment in production and development
         )
         location = client.locations.retrieve_location(location_id=context['loc_id']).body['location']
         context['currency'] = location['currency']
@@ -154,7 +155,7 @@ def process_payment(request, **kwargs):
             }
 
         # Send info to square api and react to the response
-        api_response = client.payments.create_payment(body)
+        api_response = client.payments.create_payment(request_body=body)
 
         if api_response.is_success():
             res = api_response.body['payment']
