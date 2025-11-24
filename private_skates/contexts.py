@@ -7,4 +7,4 @@ def appname(request):
 
 def in_group_whaley(request):
     in_group = request.user.groups.filter(name='whaley')
-    return { 'in_group_whaley': in_group }
+return { 'in_group_whaley': in_group }

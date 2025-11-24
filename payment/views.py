@@ -7,7 +7,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
 import uuid, os
 from datetime import date
-from square.client import Client
+from square_legacy.client import Client as SquareClient
 
 from . import models
 from cart.models import Cart
@@ -50,8 +50,8 @@ class PaymentView(LoginRequiredMixin, TemplateView):
         context['loc_id'] = os.getenv("SQUARE_LOCATION_ID") # uncomment in production and development
         access_token = os.getenv('SQUARE_API_ACCESS_TOKEN') # uncomment in production and development
 
-        client = Client(
-            access_token=access_token,
+        client = SquareClient(
+            access_token=settings.SQUARE_API_ACCESS_TOKEN,
             environment=os.getenv('SQUARE_API_ENVIRONMENT'), # Uncomment in production and development
         )
         location = client.locations.retrieve_location(location_id=context['loc_id']).body['location']
