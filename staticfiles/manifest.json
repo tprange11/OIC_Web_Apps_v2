@@ -1,0 +1,27 @@
+{
+    "name": "Ozaukee Ice Center Web Applications",
+    "short_name": "OIC Web Apps",
+    "prefer_related_applications": false,
+    "icons": [
+        {
+            "src": "/static/images/icons/android-chrome-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/static/images/icons/android-chrome-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ],
+    "start_url": "/",
+    "scope": "/",
+    "orientation": "any",
+    "theme_color": "#299c39",
+    "background_color": "#299c39",
+    "display": "standalone",
+    "description": "Web Apps for the Ozaukee Ice Center including Open Hockey, Stick and Puck and Resurfacing Schedule.",
+    "dir": "ltr",
+    "lang": "en-US"
+}
+

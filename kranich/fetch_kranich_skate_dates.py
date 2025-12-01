@@ -79,13 +79,13 @@ def send_skate_dates_email():
     for recipient in recipients:
         if recipient.user.is_active:
             to_email = [recipient.user.email]
-            from_email = 'no-reply@mg.oicwebapps.com'
+            from_email = 'no-reply@mg.oicwebapp.com'
             subject = 'New Kranich Skate Date Added'
 
             # Build the plain text message
             text_message = f'Hi {recipient.user.first_name},\n\n'
             text_message += f'New Kranich Skate dates are now available online. Sign up at the url below.\n\n'
-            text_message += f'https://www.oicwebapps.com/web_apps/kranich/\n\n'
+            text_message += f'https://www.oicwebapp.com/web_apps/kranich/\n\n'
             text_message += f'If you no longer wish to receive these emails, log in to your account,\n'
             text_message += f'click on your username and change the email settings in your profile.\n\n'
             text_message += f'Thank you for using OICWebApps.com!\n\n'

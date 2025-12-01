@@ -36,6 +36,7 @@ class YetiSkateSession(models.Model):
     goalie = models.BooleanField(default=False)
     paid = models.BooleanField(default=False)
 
+
     class Meta:
         # Prevent duplicate entries
         unique_together = ['skater', 'skate_date']

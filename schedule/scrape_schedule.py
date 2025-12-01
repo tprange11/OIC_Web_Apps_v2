@@ -30,9 +30,9 @@ south_locker_rooms = [[6, 9], [5, 8], 7]  # Locker room numbers in South
 
 def get_schedule_data(from_date, to_date):
     '''Request schedule data from Schedule Werks for the specified period.'''
-    
+
     url = f"https://ozaukeeicecenter.schedulewerks.com/public/ajax/swCalGet?tid=-1&from={from_date}&to={to_date}&Complex=-1"
-    
+
     try:
         response = requests.get(url)
         data = json.loads(response.text)
@@ -50,7 +50,11 @@ def process_data(data, from_date):
             end_time = item["end_date"].split(" ")[1]
 
             # Clean up text: decode HTML entities and strip printer emoji
-            text_clean = unescape(item["text"]).replace("🖨️", "")
+            #text_clean = unescape(item["text"]).replace("🖨️", "")
+
+            # Decode unicode escapes, strip HTML tags, remove printer emoji
+            text_clean = BeautifulSoup(item["text"].encode().decode('unicode_escape'), "html.parser").get_text()
+            text_clean = text_clean.replace("🖨️", "")
 
             if "South Rink" in text_clean:
                 rink = "South Rink"
@@ -108,7 +112,7 @@ def scrape_teams(league):
         url = "https://www.ozaukeeicecenter.org/schedule/day/league_instance/226296?subseason=953087"
     else:
         return
-    
+
     response = requests.get(url)
 
     soup = BeautifulSoup(response.text, "html.parser")
@@ -124,7 +128,7 @@ def scrape_teams(league):
     for row in rows:
         cols = row.find_all("td")
         team_events.append([cols[5].find("span").get_text().strip(" CST").strip(" CDT"), cols[2].find("a").get_text(), cols[0].find("a").get_text(), cols[4].find("div").get_text().strip()])
-    
+
     # Convert start time to 24 hour time to match oic_schedule time format
     for row in team_events:
         time = row[0].strip(" PM")
@@ -141,11 +145,11 @@ def add_locker_rooms_to_schedule():
     x = 0  # index of rink list for appending locker room numbers
     no_locker_room = ("Public Skate", "LTS", "Open FS", "Kettle Moraine Figure Skating Club")
     need_game_locker_rooms = (
-        # "Cedarburg", 
-        # "Homestead", 
+        # "Cedarburg",
+        # "Homestead",
         "Lakeshore Lightning",
-        "Concordia ACHA", 
-        "Concordia Men", 
+        "Concordia ACHA",
+        "Concordia Men",
         "Concordia Women"
         )
 
@@ -173,8 +177,8 @@ def add_locker_rooms_to_schedule():
     for item in oic_schedule:
         if item[4] in short_name:
             item[4] = short_name[item[4]]
-        if item[4].count("Mite") >= 2:
-            item[4] =  "Mites"
+#        if item[4].count("Mite") >= 2:
+#            item[4] =  "Mites"
 
     for (_, _, _, rink, customer, event_type) in oic_schedule:
         # if 'Practice' in event_type or customer in no_locker_room: # Used for Covid-19
@@ -251,9 +255,9 @@ def add_schedule_to_model(schedule, data_removed):
         try:
             data = model(
                 schedule_date=f"{item[0][6:]}-{item[0][0:2]}-{item[0][3:5]}", # Date formatted to YYYY-MM-DD
-                start_time=item[1], 
-                end_time=item[2], 
-                rink=item[3], 
+                start_time=item[1],
+                end_time=item[2],
+                rink=item[3],
                 event=item[4],
                 home_locker_room=item[6],
                 visitor_locker_room=item[7],
@@ -265,7 +269,7 @@ def add_schedule_to_model(schedule, data_removed):
     return
 
 if __name__ == "__main__":
-    
+
     # todays_date = date.today()
     from_date = date.today().strftime("%m/%d/%Y")
     to_date = (date.today() + timedelta(days=2)).strftime("%m/%d/%Y")

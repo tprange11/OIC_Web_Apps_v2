@@ -17,7 +17,7 @@ class ContactFormView(LoginRequiredMixin, FormView):
     def form_valid(self, form):
         recipients = User.objects.filter(id__in=['1', '2']).values_list('email', flat=True)
         subject = form.cleaned_data.get('subject')
-        subject += ' - oicwebapps.com'
+        subject += ' - oicwebapp.com'
         name = self.request.user.get_full_name()
         message = f'Message from {name}\n\n'
         message += f'##########################################################################\n\n'

@@ -1,29 +1,28 @@
+from django.views.generic import ListView
 from django.shortcuts import render, redirect
-from django.views.generic import TemplateView, ListView
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 from django.db import IntegrityError
-from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
-import uuid, os
 from datetime import date
-from square.client import Square,SquareEnvironment
-from django.conf import settings
+import uuid
+import os
+
+# Square REST SDK (your version)
+from square.client import Square
+from square.client import SquareEnvironment
+from square.core.api_error import ApiError
 
 from . import models
 from cart.models import Cart
 from programs.models import Program
-# from open_hockey.models import OpenHockeySessions, OpenHockeyMember
 from stickandpuck.models import StickAndPuckSession
-# from thane_storck.models import SkateSession
 from figure_skating.models import FigureSkatingSession
 from adult_skills.models import AdultSkillsSkateSession
-# from mike_schultz.models import MikeSchultzSkateSession
 from yeti_skate.models import YetiSkateSession
 from womens_hockey.models import WomensHockeySkateSession
 from bald_eagles.models import BaldEaglesSession
 from lady_hawks.models import LadyHawksSkateSession
-# from chs_alumni.models import CHSAlumniSession
 from private_skates.models import PrivateSkateSession, PrivateSkate
 from open_roller.models import OpenRollerSkateSession
 from owhl.models import OWHLSkateSession
@@ -32,207 +31,235 @@ from nacho_skate.models import NachoSkateSession
 from ament.models import AmentSkateSession
 from accounts.models import UserCredit
 
-# Create your views here.
 
-class PaymentView(LoginRequiredMixin, TemplateView):
-    '''Displays page where user can pay for services.'''
+# --------------------------------------------------------
+# CREATE SQUARE CLIENT
+# --------------------------------------------------------
+def get_square_client():
+    token = os.getenv("SQUARE_API_ACCESS_TOKEN")
+    if not token:
+        raise ImproperlyConfigured("SQUARE_API_ACCESS_TOKEN is not configured")
 
-    template_name = 'sq-payment-form.html'
-    cart_model = Cart
+    env_raw = os.getenv("SQUARE_API_ENVIRONMENT", "sandbox").lower()
+    environment = (
+        SquareEnvironment.PRODUCTION
+        if env_raw == "production"
+        else SquareEnvironment.SANDBOX
+    )
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        items_cost = self.cart_model.objects.filter(customer=self.request.user).values_list('amount', flat=True)
-        total = 0
-        for item_cost in items_cost:
-            total += item_cost
-        context['total'] = total
-        context['app_id'] = os.getenv("SQUARE_APP_ID") # uncomment in production and development
-        context['loc_id'] = os.getenv("SQUARE_LOCATION_ID") # uncomment in production and development
-        access_token = os.getenv('SQUARE_API_ACCESS_TOKEN') # uncomment in production and development
+    client = Square(
+        token=token,
+        environment=environment,
+    )
 
-        client = Square(
-            access_token=settings.SQUARE_API_ACCESS_TOKEN,
-            environment=SquareEnvironment.os.getenv('SQUARE_API_ENVIRONMENT'), # Uncomment in production and development
-        )
-        location = client.locations.retrieve_location(location_id=context['loc_id']).body['location']
-        context['currency'] = location['currency']
-        context['country'] = location['country']
-        return context
+    return client
 
 
-class PaymentListView(LoginRequiredMixin, ListView):
-    '''Displays page with users past payments.'''
-
-    model = models.Payment
-    template_name = 'payments-list.html'
-    context_object_name = 'payments'
-    paginate_by = 12
-
-    def get_queryset(self):
-        queryset = super().get_queryset().filter(payer=self.request.user)
-        return queryset
-
-
+# --------------------------------------------------------
+# PAYMENT PROCESSING
+# --------------------------------------------------------
 @login_required
 def process_payment(request, **kwargs):
-    '''Processes the payment and returns an error or success page.'''
 
-    context = None #Initialize context
-    template_name = 'sq-payment-result.html'
-    cart_model = Cart
-    program_model = Program
-    # open_hockey_sessions_model = OpenHockeySessions
-    # open_hockey_member_model = OpenHockeyMember
-    stick_and_puck_sessions_model = StickAndPuckSession
-    # thane_storck_sessions_model = SkateSession
-    figure_skating_sessions_model = FigureSkatingSession
-    adult_skills_sessions_model = AdultSkillsSkateSession
-    # mike_schultz_sessions_model = MikeSchultzSkateSession
-    yeti_sessions_model = YetiSkateSession
-    womens_hockey_sessions_model = WomensHockeySkateSession
-    bald_eagles_sessions_model = BaldEaglesSession
-    lady_hawks_sessions_model = LadyHawksSkateSession
-    # chs_alumni_sessions_model = CHSAlumniSession
-    private_skate_sessions_model = PrivateSkateSession
-    open_roller_sessions_model = OpenRollerSkateSession
-    owhl_sessions_model = OWHLSkateSession
-    kranich_sessions_model = KranichSkateSession
-    nacho_skate_sessions_model = NachoSkateSession
-    ament_sessions_model = AmentSkateSession
-    user_credit_model = UserCredit
-    today = date.today()
+    template_name = "sq-payment-result.html"
 
-    if request.method == 'GET':
-        return redirect('cart:shopping-cart')
-    else:
+    if request.method == "GET":
+        return redirect("cart:shopping-cart")
 
-        token = request.POST['payment-token']
-        # print(f"Token: {token}")
-        access_token = os.getenv('SQUARE_API_ACCESS_TOKEN') # uncomment in production and development
-        cart_items = cart_model.objects.filter(customer=request.user).values_list('item', 'amount')
-        total = 0
-        programs = program_model.objects.all().values_list('program_name', flat=True)
-        note = {program: 0 for program in programs}
-        private_skates = PrivateSkate.objects.all().values_list('name', flat=True)
-        for skate in private_skates:
-            note[skate] = 0
-        note['User Credits'] = 0
+    token = request.POST.get("payment-token")
+    if not token:
+        return render(request, template_name, {
+            "error": True,
+            "error_message": "Payment token missing.",
+        })
 
-        for item, amount in cart_items:
-            total += amount
-            # if item == 'OH Membership':
-            #     note['Open Hockey'] += amount
-            # else:
+    # CART ITEMS
+    cart_items = Cart.objects.filter(
+        customer=request.user
+    ).values_list("item", "amount")
+
+    total = 0
+    programs = Program.objects.values_list("program_name", flat=True)
+    note = {program: 0 for program in programs}
+
+    for skate_name in PrivateSkate.objects.values_list("name", flat=True):
+        note[skate_name] = 0
+
+    note["User Credits"] = 0
+
+    for item, amount in cart_items:
+        total += amount
+        if item in note:
             note[item] += amount
-        total *= 100 #convert to pennies for square
 
-        client = Client(
-            access_token=access_token,
-            # environment='sandbox', # Uncomment on local machine
-            environment=os.getenv('SQUARE_API_ENVIRONMENT'), # Uncomment in production and development
+    total *= 100  # USD → cents
+
+    client = get_square_client()
+
+    # --------------------------------------------------------
+    # LOCATION LOOKUP (CORRECT METHOD)
+    # --------------------------------------------------------
+    location_id = os.getenv("SQUARE_LOCATION_ID")
+    if not location_id:
+        raise ImproperlyConfigured("SQUARE_LOCATION_ID is not configured")
+
+    try:
+        locations_resp = client.locations.list()
+    except ApiError as e:
+        models.PaymentError.objects.create(payer=request.user, error=str(e))
+        return render(request, template_name, {
+            "error": True,
+            "error_message": "Square configuration error.",
+        })
+
+    if locations_resp.errors:
+        models.PaymentError.objects.create(
+            payer=request.user,
+            error=str(locations_resp.errors)
+        )
+        return render(request, template_name, {
+            "error": True,
+            "error_message": "Square location fetch failed.",
+        })
+
+    location = next((loc for loc in locations_resp.locations if loc.id == location_id), None)
+    if not location:
+        return render(request, template_name, {
+            "error": True,
+            "error_message": "Square location not found.",
+        })
+
+    currency = location.currency
+
+    idempotency_key = str(uuid.uuid4())
+
+    amount_money = {
+        "amount": total,
+        "currency": currency,
+    }
+
+    payment_note = "".join(f"({k} ${v}) " for k, v in note.items() if v != 0)
+
+    body = {
+        "idempotency_key": idempotency_key,
+        "source_id": token,
+        "amount_money": amount_money,
+        "autocomplete": True,
+        "note": payment_note,
+    }
+
+    # --------------------------------------------------------
+    # CREATE PAYMENT (CORRECT METHOD: payments.create)
+    # --------------------------------------------------------
+    try:
+        payment_resp = client.payments.create(**body)
+    except ApiError as e:
+        models.PaymentError.objects.create(payer=request.user, error=str(e))
+        return render(request, template_name, {
+            "error": True,
+            "error_message": "Payment processing failed.",
+        })
+
+    if payment_resp.errors:
+        err = payment_resp.errors[0]
+        detail = getattr(err, "detail", str(err))
+        models.PaymentError.objects.create(payer=request.user, error=detail)
+        return render(request, template_name, {
+            "error": True,
+            "error_message": detail,
+        })
+
+    # SUCCESS
+    res = payment_resp.payment
+    amount = float(res.amount_money.amount) / 100
+
+    models.Payment.objects.create(
+        payer=request.user,
+        square_id=res.id,
+        square_receipt=getattr(res, "receipt_number", None),
+        amount=amount,
+        note=res.note,
+    )
+
+    # UPDATE SESSIONS
+    today = date.today()
+    try:
+        StickAndPuckSession.objects.filter(guardian=request.user, session_date__gte=today, paid=False).update(paid=True)
+        FigureSkatingSession.objects.filter(guardian=request.user, session__skate_date__gte=today, paid=False).update(paid=True)
+        AdultSkillsSkateSession.objects.filter(skater=request.user, paid=False).update(paid=True)
+        YetiSkateSession.objects.filter(skater=request.user, paid=False).update(paid=True)
+        WomensHockeySkateSession.objects.filter(user=request.user, paid=False).update(paid=True)
+        BaldEaglesSession.objects.filter(skater=request.user, paid=False).update(paid=True)
+        LadyHawksSkateSession.objects.filter(user=request.user, paid=False).update(paid=True)
+        OpenRollerSkateSession.objects.filter(user=request.user).update(paid=True)
+        PrivateSkateSession.objects.filter(user=request.user, paid=False).update(paid=True)
+        OWHLSkateSession.objects.filter(skater=request.user, paid=False).update(paid=True)
+        KranichSkateSession.objects.filter(skater=request.user, paid=False).update(paid=True)
+        NachoSkateSession.objects.filter(skater=request.user, paid=False).update(paid=True)
+        AmentSkateSession.objects.filter(skater=request.user, paid=False).update(paid=True)
+    except IntegrityError:
+        pass
+
+    # USER CREDITS
+    try:
+        user_credit = UserCredit.objects.get(user=request.user)
+        if user_credit.pending > 0:
+            user_credit.balance += user_credit.pending
+            user_credit.pending = 0
+            user_credit.paid = True
+            user_credit.save()
+    except ObjectDoesNotExist:
+        user_credit = None
+
+    if "User Credits" in res.note and user_credit:
+        send_mail(
+            "User Credits Purchased",
+            f"{request.user.get_full_name()} purchased credits. {res.note}\nBalance: {user_credit.balance}",
+            "no-reply@mg.oicwebapp.com",
+            ["brianc@wi.rr.com"],
+            fail_silently=True,
         )
 
-        location_id = os.getenv("SQUARE_LOCATION_ID") # uncomment in production and development
-        location = client.locations.retrieve_location(location_id=location_id).body['location']
-        currency = location['currency']
+    # CLEAR CART
+    Cart.objects.filter(customer=request.user).delete()
 
-        # Assemble the body for the create_payment() api function
-        idempotency_key = str(uuid.uuid1())
-        amount = {'amount': total, 'currency': currency}
+    return render(request, template_name, {
+        "message": True,
+        "amount": amount,
+        "note": res.note,
+    })
 
-        # Create the note depending on what the user is paying for....
-        payment_note = ''
-        for k, v in note.items():
-            if v != 0:
-                payment_note += f'({k} ${v}) '
+@login_required
+def payment_page(request):
+    """Render the Square payment form page."""
+    client = get_square_client()
 
-        body = {
-            'idempotency_key': idempotency_key, 
-            'source_id': token, 'amount_money': amount, 
-            'autocomplete': True, 
-            'note': payment_note
-            }
+    # Fetch location details
+    loc_resp = client.locations.list_locations()
+    location = loc_resp.locations[0]
 
-        # Send info to square api and react to the response
-        api_response = client.payments.create_payment(request_body=body)
+    total = sum(
+        Cart.objects.filter(customer=request.user)
+        .values_list("amount", flat=True)
+    )
 
-        if api_response.is_success():
-            res = api_response.body['payment']
-            # Add payment record to Payment Model
-            model = models.Payment
-            payer = request.user
-            square_id = res['id']
-            square_receipt = res['receipt_number']
-            amount = float(res['amount_money']['amount']) / 100
-            note = res['note']
-            payment_record = model(payer=payer, square_id=square_id, square_receipt=square_receipt, amount=amount, note=note)
-            payment_record.save()
+    context = {
+        "app_id": os.getenv("SQUARE_WEB_PAYMENT_APP_ID"),
+        "loc_id": os.getenv("SQUARE_LOCATION_ID"),
+        "currency": location.currency,
+        "country": location.country,
+        "total": total,
+    }
+    return render(request, "sq-payment-form.html", context)
 
 
-            # Update model(s) to mark items as paid.
-            try:
-                # open_hockey_sessions_model.objects.filter(skater=request.user, date__gte=today).update(paid=True)
-                stick_and_puck_sessions_model.objects.filter(guardian=request.user, session_date__gte=today, paid=False).update(paid=True)
-                # open_hockey_member_model.objects.filter(member=request.user).update(active=True)
-                # thane_storck_sessions_model.objects.filter(skater=request.user).update(paid=True)
-                figure_skating_sessions_model.objects.filter(guardian=request.user, session__skate_date__gte=today, paid=False).update(paid=True)
-                adult_skills_sessions_model.objects.filter(skater=request.user, paid=False).update(paid=True)
-                # mike_schultz_sessions_model.objects.filter(user=request.user).update(paid=True)
-                yeti_sessions_model.objects.filter(skater=request.user, paid=False).update(paid=True)
-                womens_hockey_sessions_model.objects.filter(user=request.user, paid=False).update(paid=True)
-                bald_eagles_sessions_model.objects.filter(skater=request.user, paid=False).update(paid=True)
-                lady_hawks_sessions_model.objects.filter(user=request.user, paid=False).update(paid=True)
-                # chs_alumni_sessions_model.objects.filter(skater=request.user).update(paid=True)
-                open_roller_sessions_model.objects.filter(user=request.user).update(paid=True)
-                private_skate_sessions_model.objects.filter(user=request.user, paid=False).update(paid=True)
-                owhl_sessions_model.objects.filter(skater=request.user, paid=False).update(paid=True)
-                kranich_sessions_model.objects.filter(skater=request.user, paid=False).update(paid=True)
-                nacho_skate_sessions_model.objects.filter(skater=request.user, paid=False).update(paid=True)
-                ament_sessions_model.objects.filter(skater=request.user, paid=False).update(paid=True)
-            except IntegrityError:
-                pass
+# --------------------------------------------------------
+# PAYMENT LIST VIEW
+# --------------------------------------------------------
+class PaymentListView(ListView):
+    model = models.Payment
+    template_name = 'payments_made.html'
+    context_object_name = 'payments'
 
-            try:
-                user_credit = user_credit_model.objects.get(user=request.user) # Get user credit model instance
-                if user_credit.pending > 0: # If there are pending credits
-                    user_credit.balance += user_credit.pending # Add pending credits to credit balance
-                    user_credit.pending = 0 # Set pending credits to 0
-                    user_credit.paid = True # Mark credits as paid
-                    user_credit.save() # Save user credit model
-            except ObjectDoesNotExist:
-                pass
-
-            if "User Credits" in note:
-                new_user_credit = user_credit.balance
-                send_mail(
-                    "User Credits Purchased",
-                    f"{payer.get_full_name()} has purchased credits.  {note}\n\n Credit Balance: {new_user_credit}",
-                    "no-reply@mg.oicwebapps.com",
-                    ['brianc@wi.rr.com'],
-                    fail_silently=True
-                )
-
-            # Clear items from the Cart Model if the payment was successful
-            Cart.objects.filter(customer=request.user).delete()
-
-            # Construct context for result page.
-            context = {'message': True, 'amount': amount, 'note': note}
-        elif api_response.is_error():
-            # Save the error in PaymentError model for debugging.
-            model = models.PaymentError
-            payer = request.user
-            payment_error = model(payer=payer, error=api_response.errors)
-            payment_error.save()
-            
-            # Create response context and send to template for display.
-            error_message = api_response.errors[0]['detail']
-            error_messages = {
-                "Authorization error: 'ADDRESS_VERIFICATION_FAILURE'": "The zip code you entered was incorrect.",
-                "Authorization error: 'CVV_FAILURE'": "The three digit security code you entered was incorrect.",
-                "Authorization error: 'GENERIC_DECLINE'": "The credit card number you entered has been declined.",
-            }
-            error = error_messages.get(error_message, error_message) # Retrieve error msg, else return raw error_message
-            context = {'error': True, 'error_message': error}
-
-        return render(request, template_name, context)
+    def get_queryset(self):
+        return self.model.objects.filter(payer=self.request.user).order_by('-id')

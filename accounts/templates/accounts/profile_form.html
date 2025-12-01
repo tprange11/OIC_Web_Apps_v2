@@ -72,7 +72,7 @@
     {% endif %}
 </p>
 {% include 'accounts/user_credits_modal_include.html' %}
-<p><a href="{% url 'payment:payments-list' %}" class="btn btn-primary btn-sm">View Payment History</a></p>
+<p><a href="{% url 'payment:payments_made' %}" class="btn btn-primary btn-sm">View Payment History</a></p>
 <form method="POST" class="border rounded p-2">
     <h5>Email Preferences:</h5>
     {% csrf_token %}

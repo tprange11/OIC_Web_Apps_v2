@@ -1,137 +1,253 @@
-from datetime import date, timedelta
-import os, sys, requests, json
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
-if os.name == 'nt':
+"""
+Nacho Skate Scheduler Script
+----------------------------
+Fetches Nacho Skate dates, inserts new sessions, processes regular skaters,
+and sends notification emails.
+
+Supports flags:
+  --force-email         Send emails immediately (ignores weekday/schedule)
+  --force-regulars      Add regulars to all future sessions regardless of balance
+  --test-email <addr>   Send ONE test email to a single address
+  --dry-run             Log actions but do NOT write to DB or send mail
+"""
+
+import os
+import sys
+import json
+import pytz
+import logging
+import requests
+import argparse
+from datetime import date, datetime, timedelta
+
+# Timezone
+CENTRAL = pytz.timezone("America/Chicago")
+
+# Django environment setup
+if os.name == "nt":
     sys.path.append("C:\\Users\\brian\\Documents\\Python\\OIC_Web_Apps\\")
 else:
-    sys.path.append("/home/OIC/OIC_Web_Apps/") # Uncomment on production server
-    # sys.path.append("/home/BrianC68/oicdev/OIC_Web_Apps/") # Uncomment on development server
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'OIC_Web_Apps.settings')
+    sys.path.append("/home/OIC/OIC_Web_Apps/")
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "OIC_Web_Apps.settings")
 
 import django
 django.setup()
 
+# Django imports
 from django.db import IntegrityError
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
+
 from nacho_skate.models import NachoSkateDate, NachoSkateSession, NachoSkateRegular
 from accounts.models import Profile, UserCredit
 from programs.models import Program
 
-skate_dates = []
+# -------------------------------------------------------------------
+# LOGGING SETUP
+# -------------------------------------------------------------------
+LOG_PATH = "/home/OIC/logs/nacho_skate.log"
+logger = logging.getLogger("nacho_skate")
+logger.setLevel(logging.INFO)
 
+handler = logging.FileHandler(LOG_PATH)
+handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
+logger.addHandler(handler)
 
-def get_schedule_data(from_date, to_date):
-    '''Request schedule data from Schedule Werks for the specified period.'''
-    
+# -------------------------------------------------------------------
+
+def fetch_schedule(from_date, to_date):
+    """Pulls OIC schedule data for the given period."""
     url = f"https://ozaukeeicecenter.schedulewerks.com/public/ajax/swCalGet?tid=-1&from={from_date}&to={to_date}&Complex=-1"
 
     try:
         response = requests.get(url)
-        data = json.loads(response.text)
-    except requests.exceptions.RequestException as e:
-        # print(e)
-        return
+        response.raise_for_status()
+        data = response.json()
+        logger.info(f"Fetched {len(data)} schedule entries.")
+        return data
+    except Exception as e:
+        logger.error(f"Failed fetching schedule: {e}")
+        return []
 
+
+def extract_nacho_sessions(data):
+    """Parse ScheduleWerks JSON for Nacho Skate events."""
+    results = []
     for item in data:
-        if "Nacho" in item["text"]:
-            skate_date = item["start_date"].split(" ")[0]
-            skate_date = f"{skate_date[6:]}-{skate_date[:2]}-{skate_date[3:5]}"
-            start_time = item["start_date"][-5:] # Last 5 characters HH:MM
-            end_time = item["end_date"][-5:] # Last 5 characters HH:MM
+        if "Nacho" in item.get("text", ""):
+            raw_date = item["start_date"].split(" ")[0]  # MM/DD/YYYY
+            clean_date = f"{raw_date[6:]}-{raw_date[:2]}-{raw_date[3:5]}"
+            start = item["start_date"][-5:]
+            end = item["end_date"][-5:]
+            results.append((clean_date, start, end))
 
-            skate_dates.append([skate_date, start_time, end_time])
-    return
+    logger.info(f"Found {len(results)} Nacho Skate events.")
+    return results
 
-def add_skate_dates(sessions):
-    '''Adds Nacho Skate dates and times to the NachoSkateDate model.'''
-    model = NachoSkateDate
-    new_dates = False
 
+def add_new_dates(sessions, dry_run=False):
+    """Insert new Nacho Skate dates into the DB."""
+    added = False
     for session in sessions:
         try:
-            data = model(skate_date=session[0], start_time=session[1], end_time=session[2])
-            data.save()
-            new_dates = True
-        except IntegrityError:
-            continue
-    # print(new_dates)
-    return new_dates
+            if not dry_run:
+                NachoSkateDate(
+                    skate_date=session[0],
+                    start_time=session[1],
+                    end_time=session[2],
+                ).save()
 
-def add_regulars():
-    '''Adds regulars to the session if they have enough credit balance to cover the price of the skate.'''
-    regulars = NachoSkateRegular.objects.all().select_related('regular')
-    skate_dates = NachoSkateDate.objects.filter(skate_date__gt=date.today())
+            logger.info(f"Added new Nacho Skate: {session}")
+            added = True
+
+        except IntegrityError:
+            logger.info(f"Duplicate date skipped: {session}")
+
+    return added
+
+
+def add_regulars(force=False, dry_run=False):
+    """Registers regular skaters if they have credit OR if forced."""
+    regulars = NachoSkateRegular.objects.all().select_related("regular")
+    sessions = NachoSkateDate.objects.filter(skate_date__gt=date.today())
     price = Program.objects.get(id=15).skater_price
 
-    for skate_date in skate_dates:
+    added = 0
+
+    for session in sessions:
         for regular in regulars:
             try:
-                user_credit = UserCredit.objects.get(user=regular.regular)
-                if user_credit.pk == 870 or user_credit.balance >= price:
-                    data = NachoSkateSession(skater=regular.regular, skate_date=skate_date, paid=True)
-                    data.save()  # Will raise IntegrityError if duplicate
-                    
-                    if user_credit.pk != 870:  # Skip credit deduction for special account
-                        user_credit.balance -= price
-                        if user_credit.balance == 0:
-                            user_credit.paid = False
-                        user_credit.save()
-            except UserCredit.DoesNotExist:
-                continue  # Skip if no credit record
-            except IntegrityError:
-                continue  # Skip duplicates
+                credit = UserCredit.objects.get(user=regular.regular)
 
-def send_skate_dates_email():
-    '''Sends email to Users who opted in letting them know when Nacho Skate dates are added.'''
-    recipients = Profile.objects.filter(nacho_skate_email=True).select_related('user')
+                if credit.pk == 870:
+                    allowed = True
+                elif force:
+                    allowed = True
+                else:
+                    allowed = credit.balance >= price
 
-    for recipient in recipients:
-        if recipient.user.is_active:
-            to_email = [recipient.user.email]
-            from_email = 'no-reply@mg.oicwebapps.com'
-            subject = 'New Nacho Skate Date Added'
+                if not allowed:
+                    continue
 
-            # Build the plain text message
-            text_message = f'Hi {recipient.user.first_name},\n\n'
-            text_message += f'New Nacho Skate dates are now available online. Sign up at the url below.\n\n'
-            text_message += f'https://www.oicwebapps.com/web_apps/nacho_skate/\n\n'
-            text_message += f'If you no longer wish to receive these emails, log in to your account,\n'
-            text_message += f'click on your username and change the email settings in your profile.\n\n'
-            text_message += f'Thank you for using OICWebApps.com!\n\n'
+                if not dry_run:
+                    NachoSkateSession(
+                        skater=regular.regular,
+                        skate_date=session,
+                        paid=True
+                    ).save()
 
-            # Build the html message
-            html_message = render_to_string(
-                'nacho_skate_dates_email.html',
-                {
-                    'recipient_name': recipient.user.first_name,
-                }
-            )
+                    if credit.pk != 870 and not force:
+                        credit.balance -= price
+                        credit.paid = credit.balance > 0
+                        credit.save()
 
-            # Send email to each recipient separately
-            try:
-                mail = EmailMultiAlternatives(
-                    subject, text_message, from_email, to_email
-                )
-                mail.attach_alternative(html_message, 'text/html')
-                mail.send()
-            except:
-                return
+                added += 1
 
+            except (UserCredit.DoesNotExist, IntegrityError):
+                continue
+
+    logger.info(f"Regulars added: {added}")
+    return added
+
+
+def send_emails(dry_run=False, test_email=None):
+    """Send Nacho Skate email notifications."""
+
+    if test_email:
+        recipients = [{"user": type("obj", (object,), {"email": test_email, "first_name": "Test"})}]
+        logger.info(f"Sending TEST email to {test_email}")
+    else:
+        recipients = Profile.objects.filter(nacho_skate_email=True).select_related("user")
+        logger.info(f"Sending emails to {recipients.count()} recipients")
+
+    for r in recipients:
+        email = test_email or r.user.email
+        fname = test_email and "Test" or r.user.first_name
+
+        subject = "New Nacho Skate Date Added"
+        from_email = "no-reply@mg.oicwebapp.com"
+
+        text_message = (
+            f"Hi {fname},\n\n"
+            "New Nacho Skate dates are now available online.\n\n"
+            "https://www.oicwebapp.com/web_apps/nacho_skate/\n\n"
+            "If you no longer wish to receive these emails, update your profile.\n\n"
+        )
+
+        html_message = render_to_string("nacho_skate_dates_email.html", {
+            "recipient_name": fname,
+        })
+
+        if dry_run:
+            logger.info(f"[DRY RUN] Would send email to {email}")
+            continue
+
+        try:
+            mail = EmailMultiAlternatives(subject, text_message, from_email, [email])
+            mail.attach_alternative(html_message, "text/html")
+            mail.send()
+            logger.info(f"Email sent to: {email}")
+        except Exception as e:
+            logger.error(f"Email failed for {email}: {e}")
+
+
+# -------------------------------------------------------------------
+# MAIN
+# -------------------------------------------------------------------
 
 if __name__ == "__main__":
-    
-    from_date = date.today() + timedelta(days=3)
-    from_date = from_date.strftime("%m/%d/%Y")
-    send_email = False
 
-    # Every Sunday request schedule data and parse for Nacho Skate dates
-    if date.today().weekday() == 6:
-        get_schedule_data(from_date, from_date)
+    parser = argparse.ArgumentParser(description="Nacho Skate Scheduler")
+    parser.add_argument("--force-email", action="store_true", help="Send emails immediately")
+    parser.add_argument("--force-regulars", action="store_true", help="Add regulars regardless of balance")
+    parser.add_argument("--test-email", type=str, help="Send a test email to one address")
+    parser.add_argument("--dry-run", action="store_true", help="Do not send mail or change DB")
 
-        if len(skate_dates) > 0:
-            send_email = add_skate_dates(skate_dates)
-        
-        if send_email:
-            add_regulars()
-            send_skate_dates_email()
+    args = parser.parse_args()
+
+    logger.info("===== Nacho Skate START =====")
+
+    today = datetime.now(CENTRAL).date()
+    weekday = today.weekday()
+
+    logger.info(f"Today (Central): {today} — Weekday {weekday}")
+
+    # ---------------------------------------------
+    # PRIORITY 1: TEST EMAIL ALWAYS SENDS IMMEDIATELY
+    # ---------------------------------------------
+    if args.test_email:
+        logger.info(f"TEST EMAIL MODE — sending only to {args.test_email}")
+        send_emails(dry_run=args.dry_run, test_email=args.test_email)
+        logger.info("===== Nacho Skate END =====")
+        sys.exit(0)
+
+    # ---------------------------------------------
+    # PRIORITY 2: FORCE EMAIL MODE
+    # ---------------------------------------------
+    if args.force_email:
+        logger.info("FORCE EMAIL MODE — sending to all recipients")
+        send_emails(dry_run=args.dry_run)
+        logger.info("===== Nacho Skate END =====")
+        sys.exit(0)
+
+    # ---------------------------------------------
+    # NORMAL SUNDAY OPERATION
+    # ---------------------------------------------
+    if weekday == 6:
+        logger.info("Sunday detected — pulling schedule")
+
+        fetch_from = (today + timedelta(days=3)).strftime("%m/%d/%Y")
+        data = fetch_schedule(fetch_from, fetch_from)
+        sessions = extract_nacho_sessions(data)
+
+        new_dates_added = add_new_dates(sessions, dry_run=args.dry_run)
+
+        if new_dates_added:
+            add_regulars(force=args.force_regulars, dry_run=args.dry_run)
+            send_emails(dry_run=args.dry_run)
+
+    logger.info("===== Nacho Skate END =====")

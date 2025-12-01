@@ -4,8 +4,7 @@ from . import views
 app_name = 'payment'
 
 urlpatterns = [
-    path('process/', views.process_payment, name='process'),
-    path('', views.PaymentView.as_view(), name='payment'),
-    path('payments_made/', views.PaymentListView.as_view(), name='payments-list'),
-
+    path('payment/', views.payment_page, name='payment'),              # Shows the payment form
+    path('process/', views.process_payment, name='process_payment'),   # Handles POST from JS
+    path('payments_made/', views.PaymentListView.as_view(), name='payments_made'),
 ]

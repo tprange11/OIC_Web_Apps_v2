@@ -8,7 +8,7 @@ class PrivateSkateAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('name',)}
 
     def page_url(self, obj):
-        return f"https://www.oicwebapps.com/web_apps/private_skates/{obj.slug}/"
+        return f"https://www.oicwebapp.com/web_apps/private_skates/{obj.slug}/"
 
 
 class PrivateSkateDateAdmin(admin.ModelAdmin):

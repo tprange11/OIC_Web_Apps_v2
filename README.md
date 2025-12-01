@@ -1,5 +1,5 @@
 # Progressive Web App for the Ozaukee Ice Center
-https://www.oicwebapps.com/
+https://www.oicwebapp.com/
 
 ## Features
 1. Skaters register and pay online for hockey, figure skating and stick & puck sessions.

@@ -1,35 +1,53 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block title %}<title>Make a Payment</title>
-<!-- link to the Web SDK library -->
-<script type="text/javascript" src="https://web.squarecdn.com/v1/square.js"></script>
-<script type="application/javascript">
-    window.applicationId = '{{ app_id }}';
-    window.locationId = '{{loc_id}}';
-    window.currency = '{{currency}}';
-    window.country = '{{country}}';
+
+{% block title %}
+<title>Make a Payment</title>
+{% endblock %}
+
+{% block extra_head %}
+<!-- Square Web Payments SDK -->
+<script src="https://web.squarecdn.com/v1/square.js"></script>
+
+<script>
+    window.applicationId = "{{ app_id }}";
+    window.locationId = "{{ loc_id }}";
+    window.currency = "{{ currency }}";
+    window.country = "{{ country }}";
 </script>
-<link rel="stylesheet" type="text/css" href="{% static 'css/sq-payment.css' %}">
-{% endblock title %}
+
+<link rel="stylesheet" href="{% static 'css/sq-payment.css' %}">
+{% endblock %}
+
 {% block content %}
-<h4>Make a Payment</h4>
-<!-- Begin Payment Form -->
-<form class="payment-form" id="fast-checkout" action="{% url 'payment:process' %}" method="POST">
-  {% csrf_token %}
-  <input type="hidden" name="payment-token" id="payment-token">
-  <div class="wrapper">
-    <div id="card-container"></div>
-    <div>
-      <button id="card-button" type="button" class="btn btn-lg btn-success">
-        Pay ${{ total }} Now
-      </button>
-      <span id="payment-flow-message">
+
+<h4 class="mb-4">Make a Payment</h4>
+
+<form id="fast-checkout"
+      class="payment-form"
+      action="{% url 'payment:process_payment' %}"
+      method="POST">
+
+    {% csrf_token %}
+    <input type="hidden" id="payment-token" name="payment-token">
+
+    <div class="wrapper">
+        <div id="card-container"></div>
+
+        <button id="card-button"
+                type="button"
+                class="btn btn-success btn-lg mt-3">
+            Pay ${{ total }} Now
+        </button>
+
+        <span id="payment-flow-message" class="text-danger mt-2"></span>
     </div>
-  </div>
 </form>
+
 <div id="payment-status-container"></div>
-<script type="text/javascript" src="{% static 'js/sq-card-pay.js' %}"></script>
-<!-- link to the local Web SDK initialization -->
-<script type="text/javascript" src="{% static 'js/sq-payment-flow.js' %}"></script>
-  <!-- End Payment Form -->
-{% endblock content %}
+
+<!-- Square JS handlers -->
+<script src="{% static 'js/sq-card-pay.js' %}"></script>
+<script src="{% static 'js/sq-payment-flow.js' %}"></script>
+
+{% endblock %}

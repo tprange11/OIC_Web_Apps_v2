@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% block title %}<title>Shopping Cart OIC Web Apps</title>{% endblock title %}
+
 {% block content %}
 <h4>Shopping Cart Items</h4>
 <div class="container">
@@ -12,29 +13,116 @@
         <div class="col-6 col-md-2">Remove Item</div>
     </div>
     <ul class="list-group mt-2">
-{% for item in shopping_cart_items %}
-    <li class="list-group-item" style="padding-left: 5px; padding-right: 0px;">
-    <div class="row align-items-center">
-        <div class="col-6 col-md-2">{{item.item}}</div>
-        <div class="col-6 col-md-2">{{item.skater_name}}</div>
-        <div class="col-6 col-md-2">{{item.event_date}}</div>
-        <div class="col-6 col-md-2">{{item.event_start_time}}</div>
-        <div class="col-6 col-md-2">${{item.amount}}</div>
-        <div class="col-6 col-md-2">
-            <form action="{% url 'cart:cart-remove-item' pk=item.pk %}" method="POST">
-                {% csrf_token %}
-                <input type="submit" value="X" class="btn btn-danger btn-sm">
-            </form>
-        </div>
-    </div>
-    </li>
-{% empty %}
-<p>There are no items in your cart.</p>
-{% endfor %}
+    {% for item in shopping_cart_items %}
+        <li class="list-group-item" style="padding-left: 5px; padding-right: 0px;">
+            <div class="row align-items-center">
+                <div class="col-6 col-md-2">{{ item.item }}</div>
+                <div class="col-6 col-md-2">{{ item.skater_name }}</div>
+                <div class="col-6 col-md-2">{{ item.event_date }}</div>
+                <div class="col-6 col-md-2">{{ item.event_start_time }}</div>
+                <div class="col-6 col-md-2">${{ item.amount }}</div>
+                <div class="col-6 col-md-2">
+                    <form action="{% url 'cart:cart-remove-item' pk=item.pk %}" method="POST">
+                        {% csrf_token %}
+                        <input type="submit" value="X" class="btn btn-danger btn-sm">
+                    </form>
+                </div>
+            </div>
+        </li>
+    {% empty %}
+        <p>There are no items in your cart.</p>
+    {% endfor %}
     </ul>
-    <div class="font-weight-bold mt-3">Cart Total: ${{cart_total}}</div>
-    <div>
-        <a class="btn btn-success btn-sm mt-3" href="{% url 'payment:payment' %}">Pay Now</a>
-    </div>
+
+    <div class="font-weight-bold mt-3">Cart Total: ${{ cart_total }}</div>
+
+    {% if shopping_cart_items %}
+    <hr>
+
+    <!-- Square payment form -->
+    <form id="payment-form"
+          method="post"
+          action="{% url 'payment:process_payment' %}">
+        {% csrf_token %}
+
+        <!-- Square mounts its card inputs here -->
+        <div id="card-container" class="mt-3 mb-2"></div>
+
+        <!-- Hidden field filled with Square token -->
+        <input type="hidden" id="payment-token" name="payment-token">
+
+        <button id="card-button" type="button" class="btn btn-success btn-sm mt-2">
+            Pay Now
+        </button>
+
+        <div id="payment-status" class="mt-2 text-danger"></div>
+    </form>
+    {% endif %}
 </div>
+
+<!-- Square Web Payments SDK -->
+<script src="https://web.squarecdn.com/v1/square.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', async function () {
+    const statusEl = document.getElementById('payment-status');
+
+    const paymentForm = document.getElementById('payment-form');
+    if (!paymentForm) {
+        // empty cart, nothing to do
+        return;
+    }
+
+    if (!window.Square) {
+        console.error('Square.js failed to load');
+        statusEl.textContent = 'Payment system is temporarily unavailable.';
+        return;
+    }
+
+    // Initialize the payments object with your app and location IDs
+    const payments = window.Square.payments(
+        '{{ square_app_id }}',
+        '{{ square_location_id }}'
+    );
+
+    let card;
+    try {
+        card = await payments.card();
+        await card.attach('#card-container');
+    } catch (err) {
+        console.error('Error initializing card:', err);
+        statusEl.textContent = 'Could not initialize payment form.';
+        return;
+    }
+
+    const form = document.getElementById('payment-form');
+    const button = document.getElementById('card-button');
+    const tokenInput = document.getElementById('payment-token');
+
+    button.addEventListener('click', async function (event) {
+        event.preventDefault();
+        statusEl.textContent = 'Processing...';
+
+        try {
+            const result = await card.tokenize();
+
+            if (result.status === 'OK') {
+                console.log('Tokenized:', result.token);
+                tokenInput.value = result.token;
+                form.submit();  // POST to /payment/process/
+            } else {
+                console.error('Tokenization failed:', result);
+                const errMsg =
+                    (result.errors && result.errors[0] && result.errors[0].detail) ||
+                    'There was a problem with your card.';
+                statusEl.textContent = errMsg;
+            }
+        } catch (err) {
+            console.error('Unexpected error tokenizing:', err);
+            statusEl.textContent = 'Unexpected payment error.';
+        }
+    });
+});
+</script>
+
 {% endblock content %}
