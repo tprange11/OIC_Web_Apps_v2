@@ -8,9 +8,8 @@ from datetime import date
 import uuid
 import os
 
-# Square REST SDK (your version)
-from square.client import Square
-from square.client import SquareEnvironment
+# Square SDK — EXACT for squareup 43.2.0.20251016
+from square.client import Square, SquareEnvironment
 from square.core.api_error import ApiError
 
 from . import models
@@ -47,33 +46,32 @@ def get_square_client():
         else SquareEnvironment.SANDBOX
     )
 
-    client = Square(
+    return Square(
         token=token,
         environment=environment,
     )
-
-    return client
 
 
 # --------------------------------------------------------
 # PAYMENT PROCESSING
 # --------------------------------------------------------
 @login_required
-def process_payment(request, **kwargs):
-
+def process_payment(request):
     template_name = "sq-payment-result.html"
 
     if request.method == "GET":
         return redirect("cart:shopping-cart")
 
-    token = request.POST.get("payment-token")
-    if not token:
+    nonce = request.POST.get("payment-token")
+    if not nonce:
         return render(request, template_name, {
             "error": True,
             "error_message": "Payment token missing.",
         })
 
-    # CART ITEMS
+    # ----------------------------
+    # CART TOTAL + NOTE
+    # ----------------------------
     cart_items = Cart.objects.filter(
         customer=request.user
     ).values_list("item", "amount")
@@ -92,96 +90,108 @@ def process_payment(request, **kwargs):
         if item in note:
             note[item] += amount
 
-    total *= 100  # USD → cents
+    total_cents = int(total * 100)
 
     client = get_square_client()
 
-    # --------------------------------------------------------
-    # LOCATION LOOKUP (CORRECT METHOD)
-    # --------------------------------------------------------
+    # ----------------------------
+    # LOCATION LOOKUP
+    # ----------------------------
     location_id = os.getenv("SQUARE_LOCATION_ID")
     if not location_id:
         raise ImproperlyConfigured("SQUARE_LOCATION_ID is not configured")
 
     try:
-        locations_resp = client.locations.list()
+        loc_resp = client.locations.list()
     except ApiError as e:
-        models.PaymentError.objects.create(payer=request.user, error=str(e))
+        models.PaymentError.objects.create(
+            payer=request.user,
+            error=str(e),
+        )
         return render(request, template_name, {
             "error": True,
             "error_message": "Square configuration error.",
         })
 
-    if locations_resp.errors:
+    if loc_resp.errors:
         models.PaymentError.objects.create(
             payer=request.user,
-            error=str(locations_resp.errors)
+            error=str(loc_resp.errors),
         )
         return render(request, template_name, {
             "error": True,
-            "error_message": "Square location fetch failed.",
+            "error_message": "Unable to fetch Square locations.",
         })
 
-    location = next((loc for loc in locations_resp.locations if loc.id == location_id), None)
+    locations = loc_resp.locations or []
+    location = next((l for l in locations if l.id == location_id), None)
+
     if not location:
         return render(request, template_name, {
             "error": True,
             "error_message": "Square location not found.",
         })
 
-    currency = location.currency
+    currency = location.currency or "USD"
 
-    idempotency_key = str(uuid.uuid4())
-
-    amount_money = {
-        "amount": total,
-        "currency": currency,
-    }
-
-    payment_note = "".join(f"({k} ${v}) " for k, v in note.items() if v != 0)
+    # ----------------------------
+    # CREATE PAYMENT
+    # ----------------------------
+    payment_note = "".join(
+        f"({k} ${v}) "
+        for k, v in note.items()
+        if v != 0
+    )
 
     body = {
-        "idempotency_key": idempotency_key,
-        "source_id": token,
-        "amount_money": amount_money,
+        "idempotency_key": str(uuid.uuid4()),
+        "source_id": nonce,
+        "amount_money": {
+            "amount": total_cents,
+            "currency": currency,
+        },
         "autocomplete": True,
         "note": payment_note,
+        "location_id": location_id,
     }
 
-    # --------------------------------------------------------
-    # CREATE PAYMENT (CORRECT METHOD: payments.create)
-    # --------------------------------------------------------
     try:
-        payment_resp = client.payments.create(**body)
+        pay_resp = client.payments.create(**body)
     except ApiError as e:
-        models.PaymentError.objects.create(payer=request.user, error=str(e))
+        models.PaymentError.objects.create(
+            payer=request.user,
+            error=str(e),
+        )
         return render(request, template_name, {
             "error": True,
             "error_message": "Payment processing failed.",
         })
 
-    if payment_resp.errors:
-        err = payment_resp.errors[0]
-        detail = getattr(err, "detail", str(err))
-        models.PaymentError.objects.create(payer=request.user, error=detail)
+    if pay_resp.errors:
+        detail = pay_resp.errors[0].detail if pay_resp.errors else "Payment failed"
+        models.PaymentError.objects.create(
+            payer=request.user,
+            error=detail,
+        )
         return render(request, template_name, {
             "error": True,
             "error_message": detail,
         })
 
-    # SUCCESS
-    res = payment_resp.payment
-    amount = float(res.amount_money.amount) / 100
+    payment = pay_resp.payment
+    amount = payment.amount_money.amount / 100
 
     models.Payment.objects.create(
         payer=request.user,
-        square_id=res.id,
-        square_receipt=getattr(res, "receipt_number", None),
+        square_id=payment.id,
+        square_receipt=getattr(payment, "receipt_number", None),
         amount=amount,
-        note=res.note,
+        note=payment.note,
     )
 
+    # ----------------------------
     # UPDATE SESSIONS
+    # ----------------------------
     today = date.today()
     try:
         StickAndPuckSession.objects.filter(guardian=request.user, session_date__gte=today, paid=False).update(paid=True)
@@ -200,7 +210,9 @@ def process_payment(request, **kwargs):
     except IntegrityError:
         pass
 
+    # ----------------------------
     # USER CREDITS
+    # ----------------------------
     try:
         user_credit = UserCredit.objects.get(user=request.user)
         if user_credit.pending > 0:
@@ -211,31 +223,37 @@ def process_payment(request, **kwargs):
     except ObjectDoesNotExist:
         user_credit = None
 
-    if "User Credits" in res.note and user_credit:
+    if user_credit and "User Credits" in (payment.note or ""):
         send_mail(
             "User Credits Purchased",
-            f"{request.user.get_full_name()} purchased credits. {res.note}\nBalance: {user_credit.balance}",
+            f"{request.user.get_full_name()} purchased credits.\n"
+            f"{payment.note}\n"
+            f"Balance: {user_credit.balance}",
             "no-reply@mg.oicwebapp.com",
             ["brianc@wi.rr.com"],
             fail_silently=True,
         )
 
-    # CLEAR CART
     Cart.objects.filter(customer=request.user).delete()
 
     return render(request, template_name, {
         "message": True,
         "amount": amount,
-        "note": res.note,
+        "note": payment.note,
     })
 
+
+# --------------------------------------------------------
+# PAYMENT FORM PAGE
+# --------------------------------------------------------
 @login_required
 def payment_page(request):
-    """Render the Square payment form page."""
     client = get_square_client()
 
-    # Fetch location details
-    loc_resp = client.locations.list_locations()
+    loc_resp = client.locations.list()
+    if loc_resp.errors:
+        raise ImproperlyConfigured("Unable to fetch Square locations")
+
     location = loc_resp.locations[0]
 
     total = sum(
@@ -243,14 +261,13 @@ def payment_page(request):
         .values_list("amount", flat=True)
     )
 
-    context = {
+    return render(request, "sq-payment-form.html", {
         "app_id": os.getenv("SQUARE_WEB_PAYMENT_APP_ID"),
         "loc_id": os.getenv("SQUARE_LOCATION_ID"),
-        "currency": location.currency,
-        "country": location.country,
+        "currency": location.currency or "USD",
+        "country": location.country or "US",
         "total": total,
-    }
-    return render(request, "sq-payment-form.html", context)
+    })
 
 
 # --------------------------------------------------------
@@ -258,8 +275,10 @@ def payment_page(request):
 # --------------------------------------------------------
 class PaymentListView(ListView):
     model = models.Payment
-    template_name = 'payments_made.html'
-    context_object_name = 'payments'
+    template_name = "payments_made.html"
+    context_object_name = "payments"
 
     def get_queryset(self):
-        return self.model.objects.filter(payer=self.request.user).order_by('-id')
+        return self.model.objects.filter(
+            payer=self.request.user
+        ).order_by("-id")

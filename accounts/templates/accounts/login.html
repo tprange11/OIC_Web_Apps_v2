@@ -9,7 +9,7 @@
     <input type="submit" value="Log In" class='btn btn-success btn-sm'>
     </form>
     <p id="caps-lock">Caps Lock is ON!</p>
-    <a href="{% url 'password_reset' %}" class="btn btn-warning btn-sm">Forgot Password?</a>
+    <a href="{% url 'accounts:password_reset' %}" class="btn btn-warning btn-sm">Forgot Password?</a>
 <script>
     var input = document.getElementById("id_password");
     var text = document.getElementById("caps-lock");

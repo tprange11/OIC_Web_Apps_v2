@@ -1,0 +1,159 @@
+<h2 style="margin-bottom:16px; font-family:system-ui,-apple-system,sans-serif; color:#1f2937;">
+  Schedule Ingest Run {{ run.id }}
+</h2>
+
+<div style="
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:12px;
+  margin-bottom:24px;
+  font-family:system-ui,-apple-system,sans-serif;
+  color:#374151;
+">
+  <div><strong>Triggered By:</strong> {{ run.triggered_by }}</div>
+  <div><strong>Started:</strong> {{ run.started_at }}</div>
+  <div><strong>Completed:</strong> {{ run.completed_at }}</div>
+  <div><strong>Dry Run:</strong> {{ run.dry_run }}</div>
+  <div><strong>Success:</strong> {{ run.success }}</div>
+</div>
+
+<table id="snapshotTable" class="data-table">
+  <thead>
+    <tr>
+      <th data-key="date">Date</th>
+      <th data-key="time">Time</th>
+      <th data-key="rink">Rink</th>
+      <th data-key="event">Event</th>
+      <th data-key="home">Home LR</th>
+      <th data-key="visitor">Visitor LR</th>
+      <th data-key="reason">Reason</th>
+    </tr>
+    <tr class="filter-row">
+      <th><input data-filter="date" placeholder="Filter" /></th>
+      <th><input data-filter="time" placeholder="Filter" /></th>
+      <th><input data-filter="rink" placeholder="Filter" /></th>
+      <th><input data-filter="event" placeholder="Filter" /></th>
+      <th><input data-filter="home" placeholder="Filter" /></th>
+      <th><input data-filter="visitor" placeholder="Filter" /></th>
+      <th><input data-filter="reason" placeholder="Filter" /></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for s in snapshots %}
+    <tr>
+      <td data-key="date">{{ s.schedule_date }}</td>
+      <td data-key="time">{{ s.start_time }}</td>
+      <td data-key="rink">{{ s.rink }}</td>
+      <td data-key="event">{{ s.event }}</td>
+      <td data-key="home">{{ s.home_locker_room }}</td>
+      <td data-key="visitor">{{ s.visitor_locker_room }}</td>
+      <td data-key="reason">{{ s.locker_reason }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<style>
+.data-table {
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0;
+  font-family:system-ui,-apple-system,sans-serif;
+  font-size:14px;
+}
+
+.data-table th {
+  background:#f8fafc;
+  color:#1f2937;
+  padding:12px;
+  text-align:left;
+  border-bottom:1px solid #e5e7eb;
+  cursor:pointer;
+  position:sticky;
+  top:0;
+  z-index:2;
+}
+
+.data-table td {
+  padding:10px 12px;
+  border-bottom:1px solid #e5e7eb;
+  color:#374151;
+}
+
+.data-table tbody tr:hover {
+  background:#f9fafb;
+}
+
+.filter-row th {
+  background:#ffffff;
+  border-bottom:1px solid #e5e7eb;
+}
+
+.filter-row input {
+  width:100%;
+  padding:6px 8px;
+  border:1px solid #d1d5db;
+  border-radius:6px;
+  font-size:13px;
+}
+</style>
+
+<script>
+(function () {
+  const table = document.getElementById("snapshotTable");
+  const filters = {};
+  let sortKey = null;
+  let sortAsc = true;
+
+  table.querySelectorAll("input[data-filter]").forEach(input => {
+    input.addEventListener("input", () => {
+      filters[input.dataset.filter] = input.value.toLowerCase();
+      apply();
+    });
+  });
+
+  table.querySelectorAll("th[data-key]").forEach(th => {
+    th.addEventListener("click", () => {
+      const key = th.dataset.key;
+      sortAsc = sortKey === key ? !sortAsc : true;
+      sortKey = key;
+      apply();
+    });
+  });
+
+  function apply() {
+    const rows = Array.from(table.tBodies[0].rows);
+
+    rows.forEach(row => {
+      let visible = true;
+      for (const key in filters) {
+        const val = filters[key];
+        if (!val) continue;
+        const cell = row.querySelector(`td[data-key="${key}"]`);
+        if (!cell || !cell.textContent.toLowerCase().includes(val)) {
+          visible = false;
+          break;
+        }
+      }
+      row.style.display = visible ? "" : "none";
+    });
+
+    if (!sortKey) return;
+
+    rows
+      .filter(r => r.style.display !== "none")
+      .sort((a, b) => {
+        let A = a.querySelector(`td[data-key="${sortKey}"]`).textContent.trim();
+        let B = b.querySelector(`td[data-key="${sortKey}"]`).textContent.trim();
+
+        const nA = parseFloat(A);
+        const nB = parseFloat(B);
+        if (!isNaN(nA) && !isNaN(nB)) {
+          return sortAsc ? nA - nB : nB - nA;
+        }
+        return sortAsc ? A.localeCompare(B) : B.localeCompare(A);
+      })
+      .forEach(r => table.tBodies[0].appendChild(r));
+  }
+})();
+</script>

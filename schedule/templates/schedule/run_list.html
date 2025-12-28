@@ -1,0 +1,263 @@
+<h2 style="margin-bottom:16px; font-family:Arial, sans-serif; color:#1f2937;">
+  Schedule Ingest Runs
+</h2>
+
+<div class="table-container">
+  <table id="runsTable">
+    <thead>
+      <tr>
+        <th data-col="0" data-type="number">
+          <div class="header-cell">
+            <span>ID</span>
+            <div class="controls">
+              <span class="sort-icon">⇅</span>
+              <button class="filter-toggle">🔍</button>
+            </div>
+          </div>
+          <div class="filter-row">
+            <input class="filter-input" type="text" placeholder="Filter ID">
+          </div>
+        </th>
+
+        <th data-col="1">
+          <div class="header-cell">
+            <span>Started</span>
+            <div class="controls">
+              <span class="sort-icon">⇅</span>
+            </div>
+          </div>
+          <div class="filter-row">
+            <input class="filter-input" type="text" placeholder="Filter Started">
+          </div>
+        </th>
+
+        <th data-col="2">
+          <div class="header-cell">
+            <span>Triggered By</span>
+            <div class="controls">
+              <span class="sort-icon">⇅</span>
+              <button class="filter-toggle">🔍</button>
+            </div>
+          </div>
+          <div class="filter-row">
+            <input class="filter-input" type="text" placeholder="Filter user">
+          </div>
+        </th>
+
+        <th data-col="3">
+          <div class="header-cell">
+            <span>Dry Run</span>
+            <div class="controls">
+              <span class="sort-icon">⇅</span>
+              <button class="filter-toggle">🔍</button>
+            </div>
+          </div>
+          <div class="filter-row">
+            <select class="filter-input">
+              <option value="">All</option>
+              <option>True</option>
+              <option>False</option>
+            </select>
+          </div>
+        </th>
+
+        <th data-col="4">
+          <div class="header-cell">
+            <span>Status</span>
+            <div class="controls">
+              <span class="sort-icon">⇅</span>
+              <button class="filter-toggle">🔍</button>
+            </div>
+          </div>
+          <div class="filter-row">
+            <select class="filter-input">
+              <option value="">All</option>
+              <option>True</option>
+              <option>False</option>
+            </select>
+          </div>
+        </th>
+
+        <th>Actions</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for r in runs %}
+      <tr>
+        <td>{{ r.id }}</td>
+        <td>{{ r.started_at }}</td>
+        <td>{{ r.triggered_by }}</td>
+        <td>{{ r.dry_run }}</td>
+        <td>{{ r.success }}</td>
+        <td><a href="{% url 'schedule:schedule_run_detail' r.id %}">View →</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<style>
+/* -------------------------
+   Base Colors & Layout
+------------------------- */
+body {
+  font-family: Arial, sans-serif;
+  background: #f7f9fb;
+  color: #1f2937;
+}
+
+.table-container {
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+
+/* -------------------------
+   Table Styles
+------------------------- */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead th {
+  background: #f7fafc;
+  padding: 12px 8px;
+  border-bottom: 1px solid #dde4ea;
+  text-align: left;
+}
+
+tbody td {
+  padding: 12px 8px;
+  border-bottom: 1px solid #edf2f7;
+}
+
+/* -------------------------
+   Header Controls
+------------------------- */
+.header-cell {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.controls {
+  display: flex;
+  gap: 8px;
+}
+
+.sort-icon {
+  cursor: pointer;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.sort-icon:hover {
+  opacity: 1;
+}
+
+.filter-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+.filter-toggle:hover {
+  opacity: 1;
+}
+
+/* -------------------------
+   Filters (hidden by default)
+------------------------- */
+.filter-row {
+  display: none;
+  margin-top: 6px;
+}
+
+.filter-input {
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 13px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+}
+
+/* -------------------------
+   Hover & Row Styles
+------------------------- */
+tbody tr:hover td {
+  background: #f1f5f9;
+}
+
+a {
+  color: #2563eb;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+</style>
+
+<script>
+(() => {
+  const table = document.getElementById("runsTable");
+  const tbody = table.querySelector("tbody");
+
+  // SORTING
+  table.querySelectorAll(".sort-icon").forEach(icon => {
+    let asc = true;
+    icon.addEventListener("click", () => {
+      const th = icon.closest("th");
+      const col = th.dataset.col;
+      const type = th.dataset.type || "string";
+
+      const rows = [...tbody.rows];
+
+      rows.sort((a, b) => {
+        let A = a.cells[col].innerText.trim();
+        let B = b.cells[col].innerText.trim();
+
+        if (type === "number") {
+          A = Number(A);
+          B = Number(B);
+          return asc ? A - B : B - A;
+        }
+
+        return asc
+          ? A.localeCompare(B, undefined, { numeric:true })
+          : B.localeCompare(A, undefined, { numeric:true });
+      });
+
+      asc = !asc;
+      rows.forEach(r => tbody.appendChild(r));
+    });
+  });
+
+  // FILTER VISIBILITY
+  table.querySelectorAll(".filter-toggle").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const row = btn.closest("th").querySelector(".filter-row");
+      row.style.display = row.style.display === "block" ? "none" : "block";
+    });
+  });
+
+  // FILTER LOGIC
+  table.querySelectorAll(".filter-input").forEach((input, col) => {
+    input.addEventListener("input", () => {
+      const val = input.value.toLowerCase();
+      [...tbody.rows].forEach(row => {
+        const txt = row.cells[col].innerText.toLowerCase();
+        row.style.display = txt.includes(val) ? "" : "none";
+      });
+    });
+  });
+})();
+</script>

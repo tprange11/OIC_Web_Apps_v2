@@ -31,7 +31,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.HomePage.as_view(), name='home'),
     path('accounts/', include('accounts.urls', namespace='accounts')),
-    path('accounts/', include('django.contrib.auth.urls')),
+#    path('accounts/', include('django.contrib.auth.urls')),
     path('thanks/', views.ThanksPage.as_view(), name='thanks'),
     path('info/open_hockey/', views.OpenHockeyPage.as_view(),
          name='info-open-hockey'),

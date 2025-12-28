@@ -1,22 +1,64 @@
-from django.urls import path
+from django.urls import path, reverse_lazy
 from django.contrib.auth import views as auth_views
+from django.http import HttpResponse
 from . import views
 
 app_name = 'accounts'
 
 urlpatterns = [
-    path('login/',
+    path(
+        'login/',
         auth_views.LoginView.as_view(template_name='accounts/login.html'),
-        name='login'),
+        name='login'
+    ),
+
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('signup/', views.SignUp.as_view(), name='signup'),
+
     path('profile/<slug>/', views.UpdateProfileView.as_view(), name='profile'),
     path('release_of_liability/', views.ReleaseOfLiablityView.as_view(), name='release-of-liability'),
+
     path('my_skaters/add/', views.CreateChildSkaterView.as_view(), name='my-skaters-add'),
     path('my_skaters/remove/<pk>/', views.DeleteChildSkaterView.as_view(), name='my-skaters-remove'),
+
     path('user_credit/purchase/<slug>/', views.UpdateUserCreditView.as_view(), name='purchase-credit'),
-    path('password_reset/', auth_views.PasswordResetView.as_view(), name='password_reset'),
-    path('password_reset/done/', auth_views.PasswordResetDoneView.as_view(), name='password_reset_done'),
-    path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
-    path('reset/done/', auth_views.PasswordResetCompleteView.as_view(), name='password_reset_complete'),
+
+    # -----------------------------
+    # PASSWORD RESET WORKFLOW
+    # -----------------------------
+
+    # 1) Request password reset
+    path(
+        'password_reset/',
+        auth_views.PasswordResetView.as_view(
+            success_url=reverse_lazy('accounts:password_reset_done')
+        ),
+        name='password_reset'
+    ),
+
+    # 2) Show “email sent” page
+    path(
+        'password_reset/done/',
+        auth_views.PasswordResetDoneView.as_view(),
+        name='password_reset_done'
+    ),
+
+    # 3) Link in email → confirm reset
+    path(
+        'reset/<uidb64>/<token>/',
+        auth_views.PasswordResetConfirmView.as_view(
+            success_url=reverse_lazy('accounts:password_reset_complete')
+        ),
+        name='password_reset_confirm'
+    ),
+
+    # 4) Password successfully reset
+    path(
+        'reset/done/',
+        auth_views.PasswordResetCompleteView.as_view(),
+        name='password_reset_complete'
+    ),
+
+    # Debug helper
+    path("test_url_check/", lambda r: HttpResponse("LOADED"), name="test-url-check"),
 ]

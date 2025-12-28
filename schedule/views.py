@@ -86,7 +86,7 @@ class RinkScheduleListView(LoginRequiredMixin, ListView):
             for item in start_times:
                 next_start_times.append(date.isoformat(datetime.now())+" "+item['start_time'].strftime('%H:%M:%S'))
             context['start_times'] = next_start_times
-        
+
         # Convert date time format for use in Javacript resurface countdown timer
         resurface_times = []
         north_resurface_times = []
@@ -103,14 +103,14 @@ class RinkScheduleListView(LoginRequiredMixin, ListView):
             for item in end_times:
                 resurface_times.append(date.isoformat(datetime.now())+" "+item['end_time'].strftime('%H:%M:%S'))
             context['resurface_times'] = resurface_times
-        
+
         return context
 
 
 def scrape_schedule(request):
     '''This view is called when the Update Schedule button is clicked. I will update the zamboni resurface
     schedule if the online schedule has changed.'''
-    
+
     todays_date = date.today()
     # print(todays_date.strftime("%m-%d-%Y"))
     formatted_date = date.isoformat(todays_date)
@@ -171,5 +171,60 @@ class RinkScheduleListAPIView(ListAPIView):
     '''Return rink schedule.'''
 
     serializer_class = RinkScheduleSerializer
-    todays_date = date.isoformat(datetime.today())
-    queryset = models.RinkSchedule.objects.filter(schedule_date=todays_date).order_by('start_time')
+
+    def get_queryset(self):
+        requested_date = self.request.query_params.get('date')
+
+        if requested_date:
+            return models.RinkSchedule.objects.filter(
+                schedule_date=requested_date
+            ).order_by('start_time')
+
+        return models.RinkSchedule.objects.filter(
+            schedule_date=date.today()
+        ).order_by('start_time')
+
+#    todays_date = date.isoformat(datetime.today())
+#    queryset = models.RinkSchedule.objects.filter(schedule_date=date.today()).order_by('start_time')
+
+from django.shortcuts import render, get_object_or_404
+from schedule.models import ScheduleIngestRun
+from schedule.services.diff import diff_runs
+
+
+def run_list(request):
+    runs = ScheduleIngestRun.objects.order_by("-started_at")
+    return render(
+        request,
+        "schedule/run_list.html",
+        {"runs": runs},
+    )
+
+
+def run_detail(request, run_id):
+    run = get_object_or_404(ScheduleIngestRun, id=run_id)
+    snapshots = run.snapshots.all().order_by(
+        "schedule_date", "start_time"
+    )
+    return render(
+        request,
+        "schedule/run_detail.html",
+        {
+            "run": run,
+            "snapshots": snapshots,
+        },
+    )
+
+
+def run_diff(request, run_a, run_b):
+    diff = diff_runs(run_a, run_b)
+    return render(
+        request,
+        "schedule/run_diff.html",
+        {
+            "run_a": run_a,
+            "run_b": run_b,
+            "diff": diff,
+        },
+    )
+

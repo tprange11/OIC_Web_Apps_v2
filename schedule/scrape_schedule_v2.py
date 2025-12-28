@@ -312,7 +312,7 @@ def write_to_db(oic):
                 visitor_locker_room=event[7],
                 notes="",
             )
-#            obj.save()
+            obj.save()
             logger.info(f"[DB] WROTE: {obj}")
 
         except Exception as e:

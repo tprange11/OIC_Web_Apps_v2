@@ -1,0 +1,38 @@
+<h2>Diff: Run {{ run_a }} → {{ run_b }}</h2>
+
+<h3>Added</h3>
+{% for row in diff.added %}
+<div style="background:#e6ffe6">
+  {{ row.schedule_date }} {{ row.start_time }} — {{ row.event }}
+</div>
+{% empty %}
+<p>None</p>
+{% endfor %}
+
+<h3>Removed</h3>
+{% for row in diff.removed %}
+<div style="background:#ffe6e6">
+  {{ row.schedule_date }} {{ row.start_time }} — {{ row.event }}
+</div>
+{% empty %}
+<p>None</p>
+{% endfor %}
+
+<h3>Changed</h3>
+{% for row in diff.changed %}
+<div style="border:1px solid #ccc; margin-bottom:10px">
+  <strong>{{ row.before.schedule_date }} {{ row.before.start_time }} — {{ row.before.event }}</strong>
+  <ul>
+    {% for field, change in row.changes.items %}
+      <li>
+        {{ field }}:
+        <span style="color:red">{{ change.before }}</span>
+        →
+        <span style="color:green">{{ change.after }}</span>
+      </li>
+    {% endfor %}
+  </ul>
+</div>
+{% empty %}
+<p>None</p>
+{% endfor %}

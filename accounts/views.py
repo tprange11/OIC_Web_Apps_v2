@@ -22,7 +22,7 @@ import calendar
 
 class SignUp(CreateView):
     form_class = forms.UserCreateForm
-    success_url = reverse_lazy('login')
+    success_url = reverse_lazy('accounts:login')
     template_name = 'accounts/signup.html'
 
 
@@ -88,7 +88,7 @@ class CreateChildSkaterView(LoginRequiredMixin, CreateView):
     model = ChildSkater
     form_class = forms.CreateChildSkaterForm
     template_name = 'accounts/create_my_skater_form.html'
-    
+
 
     def form_valid(self, form):
         self.object = form.save(commit=False)
@@ -101,7 +101,7 @@ class CreateChildSkaterView(LoginRequiredMixin, CreateView):
             return render(self.request, template_name=self.template_name, context=self.get_context_data())
         # If all goes well add success message
         messages.add_message(self.request, messages.SUCCESS, 'Skater successfully added to your list!')
-        
+
         return super().form_valid(form)
 
 
@@ -109,7 +109,7 @@ class DeleteChildSkaterView(LoginRequiredMixin, DeleteView):
     '''Displays page where user can remove child or dependent skaters.'''
     model = ChildSkater
     success_url = ''
-    
+
     def delete(self, *args, **kwargs):
         messages.add_message(self.request, messages.SUCCESS, 'Skater has been removed from your list!')
         self.success_url = reverse('accounts:profile', kwargs={'slug': self.request.user.id})
@@ -166,12 +166,12 @@ class UpdateUserCreditView(LoginRequiredMixin, UpdateView):
     def apply_incentive(self, credits):
         '''Applies credit incentive percentage to amount of credits purchased.'''
 
-        # Get user credit incentives model 
+        # Get user credit incentives model
         incentives = self.incentives_model.objects.all()
 
         if self.object.pending < incentives.last().price_point:
             return
-        
+
         for incentive in incentives:
             if self.object.pending >= incentive.price_point:
                 free_points = self.object.pending * ((incentive.incentive / 100) + 1)
@@ -180,7 +180,7 @@ class UpdateUserCreditView(LoginRequiredMixin, UpdateView):
 
 
 class ReportView(TemplateView, LoginRequiredMixin):
-    
+
     template_name = 'accounts/reports.html'
 
 
@@ -235,7 +235,7 @@ class OutstandingUserCreditsView(TemplateView, LoginRequiredMixin):
         for item in user_credit_records:
             item = item.split(' ')
             user_credit_revenue += int(item[2].strip('$').strip(')'))
-        
+
         context['user_credit_revenue'] = user_credit_revenue
 
         return context
@@ -302,7 +302,7 @@ def revenue_report(request, **kwargs):
                 else:
                     totals.update({s[0]: int(s[1]) + current_total})
                 total_revenue += int(s[1])
- 
+
         context = {'payment_totals': totals, 'total_revenue': total_revenue, 'start_date': start_date, 'end_date': end_date}
 
     return render(request, 'accounts/revenue_report.html', context)
