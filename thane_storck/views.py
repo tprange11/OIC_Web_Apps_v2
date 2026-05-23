@@ -30,7 +30,7 @@ class SkateDateListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         # Get all skaters signed up for each session to display the list of skaters for each session
-        skate_sessions = self.session_model.objects.filter(skate_date__skate_date__gte=date.today())
+        skate_sessions = self.session_model.objects.filter(skate_date__skate_date__gte=date.today()).order_by('pk')
         context['skate_sessions'] = skate_sessions
 
         # Create a user credit object if one does not exist
@@ -214,7 +214,7 @@ class PrintSkateDateListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        session_skaters = self.sessions_model.objects.filter(skate_date__skate_date__gte=date.today()).order_by('skate_date')
+        session_skaters = self.sessions_model.objects.filter(skate_date__skate_date__gte=date.today()).order_by('skate_date', 'pk')
         context['session_skaters'] = session_skaters
         return context
 
