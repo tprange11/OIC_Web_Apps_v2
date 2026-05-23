@@ -37,7 +37,7 @@ class KranichSkateDateListView(LoginRequiredMixin, ListView):
         # Join the Kranich Group
         self.join_kranich_group()
         # Get all skaters signed up for each session to display the list of skaters for each session
-        skate_sessions = self.session_model.objects.filter(skate_date__skate_date__gte=date.today())
+        skate_sessions = self.session_model.objects.filter(skate_date__skate_date__gte=date.today()).order_by('pk')
         context['skate_sessions'] = skate_sessions
         # Create a user credit object if one does not exist
         try:

@@ -33,7 +33,7 @@ class BaldEaglesSkateDateListView(LoginRequiredMixin, ListView):
         # Join the Bald Eagles Skate Group
         self.join_bald_eagles_group()
         # Get all skaters signed up for each session to display the list of skaters for each session
-        skate_sessions = self.session_model.objects.filter(session_date__skate_date__gte=date.today())
+        skate_sessions = self.session_model.objects.filter(session_date__skate_date__gte=date.today()).order_by('pk')
         # print(skate_sessions)
         context['skate_sessions'] = skate_sessions
         # Create a user credit object if one does not exist
@@ -231,7 +231,7 @@ class BaldEaglesSessionStaffListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        session_skaters = self.sessions_model.objects.filter(session_date__skate_date__gte=date.today()).order_by('session_date')
+        session_skaters = self.sessions_model.objects.filter(session_date__skate_date__gte=date.today()).order_by('session_date', 'pk')
         context['session_skaters'] = session_skaters
         return context
 
