@@ -37,7 +37,7 @@
             </button>
             {% if date.session_pk != None and date.paid == False %}
             <a href="{% url 'cart:shopping-cart' %}" class="btn btn-sm btn-primary">Pay Now</a>
-            <form method="POST" action="{% url 'adult_skills:session-remove' pk=date.session_pk %}">
+            <form method="POST" action="{% url 'adult_skills:session-remove' pk=date.session_pk paid=date.paid skater_pk=user.id %}">
                 {% csrf_token %}
                 <input type="hidden" name="pk" value="{{date.session_pk}}">
                 <input type="submit" value="Remove Me From This Skate" class="btn btn-danger btn-sm mt-2">
