@@ -2,7 +2,7 @@ from django.urls import path, reverse_lazy
 from django.contrib.auth import views as auth_views
 from django.http import HttpResponse
 from . import views
-from .views import download_credit_revenue, download_outstanding_credits
+from .views import download_credit_revenue, download_outstanding_credits, download_fs_revenue
 
 app_name = 'accounts'
 
@@ -62,6 +62,7 @@ urlpatterns = [
 
     path('download/credit-revenue/', download_credit_revenue, name='download-credit-revenue'),
     path('download/outstanding-credits/', download_outstanding_credits, name='download-outstanding-credits'),
+    path('download/fs-revenue/', download_fs_revenue, name='download-fs-revenue'),
 
     # Debug helper
     path("test_url_check/", lambda r: HttpResponse("LOADED"), name="test-url-check"),

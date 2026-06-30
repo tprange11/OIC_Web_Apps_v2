@@ -317,6 +317,30 @@ class FigureSkatingRevenueReport(TemplateView, LoginRequiredMixin):
 
 
 @login_required
+def download_fs_revenue(request):
+    '''Streams the Figure Skating revenue for the past 12 months as a CSV download.'''
+    today = timezone.now().replace(hour=0, minute=0, second=0)
+    offset = -366 if calendar.isleap(today.year) else -365
+    start_date = today + timedelta(days=offset)
+
+    payment_records = Payment.objects.filter(date__gte=start_date).order_by('-date')
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="FSRevenueReport.csv"'
+    writer = csv.writer(response)
+    writer.writerow(['User', 'Amount', 'Payment Breakdown', 'Date'])
+    for record in payment_records:
+        if record.payer.groups.filter(name='Figure Skating').exists():
+            writer.writerow([
+                record.payer.get_full_name(),
+                record.amount,
+                record.note,
+                record.date.strftime('%Y-%m-%d'),
+            ])
+    return response
+
+
+@login_required
 def revenue_report(request, **kwargs):
     '''View that renders the revenue report form template of the revenue report results template.'''
 
