@@ -9,10 +9,10 @@
 <p>User Credit revenue for the past 12 months was <b>${{ user_credit_revenue }}</b>. The following records contain the User Credit purchases in the past 12 months.</p>
 <div class="row">
     <div class="col-md-6 col-sm-12 my-3">
-        <a href="{% static 'reports/UserCreditsPurchased.csv' %}" class="btn btn-dark">Download Credit Revenue Data</a>
+        <a href="{% url 'accounts:download-credit-revenue' %}" class="btn btn-dark">Download Credit Revenue Data</a>
     </div>
     <div class="col-md-6 col-sm-12 my-3">
-        <a href="{% static 'reports/OutstandingCreditsData.csv' %}" class="btn btn-dark">Download Outstanding Credits Data</a>
+        <a href="{% url 'accounts:download-outstanding-credits' %}" class="btn btn-dark">Download Outstanding Credits Data</a>
     </div>
 </div>
 {% endblock content %}

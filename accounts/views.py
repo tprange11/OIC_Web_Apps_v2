@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect
+from django.http import HttpResponse
 from django.urls import reverse_lazy, reverse
 from django.views.generic import CreateView, UpdateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -239,6 +240,46 @@ class OutstandingUserCreditsView(TemplateView, LoginRequiredMixin):
         context['user_credit_revenue'] = user_credit_revenue
 
         return context
+
+
+@login_required
+def download_credit_revenue(request):
+    '''Streams the User Credit purchase history for the past 12 months as a CSV download.'''
+    today = timezone.now().replace(hour=0, minute=0, second=0)
+    offset = -366 if calendar.isleap(today.year) else -365
+    start_date = today + timedelta(days=offset)
+
+    payment_records = Payment.objects.filter(
+        note__icontains='User Credits',
+        date__gte=start_date
+    ).order_by('-date')
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="UserCreditsPurchased.csv"'
+    writer = csv.writer(response)
+    writer.writerow(['User', 'Amount', 'Payment Breakdown', 'Date'])
+    for record in payment_records:
+        writer.writerow([
+            record.payer.get_full_name(),
+            record.amount,
+            record.note,
+            record.date.strftime('%Y-%m-%d'),
+        ])
+    return response
+
+
+@login_required
+def download_outstanding_credits(request):
+    '''Streams the current outstanding user credit balances as a CSV download.'''
+    credits = UserCredit.objects.filter(balance__gte=1).select_related('user')
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="OutstandingCreditsData.csv"'
+    writer = csv.writer(response)
+    writer.writerow(['User', 'Credit Balance'])
+    for obj in credits:
+        writer.writerow([obj.user.get_full_name(), obj.balance])
+    return response
 
 
 class FigureSkatingRevenueReport(TemplateView, LoginRequiredMixin):

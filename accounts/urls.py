@@ -2,6 +2,7 @@ from django.urls import path, reverse_lazy
 from django.contrib.auth import views as auth_views
 from django.http import HttpResponse
 from . import views
+from .views import download_credit_revenue, download_outstanding_credits
 
 app_name = 'accounts'
 
@@ -58,6 +59,9 @@ urlpatterns = [
         auth_views.PasswordResetCompleteView.as_view(),
         name='password_reset_complete'
     ),
+
+    path('download/credit-revenue/', download_credit_revenue, name='download-credit-revenue'),
+    path('download/outstanding-credits/', download_outstanding_credits, name='download-outstanding-credits'),
 
     # Debug helper
     path("test_url_check/", lambda r: HttpResponse("LOADED"), name="test-url-check"),
