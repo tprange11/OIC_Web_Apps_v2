@@ -198,7 +198,7 @@ class OutstandingUserCreditsView(TemplateView, LoginRequiredMixin):
             path_to_file = '/reports/UserCreditsPurchased.csv'
             path_to_credits_file = '/reports/OutstandingCreditsData.csv'
 
-        cf = open(settings.STATICFILES_DIRS[0] + path_to_credits_file, 'w', newline='')
+        cf = open(settings.STATIC_ROOT + path_to_credits_file, 'w', newline='')
         writer = csv.writer(cf)
         writer.writerow(['User', 'Credit Balance'])
 
@@ -218,7 +218,7 @@ class OutstandingUserCreditsView(TemplateView, LoginRequiredMixin):
         start_date = today + timedelta(days=offset)
 
         payment_records = Payment.objects.all().filter(note__icontains='User Credits', date__gte=start_date)
-        f = open(settings.STATICFILES_DIRS[0] + path_to_file, 'w', newline='')
+        f = open(settings.STATIC_ROOT + path_to_file, 'w', newline='')
         writer = csv.writer(f)
         writer.writerow(['User', 'Amount', 'Payment Breakdown', 'Date'])
 
@@ -263,7 +263,7 @@ class FigureSkatingRevenueReport(TemplateView, LoginRequiredMixin):
         start_date = today + timedelta(days=offset)
 
         payment_records = Payment.objects.all().filter(date__gte=start_date)
-        f = open(settings.STATICFILES_DIRS[0] + path_to_file, 'w', newline='')
+        f = open(settings.STATIC_ROOT + path_to_file, 'w', newline='')
         writer = csv.writer(f)
         writer.writerow(['User', 'Amount', 'Payment Breakdown', 'Date'])
 
