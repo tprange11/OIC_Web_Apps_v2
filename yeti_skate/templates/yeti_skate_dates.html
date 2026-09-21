@@ -39,6 +39,7 @@
                 </a>
         {% else %}
             <li class="list-group-item" style="padding: 5px 15px;">
+                {# New skaters (YetiSkateNewSkater) may only sign up for a Friday skate on Thursday; see YetiSkateDateListView.get_context_data #}
                 {% if day_of_week != 3 and new_skater and date.skate_date.weekday == 4 %}
                     Check back on Thursday!
                 {% else %}
@@ -92,7 +93,7 @@
                                 <div>
                                     {{skater.skater.first_name}} {{skater.skater.last_name}}
                                     {% if skater.goalie %}<b>(Goalie)</b>{% endif %}
-                                    {% if user.is_superuser or user.id == 359 %}
+                                    {% if user.is_superuser or user.id == 359 %} {# user 359 is Nick Antonie, the skate organizer #}
                                     {% if skater.paid %}<b>(Paid)</b>{% else %}<b>(Not Paid)</b>{% endif %}
                                 </div>
                                 <div>
@@ -107,7 +108,7 @@
                                         <input type="submit" value="Remove/Refund" class="btn btn-danger btn-sm">
                                     </form>
                                     {% endif %}
-                                    {% endif %}{% comment %}{{ endif for superuser and Nick Antonie }}{% endcomment %}
+                                    {% endif %}{# endif superuser or Nick Antonie #}
                                 </div>
                             </li>
                             {% endif %}{% endfor %}

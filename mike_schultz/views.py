@@ -1,3 +1,8 @@
+'''Mike Schultz skate (Program id 6): users register a ChildSkater for scheduled skates.
+
+Near-copy of open_roller and womens_hockey. The admin registrations are commented out
+and the scraper targets the old MaxGalaxy site, so this app may no longer be in use.
+'''
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, DeleteView
@@ -15,7 +20,6 @@ from cart.models import Cart
 
 from datetime import date
 
-# Create your views here.
 
 class MikeSchultzSkateDateListView(LoginRequiredMixin, ListView):
     '''Page that displays upcoming Mike Schultz skates.'''
@@ -62,6 +66,7 @@ class MikeSchultzSkateDateListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         queryset = super().get_queryset()
         queryset = queryset.filter(skate_date__gte=date.today()).values('pk', 'skate_date', 'start_time', 'end_time').annotate(num_skaters=Count('session_skaters')).order_by('skate_date', 'pk')
+        # skater_sessions is computed but unused (dead code, see backlog)
         skater_sessions = self.session_model.objects.filter(user=self.request.user).values_list('skate_date','pk', 'paid')
         return queryset
 
@@ -100,8 +105,9 @@ class CreateMikeSchultzSkateSessionView(LoginRequiredMixin, CreateView):
         return context
 
     def form_valid(self, form):
+        '''Enforce goalie/skater caps, then pay from user credit or add to the cart.'''
 
-        user_credit = self.credit_model.objects.get(user=self.request.user) # User credit model
+        user_credit = self.credit_model.objects.get(user=self.request.user)
         credit_used = False # Used to set the success message
         price = 0
 
@@ -127,26 +133,27 @@ class CreateMikeSchultzSkateSessionView(LoginRequiredMixin, CreateView):
             else:
                 price = skater_cost
 
+            # Reset the paid flag if the balance was already spent (checked before
+            # this deduction, so a balance that hits zero here stays flagged paid)
             if user_credit.balance == 0:
-                # If user credit has been depleted, make sure user credit paid is set to False
                 user_credit.paid = False
                 
             # If the user has enough credits, deduct credits and set session as paid
+            # (unlike the yeti/nacho/thane apps, user_credit.paid is not checked here)
             if user_credit.balance >= price:
                 self.object.paid = True
                 user_credit.balance -= price
                 credit_used = True
-            # If the user doesn't have enough credits
+            # Not enough credit: free sessions are marked paid, otherwise add to the cart
             else:
                 if price == 0:
                     self.object.paid = True
                 else:
                     self.add_to_cart(price)
 
-            # Save the user credit model
             user_credit.save()
-            # self.add_mike_schultz_email_to_profile()
             self.object.save()
+        # Duplicate sign-up is silently ignored; super().form_valid() will re-raise on save
         except IntegrityError:
             pass
         # If all goes well set success message and return
@@ -167,19 +174,6 @@ class CreateMikeSchultzSkateSessionView(LoginRequiredMixin, CreateView):
         cart.save()
         return False
 
-    # def add_mike_schultz_email_to_profile(self):
-    #     '''If no user profile exists, create one and set mike_schultz_email to True.'''
-        
-    #     # If a profile already exists, do nothing
-    #     try:
-    #         self.profile_model.objects.get(user=self.request.user)
-    #         return
-    #     # If no profile exists, add one and set open_hockey_email to True
-    #     except ObjectDoesNotExist:
-    #         profile = self.profile_model(user=self.request.user, slug=self.request.user.id, mike_schultz_email=True)
-    #         profile.save()
-    #         return
-
 
 class DeleteMikeSchultzSkateSessionView(LoginRequiredMixin, DeleteView):
     '''Allows user to remove themself from a skate session'''
@@ -188,22 +182,24 @@ class DeleteMikeSchultzSkateSessionView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy('mike_schultz:mike-schultz')
 
     def delete(self, *args, **kwargs):
-        '''Things that need doing once a session is removed.'''
+        '''Remove the matching cart item when an unpaid session is dropped.
 
-        # Clear session from the cart
+        NOTE: Django 4.0 DeleteView handles POST via form_valid() and does not call delete(),
+        so this cleanup does not run (see backlog).
+        '''
+
+        # Clear session from the cart (the Program instance is matched against the
+        # item CharField via its __str__, which is the program name)
         skate_date = self.model.objects.filter(id=kwargs['pk']).values_list('skate_date', flat=True)
         skater_id = self.model.objects.filter(id=kwargs['pk']).values_list('skater', flat=True)
         skater = ChildSkater.objects.get(id=skater_id[0])
-        # print(skater_id[0])
-        # print(skater)
         cart_date = self.skate_date_model.objects.filter(id=skate_date[0])
         cart_item = Cart.objects.filter(item=Program.objects.all().get(id=6), skater_name=skater, event_date=cart_date[0].skate_date).delete()
 
-        # Set success message and return
         messages.add_message(self.request, messages.SUCCESS, 'Skater has been removed from that skate session!')
         return super().delete(*args, **kwargs)
 
-################ The following views are for staff only ##########################################################
+# The following views are for staff only.
 
 class MikeSchultzSkateDateStaffListView(LoginRequiredMixin, ListView):
     '''Displays page with list of upcoming Mike Schultz skates with buttons for viewing registered skaters.'''

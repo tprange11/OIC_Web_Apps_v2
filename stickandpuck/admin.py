@@ -1,11 +1,10 @@
 from django.contrib import admin
 from stickandpuck.models import StickAndPuckDate, StickAndPuckSession, StickAndPuckSkater
-# Register your models here.
+
 
 class StickAndPuckSessionAdmin(admin.ModelAdmin):
     list_display = ['guardian_name', 'skater', 'session_date', 'session_time', 'paid']
     search_fields = ['guardian__first_name', 'guardian__last_name', 'skater__first_name', 'skater__last_name', 'session_date']
-    # list_filter = ['session_date']
 
     def guardian_name(self, obj):
         return f"{obj.guardian.first_name} {obj.guardian.last_name}"

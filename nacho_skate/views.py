@@ -1,3 +1,8 @@
+'''Nacho Skate (Program id 15): adult skaters register themselves for scheduled skates.
+
+Near-copy of yeti_skate; "regulars" (NachoSkateRegular) are auto-registered by
+fetch_nacho_skate_dates.py. No staff list view here, unlike the sibling apps.
+'''
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, DeleteView
@@ -19,7 +24,6 @@ from datetime import date
 
 User = get_user_model()
 
-# Create your views here.
 
 class NachoSkateDateListView(LoginRequiredMixin, ListView):
     '''Page that displays upcoming Nacho skates.'''
@@ -34,7 +38,6 @@ class NachoSkateDateListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Join the Nacho Group
         self.join_nacho_skate_group()
         # Get all skaters signed up for each session to display the list of skaters for each session
         skate_sessions = self.session_model.objects.filter(skate_date__skate_date__gte=date.today()).order_by('pk')
@@ -50,13 +53,15 @@ class NachoSkateDateListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         queryset = super().get_queryset()
+        # No annotate() here, so Meta.ordering (skate_date) still applies without an explicit order_by
         queryset = queryset.filter(skate_date__gte=date.today()).values('pk', 'skate_date', 'start_time', 'end_time')
         skater_sessions = self.session_model.objects.filter(skater=self.request.user).values_list('skate_date','pk', 'paid', 'goalie')
-        # If user is already signed up for the skate, add key value pair to disable button
+        # Annotate each date with skater/goalie counts and, if the user is already
+        # signed up, the session details so the template can disable the button
         for item in queryset:
             item['registered_skaters'] = self.model.registered_skaters(skate_date=item['pk'])
             for session in skater_sessions:
-                # If the session date and skate date match and paid is True, add disabled = True to queryset
+                # Both branches do the same thing; paid/unpaid are handled identically here
                 if item['pk'] == session[0] and session[2] == True:
                     item['disabled'] = True
                     item['session_pk'] = session[1]
@@ -77,7 +82,7 @@ class NachoSkateDateListView(LoginRequiredMixin, ListView):
         return queryset
 
     def join_nacho_skate_group(self, join_group='Nacho Skate'):
-        '''Adds user to Nacho group "behind the scenes", for communication purposes.'''
+        '''Adds user to the Nacho Skate group "behind the scenes" and makes sure a Profile exists.'''
         
         try:
             group = self.group_model.objects.get(name=join_group)
@@ -126,18 +131,17 @@ class CreateNachoSkateSessionView(LoginRequiredMixin, CreateView):
         return context
 
     def form_valid(self, form):
+        '''Enforce goalie/skater caps, then pay from user credit or add to the cart.'''
 
-        # Get the user credit model instance
         user_credit = UserCredit.objects.get(user=self.request.user)
         credit_used = False # Used to set the message
         self.object = form.save(commit=False)
 
-        # Get the program skater/goalie cost
+        # Program id 15 is Nacho Skate
         if self.object.goalie == True:
             cost = self.program_model.objects.get(id=15).goalie_price
         else:
             cost = self.program_model.objects.get(id=15).skater_price
-        # print(f'Cost: {cost}')
 
         try:
             # If goalie spots are full, do not save object
@@ -148,14 +152,13 @@ class CreateNachoSkateSessionView(LoginRequiredMixin, CreateView):
             elif self.object.goalie == False and self.model.objects.filter(goalie=False, skate_date=self.object.skate_date).count() == Program.objects.get(pk=15).max_skaters:
                 messages.add_message(self.request, messages.ERROR, 'Sorry, skater spots are full!')
                 return redirect('nacho_skate:index')
-            # If spots are not full do the following
             
-            if cost == 0: # Employees skate for free
+            if cost == 0: # Free (e.g. goalie_price of 0), nothing to pay
                 self.object.paid = True
             elif user_credit.balance >= cost and user_credit.paid:
                 self.object.paid = True
                 user_credit.balance -= cost
-                # Check to see if there's a $0 balance, if so, set paid to false
+                # A zero balance is flagged as unpaid so it can't be spent again
                 if user_credit.balance == 0:
                     user_credit.paid = False
                 user_credit.save()
@@ -163,6 +166,7 @@ class CreateNachoSkateSessionView(LoginRequiredMixin, CreateView):
             else:
                 credit_used = self.add_to_cart(cost)
             self.object.save()
+        # Duplicate sign-up is silently ignored; super().form_valid() will re-raise on save
         except IntegrityError:
             pass
         # If all goes well set success message and return
@@ -194,13 +198,17 @@ class DeleteNachoSkateSessionView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy('nacho_skate:index')
 
     def delete(self, *args, **kwargs):
-        '''Things that need doing once a session is removed.'''
+        '''Refund credit (paid session) or clear the cart item (unpaid), then email the skater.
+
+        NOTE: Django 4.0 DeleteView handles POST via form_valid() and does not call delete(),
+        so none of this runs (see backlog). The paid flag and skater pk also come straight
+        from the URL rather than the session row.
+        '''
 
         user = User.objects.get(pk=kwargs['skater_pk'])
 
         if kwargs['paid'] == 'True':
-            # If the session is paid for, issue credit to the user
-            # Get the program skater/goalie cost
+            # If the session is paid for, refund the skater/goalie price to the user's credit
             session = self.model.objects.get(pk=kwargs['pk'])
             if session.goalie:
                 price = self.program_model.objects.get(id=15).goalie_price
@@ -214,14 +222,14 @@ class DeleteNachoSkateSessionView(LoginRequiredMixin, DeleteView):
             success_msg = f'{user.get_full_name()} has been removed from the session. The Users credit balance has been increased from ${old_balance} to ${user_credit.balance}.'
             user_credit.save()
         else:
-            # Clear session from the cart, user hasn't paid yet
+            # Clear session from the cart, user hasn't paid yet (not filtered by customer, see backlog)
             skate_date = self.model.objects.filter(id=kwargs['pk']).values_list('skate_date', flat=True)
             cart_date = self.skate_date_model.objects.filter(id=skate_date[0])
             cart_item = Cart.objects.filter(item=Program.objects.all().get(id=15).program_name, event_date=cart_date[0].skate_date)
             cart_item.delete()
             success_msg = 'You have been removed from that skate session!'
     
-        # Send email to user about the credit
+        # Email the skater plus the admin accounts (ids 1, 2) and user 870
         recipients = User.objects.filter(id__in=['1', '2', '870', user.id]).values_list('email', flat=True)
         subject = 'Credit Issued for Nacho Skate Session'
         from_email = 'no-reply@oicwebapp.com'
@@ -230,12 +238,8 @@ class DeleteNachoSkateSessionView(LoginRequiredMixin, DeleteView):
             send_mail(subject, success_msg, from_email, recipients)
             messages.add_message(self.request, messages.INFO, 'Email message has been sent to the skater!')
             self.success_url = reverse_lazy('nacho_skate:index')
-        #except:
-            #messages.add_message(self.request, messages.ERROR, 'Oops, something went wrong!  Please try again.')
-            #return reverse('contact:contact-form', kwargs={ 'form': form.cleaned_data })
         except Exception as e:
             messages.add_message(self.request, messages.ERROR, f'Failed to send email: {str(e)}')
 
-        # Set success message and return
         messages.add_message(self.request, messages.SUCCESS, success_msg)
         return super().delete(*args, **kwargs)

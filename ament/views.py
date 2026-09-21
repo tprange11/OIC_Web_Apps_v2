@@ -1,3 +1,4 @@
+'''Views for the Ament Skate program: list upcoming skates, register for one, remove a registration.'''
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, DeleteView
@@ -17,7 +18,6 @@ from cart.models import Cart
 
 from datetime import date
 
-# Create your views here.
 
 class AmentSkateDateListView(LoginRequiredMixin, ListView):
     '''Page that displays upcoming Ament skates.'''
@@ -32,9 +32,9 @@ class AmentSkateDateListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Join the Ament Group
+        # Silently add the user to the Ament group (used for communication)
         self.join_ament_group()
-        # Get all skaters signed up for each session to display the list of skaters for each session
+        # All registrations for upcoming skates, so the template can list who is skating
         skate_sessions = self.session_model.objects.filter(skate_date__skate_date__gte=date.today()).order_by('pk')
         context['skate_sessions'] = skate_sessions
         # Create a user credit object if one does not exist
@@ -48,14 +48,15 @@ class AmentSkateDateListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        queryset = queryset.filter(skate_date__gte=date.today()).values('pk', 'skate_date', 'start_time', 'end_time').order_by('skate_date', 'pk')#.annotate(num_skaters=Count('session_skaters'))
+        queryset = queryset.filter(skate_date__gte=date.today()).values('pk', 'skate_date', 'start_time', 'end_time').order_by('skate_date', 'pk')
         skater_sessions = self.session_model.objects.filter(skater=self.request.user).values_list('skate_date','pk', 'paid', 'goalie')
-        # If user is already signed up for the skate, add key value pair to disable button
+        # Annotate each skate date with head counts and, if the user is already signed up,
+        # with their session details so the template can disable the register button
+        # and show the Remove Me button.
         for item in queryset:
-            # item['is_in_future'] = date.today() < item['skate_date'] # This is used for the Remove Me button if already paid.
             item['registered_skaters'] = self.model.registered_skaters(skate_date=item['pk'])
             for session in skater_sessions:
-                # If the session date and skate date match and paid is True, add disabled = True to queryset
+                # User already has a session for this skate date (paid or unpaid): disable registration
                 if item['pk'] == session[0] and session[2] == True:
                     item['disabled'] = True
                     item['session_pk'] = session[1]
@@ -76,7 +77,8 @@ class AmentSkateDateListView(LoginRequiredMixin, ListView):
         return queryset
 
     def join_ament_group(self, join_group='Ament'):
-        '''Adds user to Ament group "behind the scenes", for communication purposes.'''
+        '''Adds user to the Ament group "behind the scenes", for communication purposes,
+        and creates a Profile for the user if one does not exist.'''
         
         try:
             group = self.group_model.objects.get(name=join_group)
@@ -88,14 +90,14 @@ class AmentSkateDateListView(LoginRequiredMixin, ListView):
             # If a profile already exists, do nothing
             profile = self.profile_model.objects.get(user=self.request.user)
         except ObjectDoesNotExist:
-            # If no profile exists, create one and set ament_email to False
+            # If no profile exists, create one; Ament email notifications default to off
             profile = self.profile_model(user=self.request.user, ament_email=False, slug=self.request.user.id)
             profile.save()
 
         return
 
 class CreateAmentSkateSessionView(LoginRequiredMixin, CreateView):
-    '''Page that displays form for user to register for skate sessions.'''
+    '''Page that displays form for user to register for an Ament skate session.'''
 
     model = AmentSkateSession
     form_class = CreateAmentSkateSessionForm
@@ -122,13 +124,15 @@ class CreateAmentSkateSessionView(LoginRequiredMixin, CreateView):
         return context
 
     def form_valid(self, form):
+        '''Enforces skater/goalie limits, then marks the session paid (staff, free, or
+        paid from credit balance) or adds it to the cart for payment.'''
 
         # Get the user credit model instance
         user_credit = UserCredit.objects.get(user=self.request.user)
         credit_used = False # Used to set the message
         self.object = form.save(commit=False)
 
-        # Get the program skater/goalie cost
+        # Get the program skater/goalie cost (Program id 16 is the Ament Skate)
         if self.object.goalie == True:
             cost = self.program_model.objects.get(id=16).goalie_price
         else:
@@ -143,19 +147,20 @@ class CreateAmentSkateSessionView(LoginRequiredMixin, CreateView):
             elif self.object.goalie == False and self.model.objects.filter(goalie=False, skate_date=self.object.skate_date).count() == Program.objects.get(pk=16).max_skaters:
                 messages.add_message(self.request, messages.ERROR, 'Sorry, skater spots are full!')
                 return redirect('ament:skate-dates')
-            # If spots are not full do the following
-            
-            if self.request.user.is_staff or cost == 0: # Employees and typically Goalies
+            # Spots are available: staff and $0-cost sessions (typically goalies) are free
+            if self.request.user.is_staff or cost == 0:
                 self.object.paid = True
                 cost = 0 # Set cost = 0 for correct message
+            # Pay from credit balance when the user has enough credit
             elif user_credit.balance >= cost and user_credit.paid:
                 self.object.paid = True
                 user_credit.balance -= cost
-                # Check to see if there's a $0 balance, if so, set paid to false
+                # A $0 balance means there is no credit left to pay with
                 if user_credit.balance == 0:
                     user_credit.paid = False
                 user_credit.save()
                 credit_used = True # Used to set the message
+            # Otherwise the session goes in the cart to be paid for
             else:
                 credit_used = self.add_to_cart(cost)
             self.object.save()
@@ -171,7 +176,7 @@ class CreateAmentSkateSessionView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
 
     def add_to_cart(self, cost):
-        '''Adds Ament Skate session to shopping cart.'''
+        '''Adds Ament Skate session to shopping cart. Always returns False (credit not used).'''
         price = cost
         item_name = self.program_model.objects.get(id=16).program_name
         start_time = self.skate_date_model.objects.filter(skate_date=self.object.skate_date.skate_date).values_list('start_time', flat=True)
@@ -182,21 +187,21 @@ class CreateAmentSkateSessionView(LoginRequiredMixin, CreateView):
 
 
 class DeleteAmentSkateSessionView(LoginRequiredMixin, DeleteView):
-    '''Allows user to remove themself from a skate session'''
+    '''Allows user (or staff) to remove a skater from a skate session.'''
     model = AmentSkateSession
     skate_date_model = AmentSkateDate
     credit_model = UserCredit
     success_url = reverse_lazy('ament:skate-dates')
 
     def delete(self, *args, **kwargs):
-        '''Things that need doing once a session is removed.'''
+        '''Refunds credit for a paid session, or clears the cart item for an unpaid one,
+        before the session is deleted.'''
 
         user = User.objects.get(pk=kwargs['skater_pk'])
-        # print(user.id)
-        if user.is_staff: # Staff doesn't pay to skate
+        if user.is_staff: # Staff doesn't pay to skate, so nothing to refund
             success_msg = 'Skater has been removed from that skate session!'
         elif kwargs['paid'] == 'True':
-            # If the session is paid for, issue credit to the user
+            # If the session is paid for, issue credit to the user (always the skater price)
             price = Program.objects.get(id=16).skater_price
             user_credit = self.credit_model.objects.get(slug=user)
             old_balance = user_credit.balance

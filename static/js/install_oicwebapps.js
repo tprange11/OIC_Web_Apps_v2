@@ -1,9 +1,11 @@
+// Add-to-home-screen prompt. The browser's own install banner is not suppressed
+// (no preventDefault), so the saved event is only re-prompted on window load when
+// beforeinstallprompt fired before the page finished loading.
 
 var deferredPrompt;
 
 window.addEventListener('beforeinstallprompt', function(event) {
     console.log('beforeinstallprompt fired!');
-    // event.preventDefault();
     deferredPrompt = event;
     return false;
 });

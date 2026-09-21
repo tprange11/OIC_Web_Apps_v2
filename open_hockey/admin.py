@@ -1,7 +1,6 @@
 from django.contrib import admin
 from open_hockey.models import OpenHockeySessions, OpenHockeyMember, OpenHockeyMemberType
 
-# Register your models here.
 
 class OpenHockeySessionsAdmin(admin.ModelAdmin):
     list_display = ['skater_name', 'date', 'goalie', 'paid']

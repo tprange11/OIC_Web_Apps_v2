@@ -1,5 +1,6 @@
 from django.urls import resolve
 
-# This is required to reference the appname in Django Templates
+
 def appname(request):
+    '''Context processor: exposes the current URL namespace as `appname` to templates.'''
     return { 'appname': resolve(request.path).app_name }

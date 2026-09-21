@@ -1,10 +1,8 @@
 from django.contrib import admin
 from . import models
 
-# Register your models here.
 
 class PaymentAdmin(admin.ModelAdmin):
-    # readonly_fields = ('payer', 'square_id', 'square_receipt', 'amount', 'note', 'date',)
     list_display = ['payer_name', 'dollar_amount', 'note', 'date']
     search_fields = ['payer__first_name', 'payer__last_name', 'note', 'date']
 

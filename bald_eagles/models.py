@@ -14,7 +14,7 @@ class BaldEaglesSkateDate(models.Model):
     end_time = models.CharField(max_length=10)
 
     class Meta:
-        #Default ordering skate_date descending
+        # Default ordering skate_date ascending (soonest first)
         ordering = ['skate_date']
         # Prevent duplicate dates
         unique_together = ['skate_date', 'start_time', 'end_time']
@@ -36,6 +36,6 @@ class BaldEaglesSession(models.Model):
     class Meta:
         # Prevent duplicate entries
         unique_together = ['skater', 'session_date']
-        # Default ordering date descending
+        # Default ordering by skate date FK descending
         ordering = ['-session_date']
         verbose_name_plural = 'Bald Eagles sessions'

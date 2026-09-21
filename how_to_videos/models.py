@@ -2,7 +2,8 @@ from django.db import models
 
 
 class Category(models.Model):
-    '''Model that holds categories for Hot To Videos.'''
+    '''A How To Video category. The slug is the URL key, so it must not change once
+    links exist. staff_only categories are hidden from non-staff users.'''
 
     video_category = models.CharField(max_length=75)
     slug = models.SlugField(max_length=100, default=None, help_text='DO NOT CHANGE THIS FIELD!')
@@ -17,7 +18,7 @@ class Category(models.Model):
 
 
 class Keyword(models.Model):
-    '''Model that holds keywords for use in How To Videos.'''
+    '''Search keyword that can be attached to any number of videos.'''
 
     keyword = models.CharField(max_length=100)
 
@@ -29,7 +30,7 @@ class Keyword(models.Model):
 
 
 class HowToVideo(models.Model):
-    '''Model that stores How To Video data.'''
+    '''A How To Video link, filtered by category, keyword search and staff_only.'''
 
     title = models.CharField(max_length=150)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)

@@ -1,8 +1,6 @@
 from django.contrib import admin
 from nacho_skate.models import NachoSkateDate, NachoSkateSession, NachoSkateRegular
 
-# Register your models here.
-
 
 class NachoSkateDateAdmin(admin.ModelAdmin):
     list_display = ['skate_date', 'start_time', 'end_time']

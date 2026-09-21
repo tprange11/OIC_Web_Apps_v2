@@ -8,16 +8,16 @@ from datetime import date, timedelta
 class FigureSkatingDate(models.Model):
     '''Model holds dates for Open Figure Skating.'''
 
-    #Model Fields
+    # Model Fields
     skate_date = models.DateField()
     start_time = models.CharField(max_length=10)
     end_time = models.CharField(max_length=10)
-    available_spots = models.IntegerField(default=0)
+    available_spots = models.IntegerField(default=0) # Per-session capacity, replaces Program.max_skaters
     up_down_charge = models.IntegerField(default=0, help_text='Enter positive number for up charge, negative number for down charge.')
     low_level = models.BooleanField(default=False)
 
     class Meta:
-        # Default ordering skate_date descending
+        # Default ordering skate_date ascending (soonest first)
         ordering = ['skate_date']
         # Prevent duplicate dates
         unique_together = ['skate_date', 'start_time', 'end_time']
@@ -59,7 +59,8 @@ class FigureSkatingSession(models.Model):
 
     @property
     def can_remove_from_session(self):
-        '''The user can remove a skater from a session up until one day before the skate.'''
+        '''True while today is more than two days before the skate date; after that the
+        user can no longer remove the skater from the session.'''
         return date.today() < self.session.skate_date - timedelta(days=2)
 
     class Meta:

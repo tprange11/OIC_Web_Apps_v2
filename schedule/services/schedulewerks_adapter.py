@@ -1,16 +1,18 @@
+"""Wraps the legacy scraper so the ingest pipeline gets plain event dicts."""
 from datetime import date, timedelta
 from datetime import datetime
 
-# Import legacy scraper as a module
+# Importing the legacy scraper calls django.setup() and edits sys.path (see its header)
 import schedule.scrape_schedule as legacy
 
 
 def fetch_schedulewerks_events(days_ahead: int):
     """
-    Adapter around legacy scrape_schedule.py.
+    Fetch today plus days_ahead-1 more days through legacy get_schedule_data() and
+    process_data(), and return raw event dicts with no locker fields or enrichment.
 
-    Returns RAW, CANONICAL events only.
-    No locker fields. No enrichment.
+    start_time/end_time are the "HH:MM" strings ScheduleWerks returns; the legacy
+    league-name shortening in process_data() still applies.
     """
 
     # Clear legacy globals to avoid bleed-over
@@ -24,7 +26,7 @@ def fetch_schedulewerks_events(days_ahead: int):
     # Fetch ScheduleWerks data
     data = legacy.get_schedule_data(from_date, to_date)
 
-    # Run legacy parsing (but stop BEFORE lockers / teams)
+    # Legacy parsing only; locker rooms and team merging are done by the pipeline
     for i in range(days_ahead):
         d = today + timedelta(days=i)
         legacy.process_data(data, d.strftime("%m/%d/%Y"))
@@ -57,5 +59,5 @@ def fetch_schedulewerks_events(days_ahead: int):
 
 
 def _parse_date(mmddyyyy: str):
-    """Convert legacy MM/DD/YYYY → date"""
+    """Convert the legacy MM/DD/YYYY string to a date."""
     return datetime.strptime(mmddyyyy, "%m/%d/%Y").date()

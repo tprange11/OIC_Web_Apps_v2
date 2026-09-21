@@ -5,7 +5,6 @@ from .models import Category, Keyword, HowToVideo
 class CategoryAdmin(admin.ModelAdmin):
     list_display = ['video_category', 'staff_only']
     prepopulated_fields = {'slug': ('video_category',)}
-    # readonly_fields = ['slug']
 
 
 class KeywordAdmin(admin.ModelAdmin):

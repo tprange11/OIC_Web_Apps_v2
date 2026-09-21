@@ -1,5 +1,7 @@
+"""Appends the opponent to a game's event name using the ScheduleWerks "usg" field."""
 import re
 
+# usg values starting with these are never treated as games with an opponent
 DISABLED_USG_PREFIXES = {
     "open hockey",
     "cross ice game",
@@ -11,12 +13,12 @@ DISABLED_USG_PREFIXES = {
 
 def enrich_game_event_name(event_name: str, usg) -> str:
     """
-    Enhance event name ONLY for true games with real opponents.
-    Explicitly skip operational / non-opponent event types.
+    Return "<event_name> vs <opponent>" when usg says this is a game against a real
+    opponent; otherwise return event_name unchanged.
 
-    usg may be:
-      - str
-      - list[str]
+    usg (the ScheduleWerks usage/type field) may be a str or a list[str]. Skips
+    operational types (see DISABLED_USG_PREFIXES), non-games, TBD opponents, and
+    names that already contain "vs".
     """
 
     if not event_name or not usg:

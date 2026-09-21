@@ -83,7 +83,7 @@
                             <div>
                                 {% if skater.paid %}
                                 {% comment %}
-                                    This form is for superusers to remove/refund people from the skate.
+                                    This form is for superusers and the skate organizer (user 21) to remove/refund people from the skate.
                                 {% endcomment %}
                                 <form method="POST" action="{% url 'ament:session-remove' pk=skater.pk paid=skater.paid skater_pk=skater.skater.pk %}">
                                     {% csrf_token %}

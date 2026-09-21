@@ -9,8 +9,8 @@ from .forms import GroupMessageForm
 
 
 class GroupMessageView(LoginRequiredMixin, FormView):
-    '''Displays page where superusers and group managers can send an email 
-    message to the respective group.'''
+    '''Form that emails every member of the Django auth Group whose id is in the URL.
+    Only login is required; there is no check that the sender manages the group.'''
 
     template_name = 'group_message_form.html'
     form_class = GroupMessageForm
@@ -24,7 +24,7 @@ class GroupMessageView(LoginRequiredMixin, FormView):
 
     def get_initial(self):
         initial = super().get_initial()
-        # Get group id from url to send to correct group
+        # Seed the hidden group field from the URL so the POST knows who to send to
         if self.request.method == 'GET':
             initial['group'] = self.kwargs['group']
         return initial

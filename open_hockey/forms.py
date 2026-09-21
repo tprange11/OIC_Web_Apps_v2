@@ -3,7 +3,10 @@ from open_hockey.models import OpenHockeySessions, OpenHockeyMember
 from django.contrib.auth.models import User
 
 class OpenHockeySignupForm(forms.ModelForm):
-    '''Form used to sign up for open hockey sessions.'''
+    '''Form used to sign up for open hockey sessions.
+
+    Currently unused: CreateOpenHockeySessions builds its form from `fields` instead.
+    '''
 
     class Meta:
         model = OpenHockeySessions

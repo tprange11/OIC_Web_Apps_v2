@@ -1,11 +1,14 @@
 // sq-payment-flow.js
+//
+// Page bootstrap for sq-payment-form.html: waits for the DOM (and the inline
+// window.applicationId / window.locationId assignments), checks that Square.js
+// loaded, then hands the card container and pay button to CardPay() in
+// sq-card-pay.js, which does the actual tokenize-and-submit.
 
 document.addEventListener("DOMContentLoaded", async () => {
 
-  // Ensure required DOM elements exist before calling any Square methods
   window.paymentFlowMessageEl = document.getElementById('payment-flow-message');
 
-  // Build Square payments instance AFTER template variables exist
   const appId = window.applicationId;
   const locationId = window.locationId;
 
@@ -14,6 +17,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
+  // This instance is only a sanity check that the SDK and IDs work; CardPay()
+  // builds the instance it actually uses
   try {
     window.payments = Square.payments(appId, locationId);
   } catch (err) {
@@ -21,14 +26,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  // Initialize card payment UI
   await CardPay(
     document.getElementById('card-container'),
     document.getElementById('card-button')
   );
 });
 
-// Simple helpers for error/success messages
+// Message helpers. Nothing calls these at the moment; CardPay() writes to the
+// message element directly.
 window.showSuccess = function(message) {
   if (!window.paymentFlowMessageEl) return;
   paymentFlowMessageEl.classList.add('success');

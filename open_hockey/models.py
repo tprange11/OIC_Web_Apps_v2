@@ -5,34 +5,32 @@ User = get_user_model()
 
 from datetime import datetime
 
-# Create your models here.
-
 
 class OpenHockeySessionsManager(models.Manager):
     '''Manager class for OpenHockeySessions Model'''
 
-    # returns number of goalies signed up for a particular session of open hockey
     def goalie_count(self, session_date):
+        '''Number of goalies signed up for a session date.'''
         goalies = self.all().filter(date=session_date, goalie=True).count()
         return goalies
 
-    # returns number of skaters signed up for a particular session of open hockey
     def skater_count(self, session_date):
+        '''Number of skaters (non-goalies) signed up for a session date.'''
         skaters = self.all().filter(date=session_date, goalie=False).count()
         return skaters
 
-    # returns participants of a particular session of open hockey 
     def get_session_participants(self, session_date):
+        '''All sign-ups for a session date.'''
         participants = self.all().filter(date=session_date)
         return participants
 
-    # returns open hockey sessions that a particular skater is signed up for
     def get_skater_sessions(self, username, the_date):
+        '''Sessions a user is signed up for on or after the_date, oldest first.'''
         skater_sessions = self.all().filter(skater=username, date__gte=the_date).order_by('date')
         return skater_sessions
 
 class OpenHockeySessions(models.Model):
-    '''OpenHockeySessions model holds open hockey session dates and participants'''
+    '''One user's sign-up for one open hockey session date.'''
 
     # Model fields
     skater = models.ForeignKey(User, on_delete=models.DO_NOTHING)
@@ -41,7 +39,6 @@ class OpenHockeySessions(models.Model):
     paid = models.BooleanField(default=False)
     objects = OpenHockeySessionsManager()
 
-    # Overrides string representation of OpenHockeySessions in the admin site
     def __str__(self):
         if self.goalie:
             string = f"{str(self.date)}, {self.skater.first_name} {self.skater.last_name}, GOALIE"
@@ -50,9 +47,8 @@ class OpenHockeySessions(models.Model):
         return string
     
     class Meta:
-        # requires that skater and date be a unique pair, skater can't sign up twice for the same session
+        # A skater can't sign up twice for the same session
         unique_together = [['skater', 'date']]
-        # default ordering is in descending date order
         ordering = ['-date']
 
 
@@ -81,17 +77,15 @@ class OpenHockeyMember(models.Model):
     end_date = models.DateField()
     active = models.BooleanField()
 
-    # Overrides string representation of OpenHockeyMember in the admin site 
     def __str__(self):
         return f"{self.member.last_name}, {self.member.first_name}, Membership ends: {self.end_date}"
 
-    # The URL that is returned after successfully adding an open hockey member
     def get_absolute_url(self):
+        '''Where CreateOpenHockeyMemberView redirects after a successful save.'''
         return reverse('open_hockey:member-detail')
 
 
     class Meta:
-        # Default ordering descending end_date
         ordering = ['-end_date']
-        # Members can't be added twice
+        # One membership row per user
         unique_together = [['member']]

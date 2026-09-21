@@ -13,7 +13,7 @@ class CHSAlumniDate(models.Model):
     end_time = models.TimeField()
 
     class Meta:
-        # Default ordering skate_date descending
+        # Default ordering skate_date ascending (soonest first)
         ordering = ['skate_date']
         # Prevent duplicate dates
         unique_together = ['skate_date', 'start_time', 'end_time']
@@ -23,7 +23,8 @@ class CHSAlumniDate(models.Model):
         return f"{self.skate_date}"
 
     def registered_skaters(skate_date):
-        '''Returns the number of skaters and goalies registered for a skate date.'''
+        '''Returns the number of skaters and goalies registered for a skate date.
+        Called on the class (not an instance) with the skate date pk.'''
         num_goalies = CHSAlumniSession.objects.filter(date=skate_date, goalie=True).count()
         num_skaters = CHSAlumniSession.objects.filter(date=skate_date, goalie=False).count()
         return {'num_skaters': num_skaters, 'num_goalies': num_goalies}
@@ -32,14 +33,14 @@ class CHSAlumniDate(models.Model):
 class CHSAlumniSession(models.Model):
     '''Model stores skate session data.'''
 
-    #Model fields
+    # Model fields
     skater = models.ForeignKey(User, on_delete=models.CASCADE)
     date = models.ForeignKey(CHSAlumniDate, on_delete=models.CASCADE, related_name='session_skaters')
     goalie = models.BooleanField(default=False)
     paid = models.BooleanField(default=False)
 
     class Meta:
-        # Default ordering date descending
+        # Default ordering by skate date FK descending
         ordering = ['-date']
         # Prevent duplicate entries
         unique_together = ['skater', 'date']

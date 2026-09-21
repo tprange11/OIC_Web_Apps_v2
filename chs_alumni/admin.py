@@ -1,8 +1,6 @@
 from django.contrib import admin
 from chs_alumni.models import CHSAlumniDate, CHSAlumniSession
 
-# Register your models here.
-
 
 class CHSAlumniDateAdmin(admin.ModelAdmin):
     list_display = ['skate_date', 'start_time', 'end_time']
@@ -19,5 +17,7 @@ class CHSAlumniSessionAdmin(admin.ModelAdmin):
     def date_display(self, obj):
         return f"{obj.date.skate_date} {obj.date.start_time} to {obj.date.end_time}"
 
+# Parked: registration is switched off, so the CHS Alumni models are hidden from the admin.
+# Uncomment to bring them back.
 # admin.site.register(CHSAlumniDate, CHSAlumniDateAdmin)
 # admin.site.register(CHSAlumniSession, CHSAlumniSessionAdmin)

@@ -1,11 +1,14 @@
+'''One-off script that bulk-creates the Figure Skating camp day sessions listed below.
+Edit skate_dates and sessions, then run it directly.'''
 from datetime import date, timedelta
 import os, sys, json, requests
 
 if os.name == 'nt':
     sys.path.append("C:\\Users\\brian\\Documents\\Python\\OIC_Web_Apps\\")
 else:
-    # sys.path.append("/home/BrianC68/oicdev/OIC_Web_Apps/") # Uncomment in development
-    sys.path.append("/home/OIC/OIC_Web_Apps/") # Uncomment in production
+    # Parked: development server project path, swap in when running there
+    # sys.path.append("/home/BrianC68/oicdev/OIC_Web_Apps/")
+    sys.path.append("/home/OIC/OIC_Web_Apps/") # Production server project path
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'OIC_Web_Apps.settings')
 
 import django
@@ -16,6 +19,7 @@ from figure_skating.models import FigureSkatingDate
 
 skate_dates = ['2024-08-03',]
 
+# Each session is [start_time, end_time, up_down_charge]
 sessions = [
     ["7:30 AM", "8:30 AM", 5],
     ["8:30 AM", "9:30 AM", 5],
@@ -30,6 +34,7 @@ sessions = [
 ]
 
 def add_camp_sessions():
+    '''Creates a FigureSkatingDate (8 spots) for every date/session combination, skipping duplicates.'''
 
     model = FigureSkatingDate
 

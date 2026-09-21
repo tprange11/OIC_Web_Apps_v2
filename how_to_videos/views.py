@@ -7,8 +7,6 @@ class HowToVideoTemplateView(TemplateView):
     '''Index page for How To Videos.'''
 
     template_name = 'how_to_video_index.html'
-    # model = HowToVideo
-    # context_object_name = 'videos'
 
 
 class HowToVideoCategoryListView(ListView):

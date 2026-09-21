@@ -1,9 +1,12 @@
+"""Locker room assignment for the ingest pipeline: admin LockerRoomRule rows take
+precedence, then each rink alternates between two locker room pairs."""
 from datetime import datetime, timedelta
 from typing import Dict, Tuple, List
 from schedule.models import LockerRoomRule
 
 
 # ---------------- CONFIG ----------------
+# A gap of this long or more between events restarts the rotation at the first pair
 ROTATION_RESET_GAP = timedelta(hours=3)
 
 DEFAULT_LOCKERS = {
@@ -11,28 +14,32 @@ DEFAULT_LOCKERS = {
     "South": [(5, 8), (6, 9)],
 }
 
-# Runtime state (per ingest run)
+# Last (idx, time) assigned per rink. Module-level, so it persists across runs in the
+# same process and is never reset; events must arrive in chronological order.
 _LAST_ASSIGNMENT = {}
 
 
 # ---------------- PUBLIC API ----------------
 def assign_lockers(event: Dict) -> Tuple[str, str, str, List[Dict]]:
+    '''Returns (home_lr, visitor_lr, reason, evaluations). `evaluations` is always
+    empty for now; it is stored on the snapshot for a future rule-trace UI.'''
     evaluations: List[Dict] = []
 
-    # 1️⃣ RULES (absolute priority)
+    # 1. Admin rules, lowest priority number wins
     rules = LockerRoomRule.objects.filter(active=True).order_by("priority")
     for rule in rules:
         if _rule_matches(rule, event):
             home, visitor = rule.home_locker_room, rule.visitor_locker_room
             return home, visitor, f"Matched rule #{rule.id}", evaluations
 
-    # 2️⃣ SEQUENTIAL ROTATION
+    # 2. Fall back to alternating pairs
     home, visitor, reason = _rotate_sequentially(event)
     return home, visitor, reason, evaluations
 
 
 # ---------------- RULE MATCH ----------------
 def _rule_matches(rule: LockerRoomRule, event: Dict) -> bool:
+    '''All of the rule's non-blank criteria must match (rink is a substring match, "Any" matches all).'''
     # Rink check
     if rule.rink and rule.rink.lower() != "any":
         if rule.rink.lower() not in event["rink"].lower():
@@ -57,6 +64,7 @@ def _rule_matches(rule: LockerRoomRule, event: Dict) -> bool:
 
 # ---------------- ROTATION ENGINE ----------------
 def _rotate_sequentially(event: Dict) -> Tuple[str, str, str]:
+    '''Alternate between the rink's two pairs, restarting after a long gap.'''
     rink = _normalize_rink(event["rink"])
     pairs = DEFAULT_LOCKERS.get(rink)
 
@@ -86,6 +94,7 @@ def _rotate_sequentially(event: Dict) -> Tuple[str, str, str]:
 
 # ---------------- HELPERS ----------------
 def _event_datetime(event: Dict) -> datetime:
+    # Relies on str() of the date and "HH:MM" start_time strings from the adapter
     return datetime.strptime(
         f"{event['schedule_date']} {event['start_time']}",
         "%Y-%m-%d %H:%M",

@@ -1,3 +1,5 @@
+'''Cron script: on Wednesdays, pull stick and puck sessions for the next five days from
+ScheduleWerks into StickAndPuckDate and email opted-in users if anything new was added.'''
 from datetime import date, timedelta
 import os, sys, requests, json
 
@@ -19,7 +21,7 @@ from accounts.models import Profile
 skate_dates = []
 
 def get_schedule_data(from_date, to_date):
-    '''Scrapes Ozaukee Ice Center schedule website for stick and puck session dates.'''
+    '''Fetches the ScheduleWerks calendar and appends Stick&Puck entries to skate_dates.'''
 
     url = f"https://ozaukeeicecenter.schedulewerks.com/public/ajax/swCalGet?tid=-1&from={from_date}&to={to_date}&Complex=-1"
 
@@ -27,11 +29,11 @@ def get_schedule_data(from_date, to_date):
         response = requests.get(url)
         data = json.loads(response.text)
     except requests.exceptions.RequestException as e:
-        # print(e)
         return
 
     for item in data:
         if "Stick&Puck" in item["text"]:
+            # start_date is "MM/DD/YYYY HH:MM"; convert to ISO date
             skate_date = item["start_date"].split(" ")[0]
             skate_date = f"{skate_date[6:]}-{skate_date[:2]}-{skate_date[3:5]}"
             start_time = item["st"].replace("P", " PM").replace("A", " AM")
@@ -48,7 +50,11 @@ def get_schedule_data(from_date, to_date):
     return
 
 def add_stick_and_puck_dates(sessions):
-    '''Adds stick and puck dates, times and session notes to StickAndPuckDate model.'''
+    '''Adds stick and puck dates, times and session notes to StickAndPuckDate model.
+
+    Returns whether the LAST session was new (see backlog: an existing final entry
+    resets the flag even when earlier entries were added).
+    '''
     model = StickAndPuckDate
 
     for session in sessions:
@@ -87,7 +93,7 @@ def send_stick_and_puck_dates_email():
                 }
             )
 
-            # Send email to each recipient separately
+            # Send email to each recipient separately; any send failure aborts the whole run
             try:
                 mail = EmailMultiAlternatives(
                     subject, text_message, from_email, to_email
@@ -107,15 +113,12 @@ if __name__ == "__main__":
     to_date = to_date.strftime("%m/%d/%Y")
     send_email = False
 
-    # Every Wednesday request schedule data for following current and following week and parse for Stick n Puck dates
+    # Every Wednesday (weekday 2) fetch today through five days out and look for Stick&Puck entries
     if the_date.weekday() == 2:
         get_schedule_data(from_date, to_date)
 
         if len(skate_dates) != 0:
-            # for item in skate_dates:
-            #     print(item)
             send_email = add_stick_and_puck_dates(skate_dates)
 
         if send_email:
-            # print('New Dates Added')
             send_stick_and_puck_dates_email()

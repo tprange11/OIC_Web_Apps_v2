@@ -4,7 +4,8 @@ User = get_user_model()
 
 
 class YetiSkateDate(models.Model):
-    '''Model holds dates for the Yeti Skate.'''
+    '''A scheduled Yeti skate. Times are free-text: the scraper writes "06:00:00" here
+    while the sibling apps store "6:00 AM" style strings (see backlog).'''
 
     # Model Fields
     skate_date = models.DateField()
@@ -12,7 +13,6 @@ class YetiSkateDate(models.Model):
     end_time = models.CharField(max_length=10)
 
     class Meta:
-        # Default ordering skate_date descending
         ordering = ['skate_date']
         # Prevent duplicate dates
         unique_together = ['skate_date', 'start_time', 'end_time']
@@ -21,14 +21,17 @@ class YetiSkateDate(models.Model):
         return f"{self.skate_date}"
 
     def registered_skaters(skate_date):
-        '''Returns the number of skaters and goalies registered for a skate date.'''
+        '''Returns the number of skaters and goalies registered for a skate date.
+
+        Called on the class (YetiSkateDate.registered_skaters(pk)); it has no self.
+        '''
         num_goalies = YetiSkateSession.objects.filter(skate_date=skate_date, goalie=True).count()
         num_skaters = YetiSkateSession.objects.filter(skate_date=skate_date, goalie=False).count()
         return {'num_skaters': num_skaters, 'num_goalies': num_goalies}
 
 
 class YetiSkateSession(models.Model):
-    '''Model that stores skate session data.'''
+    '''One user's sign-up for one YetiSkateDate.'''
 
     # Model Fields
     skater = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -40,11 +43,10 @@ class YetiSkateSession(models.Model):
     class Meta:
         # Prevent duplicate entries
         unique_together = ['skater', 'skate_date']
-        # Default ordering date descending
         ordering = ['-skate_date']
 
 
 class YetiSkateNewSkater(models.Model):
-    '''Model that stores new skaters to limit their ability to register for skates.'''
+    '''Users listed here are "new skaters" and may only register for Friday skates on Thursday.'''
 
     skater = models.ForeignKey(User, on_delete=models.CASCADE)

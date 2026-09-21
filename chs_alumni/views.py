@@ -1,3 +1,5 @@
+'''Views for the CHS Alumni skate program: list upcoming skates, register for one,
+remove an unpaid registration, and a staff list of skate dates.'''
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, DeleteView
@@ -16,14 +18,12 @@ from cart.models import Cart
 
 from datetime import date, datetime
 
-# Create your views here.
 
 class CHSAlumniSkateDateListView(LoginRequiredMixin, ListView):
     '''Page that displays upcoming CHS Alumni skates.'''
 
     template_name = 'chs_alumni_dates.html'
     model = CHSAlumniDate
-    # skate_date_model = CHSAlumniSession
     credit_model = UserCredit
     group_model = Group
     profile_model = Profile
@@ -31,7 +31,7 @@ class CHSAlumniSkateDateListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Join the CHS Alumni Skate Group
+        # Silently add the user to the CHS Alumni group (used for communication)
         self.join_chs_alumni_group()
         
         # Create a user credit object if one does not exist
@@ -48,7 +48,8 @@ class CHSAlumniSkateDateListView(LoginRequiredMixin, ListView):
         return queryset
 
     def join_chs_alumni_group(self, join_group='CHS Alumni'):
-        '''Adds user to CHS Alumni group "behind the scenes".'''
+        '''Adds user to the CHS Alumni group "behind the scenes", for communication purposes,
+        and creates a Profile for the user if one does not exist.'''
         
         try:
             group = self.group_model.objects.get(name=join_group)
@@ -62,14 +63,14 @@ class CHSAlumniSkateDateListView(LoginRequiredMixin, ListView):
         except IntegrityError:
             pass
         except ObjectDoesNotExist:
-            # If no profile exists, create one and set chs_alumni_email to True
+            # If no profile exists, create one with CHS Alumni email notifications on
             profile = self.profile_model(user=self.request.user, chs_alumni_email=True, slug=self.request.user.id)
             profile.save()
         return
 
 
 class CreateCHSAlumniSessionView(LoginRequiredMixin, CreateView):
-    '''Page that displays form for user to register for skate sessions.'''
+    '''Page that displays form for user to register for a CHS Alumni skate session.'''
 
     model = CHSAlumniSession
     form_class = CreateCHSAlumniSkateSessionForm
@@ -96,6 +97,8 @@ class CreateCHSAlumniSessionView(LoginRequiredMixin, CreateView):
         return context
 
     def form_valid(self, form):
+        '''Enforces skater/goalie limits, then marks the session paid (free goalie or paid
+        from credit balance) or adds it to the cart for payment.'''
 
         # Get the user credit model instance
         user_credit = UserCredit.objects.get(user=self.request.user)
@@ -113,7 +116,7 @@ class CreateCHSAlumniSessionView(LoginRequiredMixin, CreateView):
                 messages.add_message(self.request, messages.ERROR, 'Sorry, skater spots are full!')
                 return redirect('chs_alumni:chs-alumni')
 
-            # Get the price of the skate
+            # Get the price of the skate (Program id 11 is CHS Alumni); goalies at $0 are marked paid
             if self.object.goalie:
                 price = self.program_model.objects.get(id=11).goalie_price
                 if price == 0:
@@ -121,11 +124,11 @@ class CreateCHSAlumniSessionView(LoginRequiredMixin, CreateView):
             else:
                 price = self.program_model.objects.get(id=11).skater_price
 
-            # If spots are not full do the following
+            # Pay from credit balance when the user has enough credit, otherwise add to cart
             if user_credit.balance >= price and user_credit.paid:
                 self.object.paid = True
                 user_credit.balance -= price
-                # Check to see if there's a $0 balance, if so, set paid to false
+                # A $0 balance means there is no credit left to pay with
                 if user_credit.balance == 0:
                     user_credit.paid = False
                 user_credit.save()
@@ -161,12 +164,11 @@ class DeleteCHSAlumniSessionView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy('chs_alumni:chs-alumni')
 
     def delete(self, *args, **kwargs):
-        '''Things that need doing once a session is removed.'''
+        '''Clears the user's matching cart item before the session is deleted.'''
 
         # Clear session from the cart
         skate_date = self.model.objects.filter(id=kwargs['pk']).values_list('date', flat=True)
         cart_date = self.skate_date_model.objects.filter(id=skate_date[0])
-        # print(cart_date[0])
         Cart.objects.filter(
             item=Program.objects.all().get(id=11).program_name, 
             event_date=cart_date[0].skate_date, 
@@ -180,7 +182,7 @@ class DeleteCHSAlumniSessionView(LoginRequiredMixin, DeleteView):
 ################ The following views are for staff only ##########################################################
 
 class CHSAlumniSkateDateStaffListView(LoginRequiredMixin, ListView):
-    '''Displays page with list of upcoming CHS ALumni Skate dates with buttons for viewing registered skaters.'''
+    '''Displays page with list of upcoming CHS Alumni skate dates with buttons for viewing registered skaters.'''
 
     model = CHSAlumniDate
     context_object_name = 'skate_dates'

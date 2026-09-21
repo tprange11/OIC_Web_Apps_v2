@@ -16,7 +16,8 @@ class WomensHockeySkateDateOrderingTests(TestCase):
     def setUp(self):
         User = get_user_model()
         self.user = User.objects.create_user(username='skater', password='pw')
-        # The list view adds every visitor to the Womens Hockey group (id=8).
+        # The list view adds every visitor to the Womens Hockey group (id=8),
+        # so the group must exist or the view raises DoesNotExist.
         Group.objects.create(id=8, name='Womens Hockey')
 
         today = date.today()

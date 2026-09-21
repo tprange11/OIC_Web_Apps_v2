@@ -1,3 +1,7 @@
+'''Thane Storck skate (Program id 4): adult skaters register themselves for scheduled skates.
+
+Goalies and staff skate for free. Near-copy of owhl/yeti_skate/nacho_skate.
+'''
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, DeleteView, FormView
@@ -15,7 +19,6 @@ from cart.models import Cart
 
 from datetime import date
 
-# Create your views here.
 
 class SkateDateListView(LoginRequiredMixin, ListView):
     '''Page that displays upcoming Thane Storck skates.'''
@@ -46,12 +49,12 @@ class SkateDateListView(LoginRequiredMixin, ListView):
         queryset = super().get_queryset()
         queryset = queryset.filter(skate_date__gte=date.today()).values('pk', 'skate_date', 'start_time', 'end_time').annotate(num_skaters=Count('session_skaters')).order_by('skate_date', 'pk')
         skater_sessions = self.session_model.objects.filter(skater=self.request.user).values_list('skate_date','pk', 'paid')
-        # print(skater_sessions)
-        # If user is already signed up for the skate, add key value pair to disable button
+        # Annotate each date with skater/goalie counts and, if the user is already
+        # signed up, the session details so the template can disable the button
         for item in queryset:
             item['registered_skaters'] = self.model.registered_skaters(skate_date=item['pk'])
             for session in skater_sessions:
-                # If the session date and skate date match and paid is True, add disabled = True to queryset
+                # Both branches do the same thing; paid/unpaid are handled identically here
                 if item['pk'] == session[0] and session[2] == True:
                     item['disabled'] = True
                     item['session_pk'] = session[1]
@@ -99,8 +102,8 @@ class CreateSkateSessionView(LoginRequiredMixin, CreateView):
         return context
 
     def form_valid(self, form):
+        '''Enforce goalie/skater caps, then pay from user credit or add to the cart.'''
 
-        # Get the user credit model instance
         user_credit = UserCredit.objects.get(user=self.request.user)
         credit_used = False # Used to set the message
         cost = 0
@@ -115,16 +118,14 @@ class CreateSkateSessionView(LoginRequiredMixin, CreateView):
             elif self.object.goalie == False and self.model.objects.filter(goalie=False, skate_date=self.object.skate_date).count() == Program.objects.get(pk=4).max_skaters:
                 messages.add_message(self.request, messages.ERROR, 'Sorry, skater spots are full!')
                 return redirect('thane_storck:thane-skate')
-            # If all goes well, do the following.
-            # Get the program skater cost
             cost = self.program_model.objects.get(id=4).skater_price
-            # If skater is a goalie or staff member they skate for free.
+            # Goalies and staff members skate for free
             if self.object.goalie or self.request.user.is_staff:
                 self.object.paid = True
             elif user_credit.balance >= cost and user_credit.paid:
                 self.object.paid = True
                 user_credit.balance -= cost
-                #Check to see if there's a 0 balance, if so, set paid to false
+                # A zero balance is flagged as unpaid so it can't be spent again
                 if user_credit.balance == 0:
                     user_credit.paid = False
                 user_credit.save()
@@ -134,10 +135,11 @@ class CreateSkateSessionView(LoginRequiredMixin, CreateView):
             self.join_thane_storck_group()
             self.add_thane_storck_email_to_profile()
             self.object.save()
+        # Duplicate sign-up is silently ignored; super().form_valid() will re-raise on save
         except IntegrityError:
             pass
-        # If all goes well set success message and return
-        # If user is a goalie, staff or Bob Sheehan set this message.
+        # If all goes well set success message and return.
+        # User id 52 gets the "free" message here but is NOT exempted from payment above (see backlog).
         if self.object.goalie or self.request.user.is_staff or self.request.user.id == 52:
             messages.add_message(self.request, messages.INFO, 'You have successfully registered for the skate!')
         elif credit_used:
@@ -148,7 +150,6 @@ class CreateSkateSessionView(LoginRequiredMixin, CreateView):
 
     def add_to_cart(self):
         '''Adds Thane Storck session to shopping cart.'''
-        # Get price of Thane Storck program
         price = self.program_model.objects.get(id=4).skater_price
         start_time = self.session_model.objects.filter(skate_date=self.object.skate_date.skate_date).values_list('start_time', flat=True)
         cart = self.cart_model(customer=self.request.user, item='Thane Storck', skater_name=self.request.user.get_full_name(), 
@@ -171,7 +172,7 @@ class CreateSkateSessionView(LoginRequiredMixin, CreateView):
         try:
             self.profile_model.objects.get(user=self.request.user)
             return
-        # If no profile exists, add one and set thank_storck_email to True
+        # If no profile exists, add one and set thane_storck_email to True
         except ObjectDoesNotExist:
             profile = self.profile_model(user=self.request.user, slug=self.request.user.id, thane_storck_email=True)
             profile.save()
@@ -185,19 +186,21 @@ class DeleteSkateSessionView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy('thane_storck:thane-skate')
 
     def delete(self, *args, **kwargs):
-        '''Things that need doing once a session is removed.'''
+        '''Remove the matching cart item when an unpaid session is dropped.
 
-        # Clear session from the cart
+        NOTE: Django 4.0 DeleteView handles POST via form_valid() and does not call delete(),
+        so this cleanup does not run (see backlog). No credit is refunded for paid sessions.
+        '''
+
+        # Clear session from the cart (not filtered by customer, see backlog)
         skate_date = self.model.objects.filter(id=kwargs['pk']).values_list('skate_date', flat=True)
         cart_date = self.skate_date_model.objects.filter(id=skate_date[0])
-        # print(cart_date[0])
         cart_item = Cart.objects.filter(item=Program.objects.all().get(id=4).program_name, event_date=cart_date[0].skate_date).delete()
 
-        # Set success message and return
         messages.add_message(self.request, messages.SUCCESS, 'You have been removed from that skate session!')
         return super().delete(*args, **kwargs)
 
-################ The following views are for staff only ##########################################################
+# The following views are for staff only.
 
 class PrintSkateDateListView(LoginRequiredMixin, ListView):
     '''Displays page with list of upcoming Thane Storck skates with buttons for printing each skate.'''
@@ -232,6 +235,7 @@ class PrintSkateDateView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        # Unpack the single (date, start_time) row for the waiver header
         skate_date_info = self.skate_date_model.objects.filter(pk=self.kwargs['pk']).values_list('skate_date', 'start_time')
         for info in skate_date_info:
             context['skate_date'] = info[0]

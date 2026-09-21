@@ -130,7 +130,7 @@ class PostUpdateView(LoginRequiredMixin, UpdateView):
         topic = Topic.objects.get(pk=self.kwargs['topic_pk'])
         post = form.save(commit=False)
         post.updated_at = timezone.now()
-        # Update Topic last_updated
+        # Editing a post bumps the topic so it re-sorts to the top of the board
         topic.last_updated = timezone.now()
         topic.save()
         self.success_url = reverse_lazy('message_boards:topic-post-list', kwargs={'slug': self.kwargs['slug'], 'pk': self.kwargs['topic_pk']})

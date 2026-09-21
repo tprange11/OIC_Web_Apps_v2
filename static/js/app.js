@@ -1,3 +1,5 @@
+// PWA bootstrap: registers the service worker served from /serviceworker.js.
+// promise.js and fetch.js (polyfills, loaded before this) cover old browsers.
 
 if (!window.Promise) {
     window.Promise = Promise;

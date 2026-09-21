@@ -4,8 +4,9 @@
 """
 Nacho Skate Scheduler Script
 ----------------------------
-Fetches Nacho Skate dates, inserts new sessions, processes regular skaters,
-and sends notification emails.
+Cron script. On Sundays (Central time) it fetches the ScheduleWerks calendar for the day
+three days out (Wednesday), inserts new NachoSkateDate rows, registers NachoSkateRegular
+skaters who have enough credit, and emails opted-in users. Logs to /home/OIC/logs/nacho_skate.log.
 
 Supports flags:
   --force-email         Send emails immediately (ignores weekday/schedule)
@@ -81,6 +82,7 @@ def extract_nacho_sessions(data):
         if "Nacho" in item.get("text", ""):
             raw_date = item["start_date"].split(" ")[0]  # MM/DD/YYYY
             clean_date = f"{raw_date[6:]}-{raw_date[:2]}-{raw_date[3:5]}"
+            # start_date/end_date end in 24h "HH:MM", which TimeField accepts directly
             start = item["start_date"][-5:]
             end = item["end_date"][-5:]
             results.append((clean_date, start, end))
@@ -90,7 +92,10 @@ def extract_nacho_sessions(data):
 
 
 def add_new_dates(sessions, dry_run=False):
-    """Insert new Nacho Skate dates into the DB."""
+    """Insert new Nacho Skate dates into the DB. Returns True if any row was new.
+
+    In dry-run mode nothing is saved, so every session counts as "added".
+    """
     added = False
     for session in sessions:
         try:
@@ -111,7 +116,11 @@ def add_new_dates(sessions, dry_run=False):
 
 
 def add_regulars(force=False, dry_run=False):
-    """Registers regular skaters if they have credit OR if forced."""
+    """Registers regular skaters for every future date if they have credit OR if forced.
+
+    UserCredit pk 870 is always registered and never charged. Charging happens per
+    session, so a regular with credit for one skate but not two is only added once.
+    """
     regulars = NachoSkateRegular.objects.all().select_related("regular")
     sessions = NachoSkateDate.objects.filter(skate_date__gt=date.today())
     price = Program.objects.get(id=15).skater_price
@@ -158,6 +167,8 @@ def send_emails(dry_run=False, test_email=None):
     """Send Nacho Skate email notifications."""
 
     if test_email:
+        # Fake a single recipient (a dict, not a Profile; the loop below reads
+        # test_email/"Test" directly so r.user is never touched in this mode)
         recipients = [{"user": type("obj", (object,), {"email": test_email, "first_name": "Test"})}]
         logger.info(f"Sending TEST email to {test_email}")
     else:

@@ -1,3 +1,8 @@
+'''Cron script: scrape the next four Saturdays for "Mike Schultz" entries and email opted-in users.
+
+This still drives the old MaxGalaxy ScheduleList.aspx form with mechanicalsoup; every other
+program scraper now uses the ScheduleWerks JSON endpoint (see backlog).
+'''
 from bs4 import BeautifulSoup
 import mechanicalsoup
 from datetime import date, timedelta
@@ -6,8 +11,7 @@ import os, sys
 if os.name == 'nt':
     sys.path.append("C:\\Users\\brian\\Documents\\Python\\OIC_Web_Apps\\")
 else:
-    sys.path.append("/home/OIC/OIC_Web_Apps/") # Uncomment on production server
-    # sys.path.append("/home/BrianC68/oicdev/OIC_Web_Apps/") # Uncomment on development server
+    sys.path.append("/home/OIC/OIC_Web_Apps/")
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'OIC_Web_Apps.settings')
 
 import django
@@ -22,24 +26,19 @@ from accounts.models import Profile
 skate_dates = []
 
 def scrape_oic_schedule(date):
-    '''Scrapes Ozaukee Ice Center schedule website for Mike Schultz skate dates.'''
+    '''Submits the MaxGalaxy schedule form for one ISO date and appends any
+    "Mike Schultz" row as [date, start, end] to skate_dates.'''
+    # The ASP.NET form wants the date in three different formats
     xx_xx_xxxx = f"{date[5:7]}/{date[8:]}/{date[0:4]}"
     xxxx_xx_xx = f"{date[0:4]},{date[5:7]},{date[8:]}"
     today_with_time = date + "-00-00-00"
-
-    # Used for testing purposes
-    # print(xx_xx_xxxx)
-    # print(xxxx_xx_xx)
-    # print(today_with_time)
 
     browser = mechanicalsoup.StatefulBrowser()
 
     browser.open("https://ozaukeeicecenter.maxgalaxy.net/ScheduleList.aspx?ID=2")
 
     browser.get_current_page()
-    # print(page)
     browser.select_form('form[action="./ScheduleList.aspx?ID=2"]')
-    # browser.get_current_form().print_summary()
 
     browser["ctl00_ContentPlaceHolder1_txtFromDate_dateInput_ClientState"] = '{"enabled":true,"emptyMessage":"","validationText":"'+today_with_time+'","valueAsString":"'+today_with_time+'","minDateStr":"1980-01-01-00-00-00","maxDateStr":"2099-12-31-00-00-00","lastSetTextBoxValue":"'+xx_xx_xxxx+'"}'
     browser["ctl00_ContentPlaceHolder1_txtThroughDate_dateInput_ClientState"] = '{"enabled":true,"emptyMessage":"","validationText":"'+today_with_time+'","valueAsString":"'+today_with_time+'","minDateStr":"1980-01-01-00-00-00","maxDateStr":"2099-12-31-00-00-00","lastSetTextBoxValue":"'+xx_xx_xxxx+'"}'
@@ -56,7 +55,6 @@ def scrape_oic_schedule(date):
     browser["ctl00$ContentPlaceHolder1$cboFacility"] = 'All items checked'
 
     response = browser.submit_selected()
-    # print(response.text)
     browser.close()
 
     soup = BeautifulSoup(response.text, 'html.parser')
@@ -65,6 +63,7 @@ def scrape_oic_schedule(date):
     except AttributeError:
         return
 
+    # Columns: 0 start time, 1 end time, 4 event name; only the first match per day is kept
     for row in rows:
         cols = row.find_all('td')
 
@@ -74,7 +73,10 @@ def scrape_oic_schedule(date):
                 break
 
 def add_skate_dates(sessions):
-    '''Adds Mike Schultz skate dates and times AdultSkillsSkateDates model.'''
+    '''Adds Mike Schultz skate dates and times to the MikeSchultzSkateDate model.
+
+    Returns whether the LAST session was new (see backlog).
+    '''
     model = MikeSchultzSkateDate
 
     for session in sessions:
@@ -85,7 +87,6 @@ def add_skate_dates(sessions):
         except IntegrityError:
             new_dates = False
             continue
-    # print(new_dates)
     return new_dates
 
 def send_skate_dates_email():
@@ -114,7 +115,7 @@ def send_skate_dates_email():
                 }
             )
 
-            # Send email to each recipient separately
+            # Send email to each recipient separately; any send failure aborts the whole run
             try:
                 mail = EmailMultiAlternatives(
                     subject, text_message, from_email, to_email
@@ -128,7 +129,6 @@ def send_skate_dates_email():
 if __name__ == "__main__":
     
     the_date = date.today()
-    # the_date = "2019-09-14"
     send_email = False
 
     # Every day scrape the next four weeks for Saturday Mike Schultz skate dates
@@ -142,7 +142,5 @@ if __name__ == "__main__":
     if len(skate_dates) != 0:
         send_email = add_skate_dates(skate_dates)
                
-    # print(skate_dates)
-    # print(send_email)
     if send_email:
         send_skate_dates_email()

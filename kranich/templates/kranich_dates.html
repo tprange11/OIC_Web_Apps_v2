@@ -78,7 +78,7 @@
                             <div>
                                 {{skater.skater.first_name}} {{skater.skater.last_name}}
                                 {% if skater.goalie %}<b>(G)</b>{% endif %}
-                                {% if user.is_superuser or user.id == 870 %} {% comment %}{{ John Kranich is user.id 870 }}{% endcomment %}
+                                {% if user.is_superuser or user.id == 870 %} {# user 870 is John Kranich, the skate organizer #}
                                 {% if skater.paid %}<b>(Paid)</b>{% else %}<b>(Not Paid)</b>{% endif %}
                             </div>
                             <div>

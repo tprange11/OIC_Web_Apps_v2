@@ -1,3 +1,5 @@
+'''Views for the Adult Skills program: list upcoming skates, register for one,
+remove a registration, and a staff list of registered skaters.'''
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, DeleteView
@@ -19,7 +21,6 @@ from cart.models import Cart
 
 from datetime import date
 
-# Create your views here.
 
 class AdultSkillsSkateDateListView(LoginRequiredMixin, ListView):
     '''Page that displays upcoming Adult Skills skates.'''
@@ -35,9 +36,10 @@ class AdultSkillsSkateDateListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        # Silently add the user to the Adult Skills group (used for communication)
         self.join_adult_skills_group()
         
-        # Get all skaters signed up for each session to display the list of skaters for each session
+        # All registrations for upcoming skates, so the template can list who is skating
         skate_sessions = self.session_model.objects.filter(skate_date__skate_date__gte=date.today()).order_by('pk')
         context['skate_sessions'] = skate_sessions
 
@@ -54,11 +56,13 @@ class AdultSkillsSkateDateListView(LoginRequiredMixin, ListView):
         queryset = super().get_queryset()
         queryset = queryset.filter(skate_date__gte=date.today()).values('pk', 'skate_date', 'start_time', 'end_time')
         skater_sessions = self.session_model.objects.filter(skater=self.request.user).values_list('skate_date', 'pk', 'paid')
-        # If user is already signed up for the skate, add key value pair to disable button
+        # Annotate each skate date with head counts and, if the user is already signed up,
+        # with their session details so the template can disable the register button
+        # and show the Remove Me button.
         for item in queryset:
             item['registered_skaters'] = self.model.registered_skaters(skate_date=item['pk'])
             for session in skater_sessions:
-                # If the session date and skate date match and paid is True, add disabled = True to queryset
+                # User already has a session for this skate date (paid or unpaid): disable registration
                     if item['pk'] == session[0] and session[2] == True:
                         item['disabled'] = True
                         item['session_pk'] = session[1]
@@ -77,7 +81,8 @@ class AdultSkillsSkateDateListView(LoginRequiredMixin, ListView):
         return queryset
 
     def join_adult_skills_group(self, join_group='Adult Skills'):
-        '''Adds user to Adult Skills group "behind the scenes", for communication purposes.'''
+        '''Adds user to the Adult Skills group "behind the scenes", for communication purposes,
+        and creates a Profile for the user if one does not exist.'''
 
         try:
             group = self.group_model.objects.get(name=join_group)
@@ -89,7 +94,7 @@ class AdultSkillsSkateDateListView(LoginRequiredMixin, ListView):
             # If a profile already exists, do nothing
             profile = self.profile_model.objects.get(user=self.request.user)
         except ObjectDoesNotExist:
-            # If a profile does not exist, create one and set adult_skills_email to True
+            # If no profile exists, create one with Adult Skills email notifications on
             profile = self.profile_model(user=self.request.user, adult_skills_email=True, slug=self.request.user.id)
             profile.save()
 
@@ -97,11 +102,10 @@ class AdultSkillsSkateDateListView(LoginRequiredMixin, ListView):
 
 
 class CreateAdultSkillsSkateSessionView(LoginRequiredMixin, CreateView):
-    '''Page that displays form for user to register for skate sessions.'''
+    '''Page that displays form for user to register for an Adult Skills skate session.'''
 
     model = models.AdultSkillsSkateSession
     form_class = forms.CreateAdultSkillsSkateSessionForm
-    # group_model = Group
     profile_model = Profile
     program_model = Program
     session_model = models.AdultSkillsSkateDate
@@ -118,6 +122,8 @@ class CreateAdultSkillsSkateSessionView(LoginRequiredMixin, CreateView):
         return initial
 
     def form_valid(self, form):
+        '''Enforces skater/goalie limits, then marks the session paid (from credit balance or
+        free) or adds it to the cart for payment.'''
 
         user_credit = self.credit_model.objects.get(user=self.request.user) # User credit model
         credit_used = False # Used to set the success message
@@ -135,7 +141,7 @@ class CreateAdultSkillsSkateSessionView(LoginRequiredMixin, CreateView):
                 messages.add_message(self.request, messages.ERROR, 'Sorry, skater spots are full!')
                 return redirect('adult_skills:adult-skills')
 
-            # If spots are not full do the following
+            # Spots are available: get the skater/goalie cost (Program id 5 is Adult Skills)
             skater_cost = self.program_model.objects.get(id=5).skater_price
             goalie_cost = self.program_model.objects.get(id=5).goalie_price
 
@@ -149,11 +155,11 @@ class CreateAdultSkillsSkateSessionView(LoginRequiredMixin, CreateView):
             if user_credit.balance >= price:
                 self.object.paid = True
                 user_credit.balance -= price
-                # If the user credit balance is 0, set paid = False
+                # A $0 balance means there is no credit left to pay with
                 if user_credit.balance == 0:
                     user_credit.paid = False
                 credit_used = True
-            # If the user doesn't have enough credits
+            # Not enough credit: free sessions are marked paid, everything else goes in the cart
             else:
                 if price == 0:
                     self.object.paid = True
@@ -162,7 +168,6 @@ class CreateAdultSkillsSkateSessionView(LoginRequiredMixin, CreateView):
             
             # Save the user credit model
             user_credit.save()
-            # self.add_adult_skills_email_to_profile()
             self.object.save()
         except IntegrityError:
             pass
@@ -184,22 +189,9 @@ class CreateAdultSkillsSkateSessionView(LoginRequiredMixin, CreateView):
             event_date=self.object.skate_date.skate_date, event_start_time=start_time[0], amount=price)
         cart.save()
 
-    # def add_adult_skills_email_to_profile(self):
-    #     '''If no user profile exists, create one and set adult_skills_email to True.'''
-        
-    #     # If a profile already exists, do nothing
-    #     try:
-    #         self.profile_model.objects.get(user=self.request.user)
-    #         return
-    #     # If no profile exists, create one and set adult_skills_email to True
-    #     except ObjectDoesNotExist:
-    #         profile = self.profile_model(user=self.request.user, slug=self.request.user.id, adult_skills_email=True)
-    #         profile.save()
-    #         return
-
 
 class DeleteAdultSkillsSkateSessionView(LoginRequiredMixin, DeleteView):
-    '''Allows user to remove themself from a skate session prior to paying.'''
+    '''Allows user (or staff) to remove a skater from a skate session, refunding credit if it was paid.'''
 
     model = models.AdultSkillsSkateSession
     skate_date_model = models.AdultSkillsSkateDate
@@ -208,15 +200,14 @@ class DeleteAdultSkillsSkateSessionView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy('adult_skills:adult-skills')
 
     def delete(self, *args, **kwargs):
-        '''Things that need doing once a session is removed.'''
+        '''Refunds credit for a paid session, or clears the cart item for an unpaid one,
+        emails the admins and skater, then deletes the session.'''
 
         user = User.objects.get(pk=kwargs['skater_pk'])
-        # print(user.id)
-        if user.is_staff: # 
+        if user.is_staff: # Staff skate free, nothing to refund
             success_msg = 'Skater has been removed from that skate session!'
         elif kwargs['paid'] == 'True':
-            # If the session is paid for, issue credit to the user
-            # Get the program skater/goalie cost
+            # If the session is paid for, issue credit to the user for the skater/goalie price
             session = self.model.objects.get(pk=kwargs['pk'])
             if session.goalie:
                 price = self.program_model.objects.get(id=5).goalie_price
@@ -237,7 +228,7 @@ class DeleteAdultSkillsSkateSessionView(LoginRequiredMixin, DeleteView):
             cart_item.delete()
             success_msg = 'You have been removed from that skate session!'
                 
-        # Send email to user about the credit
+        # Email the removal message to the site admins (ids 1 and 2) and the skater
         recipients = User.objects.filter(id__in=['1', '2', user.id]).values_list('email', flat=True)
         subject = 'Credit Issued for Adult Skills Session'
         from_email = 'no-reply@oicwebapp.com'

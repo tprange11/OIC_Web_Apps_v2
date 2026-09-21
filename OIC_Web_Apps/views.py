@@ -1,7 +1,8 @@
+"""Site-level pages: home, public program info pages, the web apps landing page and
+the 404/500 handlers."""
 from django.views.generic import TemplateView
 from django.shortcuts import render
 from django.contrib.auth.mixins import LoginRequiredMixin
-# from open_hockey.models import OpenHockeyMemberType
 from programs.models import Program
 
 class HomePage(TemplateView):
@@ -9,15 +10,9 @@ class HomePage(TemplateView):
     
 
 class OpenHockeyPage(TemplateView):
+    '''Static info page; the membership/program context it used to pull from the
+    retired open_hockey app was removed with that app.'''
     template_name = 'info_open_hockey.html'
-    # model = OpenHockeyMemberType
-
-    # def get_context_data(self, **kwargs):
-    #     context = super().get_context_data(**kwargs)
-    #     member_types = self.model.objects.all()
-    #     context['memberships'] = member_types
-    #     context['program_details'] = Program.objects.get(id=1)
-    #     return context
 
 
 class StickAndPuckPage(TemplateView):
@@ -46,6 +41,8 @@ class ThanksPage(TemplateView):
     template_name = 'thanks.html'
 
 
+# Custom error handlers; render(None, ...) skips context processors, so the error
+# pages cannot rely on request-based context such as `user` or `cart_has_items`.
 def handler404(request, exception, template_name='404.html'):
     response = render(None, template_name)
     response.status_code = 404

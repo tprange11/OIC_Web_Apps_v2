@@ -2,6 +2,9 @@ from schedule.models import NameNormalizationRule
 
 
 def normalize_event_name(event_name: str) -> str:
+    '''Apply every active NameNormalizationRule in priority order and collapse whitespace.
+    Matching is case-insensitive but the replacement is case-sensitive, so a rule that
+    matches only by case leaves the text unchanged.'''
     if not event_name:
         return event_name
 

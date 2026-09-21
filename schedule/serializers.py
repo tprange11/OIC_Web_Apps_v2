@@ -5,6 +5,8 @@ from datetime import datetime, date
 
 
 class RinkScheduleSerializer(serializers.ModelSerializer):
+    '''Schedule rows for the JSON API; times are 12-hour strings and countdown_time is
+    today's date joined to the start time, in the format the countdown JS expects.'''
 
     start_time = serializers.TimeField(format='%I:%M %p')
     end_time = serializers.TimeField(format='%I:%M %p')

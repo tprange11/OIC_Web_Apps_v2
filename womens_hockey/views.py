@@ -1,3 +1,5 @@
+'''Womens Hockey (Program id 8, Group id 8): users register a ChildSkater (which may be
+themselves) for scheduled skates. Near-copy of mike_schultz and open_roller.'''
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, DeleteView
@@ -31,6 +33,7 @@ class WomensHockeySkateDateListView(LoginRequiredMixin, ListView):
         '''Adds user to Womens Hockey group "behind the scenes", for communication purposes.'''
 
         try:
+            # Group id 8 is "Womens Hockey" (looked up by id here, by name in contexts.py)
             group = self.group_model.objects.get(id=8)
             self.request.user.groups.add(group)
         except IntegrityError:
@@ -41,7 +44,7 @@ class WomensHockeySkateDateListView(LoginRequiredMixin, ListView):
             profile = self.profile_model.objects.get(
                 user=self.request.user)
         except ObjectDoesNotExist:
-            # If a profile already exists, set womens_hockey_email to True
+            # If no profile exists, create one and set womens_hockey_email to True
             profile = self.profile_model(user=self.request.user, womens_hockey_email=True, slug=self.request.user.id)
             profile.save()
 
@@ -66,6 +69,9 @@ class WomensHockeySkateDateListView(LoginRequiredMixin, ListView):
         queryset = super().get_queryset()
         queryset = queryset.filter(skate_date__gte=date.today()).values(
             'pk', 'skate_date', 'start_time', 'end_time').annotate(num_skaters=Count('session_skaters')).order_by('skate_date', 'pk')
+        # skater_sessions is computed but unused (dead code, see backlog). The sibling
+        # single-skater apps use it to disable the register button; here a user may
+        # register several ChildSkaters for one date.
         skater_sessions = self.session_model.objects.filter(
             user=self.request.user).values_list('skate_date', 'pk', 'paid')
         return queryset
@@ -106,8 +112,9 @@ class CreateWomensHockeySkateSessionView(LoginRequiredMixin, CreateView):
         return context
 
     def form_valid(self, form):
+        '''Enforce goalie/skater caps, then pay from user credit or add to the cart.'''
 
-        user_credit = self.credit_model.objects.get(user=self.request.user) # User credit model
+        user_credit = self.credit_model.objects.get(user=self.request.user)
         credit_used = False # Used to set the success message
         price = 0
 
@@ -135,25 +142,27 @@ class CreateWomensHockeySkateSessionView(LoginRequiredMixin, CreateView):
             else:
                 price = skater_cost
 
-            # If user credit has been depleted, make sure user credit paid is set to False
+            # Reset the paid flag if the balance was already spent (checked before
+            # this deduction, so a balance that hits zero here stays flagged paid)
             if user_credit.balance == 0:
                 user_credit.paid = False
             
+            # If the user has enough credits, deduct credits and set session as paid
+            # (unlike the yeti/nacho/thane apps, user_credit.paid is not checked here)
             if user_credit.balance >= price:
                 self.object.paid = True
                 user_credit.balance -= price
                 credit_used = True
-            # If the user doesn't have enough credits
+            # Not enough credit: free sessions are marked paid, otherwise add to the cart
             else:
                 if price == 0:
                     self.object.paid = True
                 else:
                     self.add_to_cart(price)
             
-            # Save the user credit model
             user_credit.save()
-            # self.add_womens_hockey_email_to_profile()
             self.object.save()
+        # Duplicate sign-up is silently ignored; super().form_valid() will re-raise on save
         except IntegrityError:
             pass
         # If all goes well set success message and return
@@ -177,19 +186,6 @@ class CreateWomensHockeySkateSessionView(LoginRequiredMixin, CreateView):
         cart.save()
         return False
 
-    # def add_womens_hockey_email_to_profile(self):
-    #     '''If no user profile exists, create one and set womens_hockey_email to True.'''
-
-    #     # If a profile already exists, do nothing
-    #     try:
-    #         self.profile_model.objects.get(user=self.request.user)
-    #     # If no profile exists, add one and set open_hockey_email to True
-    #     except ObjectDoesNotExist:
-    #         profile = self.profile_model(
-    #             user=self.request.user, slug=self.request.user.id, womens_hockey_email=True)
-    #         profile.save()
-    #     return
-
 
 class DeleteWomensHockeySkateSessionView(LoginRequiredMixin, DeleteView):
     '''Allows user to remove themself from a skate session'''
@@ -198,9 +194,14 @@ class DeleteWomensHockeySkateSessionView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy('womens_hockey:womens-hockey')
 
     def delete(self, *args, **kwargs):
-        '''Things that need doing once a session is removed.'''
+        '''Remove the matching cart item when an unpaid session is dropped.
 
-        # Clear session from the cart
+        NOTE: Django 4.0 DeleteView handles POST via form_valid() and does not call delete(),
+        so this cleanup does not run (see backlog).
+        '''
+
+        # Clear session from the cart (the Program instance is matched against the
+        # item CharField via its __str__, which is the program name)
         skate_date = self.model.objects.filter(
             id=kwargs['pk']).values_list('skate_date', flat=True)
         skater_id = self.model.objects.filter(
@@ -210,12 +211,11 @@ class DeleteWomensHockeySkateSessionView(LoginRequiredMixin, DeleteView):
         cart_item = Cart.objects.filter(item=Program.objects.all().get(
             id=8), skater_name=skater, event_date=cart_date[0].skate_date).delete()
 
-        # Set success message and return
         messages.add_message(self.request, messages.SUCCESS,
                              'Skater has been removed from that skate session!')
         return super().delete(*args, **kwargs)
 
-################ The following views are for staff only ##########################################################
+# The following views are for staff only.
 
 
 class WomensHockeySkateDateStaffListView(LoginRequiredMixin, ListView):

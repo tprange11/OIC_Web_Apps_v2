@@ -1,11 +1,12 @@
+'''Cron script: on Wednesdays, pull "Open Roll" entries for the day five days out (Monday)
+from ScheduleWerks into OpenRollerSkateDate and email opted-in users if anything new was added.'''
 from datetime import date, timedelta
 import os, sys, requests, json
 
 if os.name == 'nt':
     sys.path.append("C:\\Users\\brian\\Documents\\Python\\OIC_Web_Apps\\")
 else:
-    sys.path.append("/home/OIC/OIC_Web_Apps/") # Uncomment on production server
-    # sys.path.append("/home/BrianC68/oicdev/OIC_Web_Apps/") # Uncomment on development server
+    sys.path.append("/home/OIC/OIC_Web_Apps/")
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'OIC_Web_Apps.settings')
 
 import django
@@ -20,7 +21,7 @@ from accounts.models import Profile
 skate_dates = []
 
 def get_schedule_data(from_date, to_date):
-    '''Fetch Ozaukee Ice Center schedule data and parse for open roller hockey session dates.'''
+    '''Fetches the ScheduleWerks calendar and appends Open Roller entries to skate_dates.'''
 
     url = f"https://ozaukeeicecenter.schedulewerks.com/public/ajax/swCalGet?tid=-1&from={from_date}&to={to_date}&Complex=-1"
 
@@ -28,11 +29,11 @@ def get_schedule_data(from_date, to_date):
         response = requests.get(url)
         data = json.loads(response.text)
     except requests.exceptions.RequestException as e:
-        # print(e)
         return
 
     for item in data:
         if "Open Roll" in item["text"]:
+            # start_date is "MM/DD/YYYY HH:MM"; convert to ISO date
             skate_date = item["start_date"].split(" ")[0]
             skate_date = f"{skate_date[6:]}-{skate_date[:2]}-{skate_date[3:5]}"
             start_time = item["st"].replace("P", " PM").replace("A", " AM")
@@ -43,7 +44,10 @@ def get_schedule_data(from_date, to_date):
     return
 
 def add_skate_dates(sessions):
-    '''Adds Open Roller Hockey skate dates and times to OpenRollerSkateDate model.'''
+    '''Adds Open Roller Hockey skate dates and times to the OpenRollerSkateDate model.
+
+    Returns whether the LAST session was new (see backlog).
+    '''
     model = OpenRollerSkateDate
 
     for session in sessions:
@@ -54,7 +58,6 @@ def add_skate_dates(sessions):
         except IntegrityError:
             new_dates = False
             continue
-    # print(new_dates)
     return new_dates
 
 def send_skate_dates_email():
@@ -83,7 +86,7 @@ def send_skate_dates_email():
                 }
             )
 
-            # Send email to each recipient separately
+            # Send email to each recipient separately; any send failure aborts the whole run
             try:
                 mail = EmailMultiAlternatives(
                     subject, text_message, from_email, to_email
@@ -101,9 +104,9 @@ if __name__ == "__main__":
     from_date = from_date.strftime("%m/%d/%Y")
     send_email = False
 
-    # Fetch next week for Open Roller Hockey every Wednesday
+    # Every Wednesday (weekday 2) fetch the single day five days out
     
-    if the_date.weekday() == 2: # If it's Wednesday
+    if the_date.weekday() == 2:
         get_schedule_data(from_date, from_date)
 
     if len(skate_dates) != 0:

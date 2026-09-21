@@ -1,3 +1,5 @@
+'''Views for the Bald Eagles skate program: list upcoming skates, register for one,
+remove a registration, and a staff list of registered skaters.'''
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, DeleteView
@@ -30,11 +32,10 @@ class BaldEaglesSkateDateListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Join the Bald Eagles Skate Group
+        # Silently add the user to the Bald Eagles group (used for communication)
         self.join_bald_eagles_group()
-        # Get all skaters signed up for each session to display the list of skaters for each session
+        # All registrations for upcoming skates, so the template can list who is skating
         skate_sessions = self.session_model.objects.filter(session_date__skate_date__gte=date.today()).order_by('pk')
-        # print(skate_sessions)
         context['skate_sessions'] = skate_sessions
         # Create a user credit object if one does not exist
         try:
@@ -49,17 +50,16 @@ class BaldEaglesSkateDateListView(LoginRequiredMixin, ListView):
         queryset = super().get_queryset()
         queryset = queryset.filter(skate_date__gte=date.today()).values('pk', 'skate_date', 'start_time', 'end_time').annotate(num_skaters=Count('session_skaters')).order_by('skate_date', 'pk')
         skater_sessions = self.session_model.objects.filter(skater=self.request.user).values_list('session_date','pk', 'paid')
-        # print(skater_sessions)
-        # If user is already signed up for the skate, add key value pair to disable button
+        # If the user is already signed up for a skate date, attach their session details so the
+        # template can disable the register button and show the Remove Me button
         for item in queryset:
             for session in skater_sessions:
-                # If the session date and skate date match and paid is True, add disabled = True to queryset
+                # User already has a session for this skate date (paid or unpaid): disable registration
                 if item['pk'] == session[0] and session[2] == True:
                     item['disabled'] = True
                     item['session_pk'] = session[1]
                     item['paid'] = session[2]
                     break
-                # If the session date and skate date match and paid is False, add disabled = True to queryset
                 elif item['pk'] == session[0] and session[2] == False:
                     item['disabled'] = True
                     item['session_pk'] = session[1]
@@ -73,7 +73,8 @@ class BaldEaglesSkateDateListView(LoginRequiredMixin, ListView):
         return queryset
 
     def join_bald_eagles_group(self, join_group='Bald Eagles'):
-        '''Adds user to Bald Eagles group "behind the scenes", for communication purposes.'''
+        '''Adds user to the Bald Eagles group "behind the scenes", for communication purposes,
+        and creates a Profile for the user if one does not exist.'''
         
         try:
             group = self.group_model.objects.get(name=join_group)
@@ -85,14 +86,14 @@ class BaldEaglesSkateDateListView(LoginRequiredMixin, ListView):
             # If a profile already exists, do nothing
             profile = self.profile_model.objects.get(user=self.request.user)
         except ObjectDoesNotExist:
-            # If no profile, create one and set bald_eagles_email to True
+            # If no profile exists, create one with Bald Eagles email notifications on
             profile = self.profile_model(user=self.request.user, bald_eagles_email=True, slug=self.request.user.id)
             profile.save()
 
         return
 
 class CreateBaldEaglesSessionView(LoginRequiredMixin, CreateView):
-    '''Page that displays form for user to register for skate sessions.'''
+    '''Page that displays form for user to register for a Bald Eagles skate session.'''
 
     model = BaldEaglesSession
     form_class = CreateBaldEaglesSessionForm
@@ -119,6 +120,8 @@ class CreateBaldEaglesSessionView(LoginRequiredMixin, CreateView):
         return context
 
     def form_valid(self, form):
+        '''Enforces skater/goalie limits, then marks the session paid (staff, free, or
+        paid from credit balance) or adds it to the cart for payment.'''
 
         # Get the user credit model instance
         user_credit = UserCredit.objects.get(user=self.request.user)
@@ -136,8 +139,7 @@ class CreateBaldEaglesSessionView(LoginRequiredMixin, CreateView):
             elif self.object.goalie == False and self.model.objects.filter(goalie=False, session_date=self.object.session_date).count() == Program.objects.get(pk=9).max_skaters:
                 messages.add_message(self.request, messages.ERROR, 'Sorry, skater spots are full!')
                 return redirect('bald_eagles:bald-eagles')
-            # If spots are not full do the following
-            # Get the program skater cost
+            # Spots are available: get the skater/goalie cost (Program id 9 is Bald Eagles)
             if self.request.user.is_staff: # Employees skate for free
                 cost = 0
             elif self.object.goalie:
@@ -147,17 +149,18 @@ class CreateBaldEaglesSessionView(LoginRequiredMixin, CreateView):
 
             if cost == 0:
                 self.object.paid = True
+            # Pay from credit balance when the user has enough credit
             elif user_credit.balance >= cost and user_credit.paid:
                 self.object.paid = True
                 user_credit.balance -= cost
-                # Check to see if there's a $0 balance, if so, set paid to false
+                # A $0 balance means there is no credit left to pay with
                 if user_credit.balance == 0:
                     user_credit.paid = False
                 user_credit.save()
                 credit_used = True # Used to set the message
+            # Otherwise the session goes in the cart to be paid for
             else:
                 self.add_to_cart(cost)
-            # self.add_bald_eagles_email_to_profile()
             self.object.save()
         except IntegrityError:
             pass
@@ -181,40 +184,26 @@ class CreateBaldEaglesSessionView(LoginRequiredMixin, CreateView):
         cart.save()
         return False
 
-    # def add_bald_eagles_email_to_profile(self):
-    #     '''If no user profile exists, create one and set bald_eagles_email to True.'''
-        
-    #     # If a profile already exists, do nothing
-    #     try:
-    #         self.profile_model.objects.get(user=self.request.user)
-    #         return
-    #     # If no profile exists, add one and set bald_eagles_email to True
-    #     except ObjectDoesNotExist:
-    #         profile = self.profile_model(user=self.request.user, slug=self.request.user.id, bald_eagles_email=True)
-    #         profile.save()
-    #         return
-
 
 class DeleteBaldEaglesSessionView(LoginRequiredMixin, DeleteView):
-    '''Allows user to remove themself from a skate session'''
+    '''Allows user to remove themself from a skate session (no credit refund; only the cart item is cleared).'''
     model = BaldEaglesSession
     skate_date_model = BaldEaglesSkateDate
     success_url = reverse_lazy('bald_eagles:bald-eagles')
 
     def delete(self, *args, **kwargs):
-        '''Things that need doing once a session is removed.'''
+        '''Clears the matching cart item before the session is deleted.'''
 
         # Clear session from the cart
         skate_date = self.model.objects.filter(id=kwargs['pk']).values_list('session_date', flat=True)
         cart_date = self.skate_date_model.objects.filter(id=skate_date[0])
-        # print(cart_date[0])
         cart_item = Cart.objects.filter(item=Program.objects.all().get(id=9).program_name, event_date=cart_date[0].skate_date).delete()
 
         # Set success message and return
         messages.add_message(self.request, messages.SUCCESS, 'You have been removed from that skate session!')
         return super().delete(*args, **kwargs)
 
-# ################ The following views are for staff only ##########################################################
+################ The following views are for staff only ##########################################################
 
 class BaldEaglesSessionStaffListView(LoginRequiredMixin, ListView):
     '''Displays page with list of upcoming Bald Eagles skates with buttons for viewing registered skaters.'''

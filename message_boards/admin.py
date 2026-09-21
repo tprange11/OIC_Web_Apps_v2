@@ -1,8 +1,6 @@
 from django.contrib import admin
 from .models import Board, Topic, Post
 
-# Register your models here.
-
 
 class BoardAdmin(admin.ModelAdmin):
     list_display = ['name', 'description']
@@ -17,6 +15,8 @@ class PostAdmin(admin.ModelAdmin):
     list_display = ['topic', 'created_by']
 
 
+# Registration is intentionally switched off: the message boards are not exposed in
+# the admin at the moment. Uncomment to manage boards/topics/posts there again.
 # admin.site.register(Board, BoardAdmin)
 # admin.site.register(Topic, TopicAdmin)
 # admin.site.register(Post, PostAdmin)

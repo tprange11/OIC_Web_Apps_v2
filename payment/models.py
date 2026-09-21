@@ -2,12 +2,11 @@ from django.db import models
 from django.contrib.auth import get_user_model
 User = get_user_model()
 
-# Create your models here.
 
 class Payment(models.Model):
-    '''Payment Model holds payment records.'''
+    '''One completed Square payment. `note` is the "(Program $amount) ..." breakdown
+    built in payment/views.py and parsed by the revenue reports.'''
 
-    # Model fields
     payer = models.ForeignKey(User, on_delete=models.CASCADE)
     square_id = models.CharField(max_length=200)
     square_receipt = models.CharField(max_length=100)
@@ -23,9 +22,8 @@ class Payment(models.Model):
 
 
 class PaymentError(models.Model):
-    '''Model holds any payment errors received.'''
+    '''A Square error returned while processing a payment, kept for support.'''
 
-    # Model Fields
     payer = models.ForeignKey(User, on_delete=models.CASCADE)
     date = models.DateTimeField(auto_now_add=True)
     error = models.TextField()

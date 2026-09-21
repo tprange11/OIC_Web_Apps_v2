@@ -6,7 +6,6 @@
     <ul class="list-group" style="display: inline-block; margin-bottom: 10px;">
         {% for date in dates %}
         <li class="list-group-item" style="padding: 5px 15px;"><a href="{% url 'open_hockey:open-hockey-list' date=date %}" class="btn btn-warning btn-sm">{{ date }}</a> 
-        <!-- Button trigger skaterlist modal -->
         <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#skaterlist{{forloop.counter}}">
         Registered Skaters</button></li>
         {% empty %}

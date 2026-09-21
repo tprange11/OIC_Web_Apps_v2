@@ -8,6 +8,7 @@ class CreateMikeSchultzSkateSessionForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user')
         super().__init__(*args, **kwargs)
+        # Only offer the ChildSkaters that belong to this user
         self.fields['skater'].queryset = ChildSkater.objects.filter(user=self.user)
 
     class Meta:

@@ -1,3 +1,8 @@
+'''Yeti Skate (Program id 7): adult skaters register themselves for scheduled skates.
+
+Staff, goalies and user id 359 skate for free. New skaters (YetiSkateNewSkater) cannot
+sign up for Friday skates until Thursday. Near-copy of nacho_skate/owhl/thane_storck.
+'''
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, DeleteView
@@ -14,20 +19,17 @@ from .forms import CreateYetiSkateSessionForm
 from accounts.models import Profile, UserCredit
 from programs.models import Program
 from cart.models import Cart
-# from message_boards.models import Topic
 
 from datetime import date
 
 User = get_user_model()
 
-# Create your views here.
 
 class YetiSkateDateListView(LoginRequiredMixin, ListView):
     '''Page that displays upcoming Yeti skates.'''
 
     template_name = 'yeti_skate_dates.html'
     model = YetiSkateDate
-    # topic_model = Topic
     session_model = YetiSkateSession
     credit_model = UserCredit
     group_model = Group
@@ -36,9 +38,7 @@ class YetiSkateDateListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Join the Yeti Skate Group
-        # self.join_yeti_skate_group()
-        # Get all skaters signed up for each session to display the list of skaters for each session
+        # Get all skaters signed up for each session to display the list of skaters for each session.
         # Order by pk so the modal lists skaters in the order they registered
         # (earliest registration first). YetiSkateSession has no created_at
         # field, so the auto-increment primary key is the reliable proxy.
@@ -46,10 +46,9 @@ class YetiSkateDateListView(LoginRequiredMixin, ListView):
             skate_date__skate_date__gte=date.today()
         ).order_by('pk')
         context['skate_sessions'] = skate_sessions
-        # latest_topic = Topic.objects.filter(board=2).order_by('-last_updated').first()
-        # context['latest_topic'] = latest_topic
         
-        # new_skater check to hide Friday signup till Thursday
+        # New skaters may only sign up for Friday skates on Thursday; the template
+        # uses day_of_week and new_skater to hide the Friday button otherwise
         context['day_of_week'] = date.today().weekday() # 0-6
         try:
             YetiSkateNewSkater.objects.get(skater=self.request.user)
@@ -70,14 +69,14 @@ class YetiSkateDateListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        queryset = queryset.filter(skate_date__gte=date.today()).values('pk', 'skate_date', 'start_time', 'end_time').order_by('skate_date', 'pk')#.annotate(num_skaters=Count('session_skaters'))
+        queryset = queryset.filter(skate_date__gte=date.today()).values('pk', 'skate_date', 'start_time', 'end_time').order_by('skate_date', 'pk')
         skater_sessions = self.session_model.objects.filter(skater=self.request.user).values_list('skate_date','pk', 'paid')
-        # print(skater_sessions)
-        # If user is already signed up for the skate, add key value pair to disable button
+        # Annotate each date with skater/goalie counts and, if the user is already
+        # signed up, the session details so the template can disable the button
         for item in queryset:
             item['registered_skaters'] = self.model.registered_skaters(skate_date=item['pk'])
             for session in skater_sessions:
-                # If the session date and skate date match and paid is True, add disabled = True to queryset
+                # Both branches do the same thing; paid/unpaid are handled identically here
                 if item['pk'] == session[0] and session[2] == True:
                     item['disabled'] = True
                     item['session_pk'] = session[1]
@@ -95,6 +94,8 @@ class YetiSkateDateListView(LoginRequiredMixin, ListView):
                     continue
         return queryset
 
+    # Parked: automatic "Yeti Skate" group join and Profile creation is switched off
+    # (nacho_skate still does this); users must join/opt in themselves.
     # def join_yeti_skate_group(self, join_group='Yeti Skate'):
     #     '''Adds user to Yeti Skate group "behind the scenes", for communication purposes.'''
         
@@ -125,7 +126,6 @@ class CreateYetiSkateSessionView(LoginRequiredMixin, CreateView):
     cart_model = Cart
     credit_model = UserCredit
     template_name = 'yeti_skate_sessions_form.html'
-    # success_url = '/web_apps/yeti_skate/'
     success_url = reverse_lazy('yeti_skate:yeti-skate')
 
     def get_initial(self, *args, **kwargs):
@@ -143,13 +143,13 @@ class CreateYetiSkateSessionView(LoginRequiredMixin, CreateView):
         return context
 
     def form_valid(self, form):
+        '''Enforce goalie/skater caps, then pay from user credit or add to the cart.'''
 
-        # Get the user credit model instance
         user_credit = UserCredit.objects.get(user=self.request.user)
         credit_used = False # Used to set the message
         self.object = form.save(commit=False)
 
-        # Get the program skater/goalie cost
+        # Program id 7 is Yeti Skate
         if self.object.goalie == True:
             cost = self.program_model.objects.get(id=7).goalie_price
         else:
@@ -164,23 +164,22 @@ class CreateYetiSkateSessionView(LoginRequiredMixin, CreateView):
             elif self.object.goalie == False and self.model.objects.filter(goalie=False, skate_date=self.object.skate_date).count() == Program.objects.get(pk=7).max_skaters:
                 messages.add_message(self.request, messages.ERROR, 'Sorry, skater spots are full!')
                 return redirect('yeti_skate:yeti-skate')
-            # If spots are not full do the following
             
-            if self.request.user.is_staff or self.object.goalie or self.request.user.id == 359: # Employees and goalies skate for free
+            if self.request.user.is_staff or self.object.goalie or self.request.user.id == 359: # Staff, goalies and user 359 skate for free
                 self.object.paid = True
                 cost = 0 # Set cost = 0 for correct message
             elif user_credit.balance >= cost and user_credit.paid:
                 self.object.paid = True
                 user_credit.balance -= cost
-                # Check to see if there's a $0 balance, if so, set paid to false
+                # A zero balance is flagged as unpaid so it can't be spent again
                 if user_credit.balance == 0:
                     user_credit.paid = False
                 user_credit.save()
                 credit_used = True # Used to set the message
             else:
                 self.add_to_cart()
-            # self.add_yeti_skate_email_to_profile()
             self.object.save()
+        # Duplicate sign-up is silently ignored; super().form_valid() will re-raise on save
         except IntegrityError:
             pass
         # If all goes well set success message and return
@@ -193,8 +192,11 @@ class CreateYetiSkateSessionView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
 
     def add_to_cart(self):
-        '''Adds Yeti Skate session to shopping cart.'''
-        # Get price of Yeti Skate program
+        '''Adds Yeti Skate session to shopping cart.
+
+        Only reached for non-goalies (goalies are marked paid in form_valid), so the
+        goalie branch below is dead.
+        '''
         if self.object.goalie:
             price = self.program_model.objects.get(id=7).goalie_price
             if price == 0:
@@ -208,19 +210,6 @@ class CreateYetiSkateSessionView(LoginRequiredMixin, CreateView):
             cart.save()
             return False
 
-    # def add_yeti_skate_email_to_profile(self):
-    #     '''If no user profile exists, create one and set yeti_skate_email to True.'''
-        
-    #     # If a profile already exists, do nothing
-    #     try:
-    #         self.profile_model.objects.get(user=self.request.user)
-    #         return
-    #     # If no profile exists, add one and set open_hockey_email to True
-    #     except ObjectDoesNotExist:
-    #         profile = self.profile_model(user=self.request.user, slug=self.request.user.id, yeti_skate_email=True)
-    #         profile.save()
-    #         return
-
 
 class DeleteYetiSkateSessionView(LoginRequiredMixin, DeleteView):
     '''Allows user to remove themself from a skate session'''
@@ -231,15 +220,19 @@ class DeleteYetiSkateSessionView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy('yeti_skate:yeti-skate')
 
     def delete(self, *args, **kwargs):
-        '''Things that need doing once a session is removed.'''
+        '''Refund credit (paid session) or clear the cart item (unpaid), then email the skater.
+
+        NOTE: Django 4.0 DeleteView handles POST via form_valid() and does not call delete(),
+        so none of this runs (see backlog). The paid flag and skater pk also come straight
+        from the URL rather than the session row.
+        '''
 
         user = User.objects.get(pk=kwargs['skater_pk'])
 
-        if user.is_staff or user.id == 359: # Employees and goalies skate for free
+        if user.is_staff or user.id == 359: # Staff and user 359 skated for free, nothing to refund
             success_msg = 'Skater has been removed from that skate session!'
         elif kwargs['paid'] == 'True':
-            # If the session is paid for, issue credit to the user
-            # Get the program skater/goalie cost
+            # If the session is paid for, refund the skater/goalie price to the user's credit
             session = self.model.objects.get(pk=kwargs['pk'])
             if session.goalie:
                 price = self.program_model.objects.get(id=7).goalie_price
@@ -252,14 +245,15 @@ class DeleteYetiSkateSessionView(LoginRequiredMixin, DeleteView):
             success_msg = f'{user.get_full_name()} has been removed from the session. The Users credit balance has been increased from ${old_balance} to ${user_credit.balance}.'
             user_credit.save()
         else:
-            # Clear session from the cart
+            # Clear session from the cart (not filtered by customer, and .delete() is called
+            # again on the tuple .delete() returns -- see backlog)
             skate_date = self.model.objects.filter(id=kwargs['pk']).values_list('skate_date', flat=True)
             cart_date = self.skate_date_model.objects.filter(id=skate_date[0])
             cart_item = Cart.objects.filter(item=Program.objects.all().get(id=7).program_name, event_date=cart_date[0].skate_date).delete()
             cart_item.delete()
             success_msg = 'You have been removed from that skate session!'
             
-        # Send email to user about the credit
+        # Email the skater plus the admin accounts (ids 1, 2) and user 359
         recipients = User.objects.filter(id__in=['1', '2','359', user.id]).values_list('email', flat=True)
         subject = 'Credit Issued for Yeti Skate Session'
         from_email = 'no-reply@oicwebapp.com'
@@ -268,16 +262,12 @@ class DeleteYetiSkateSessionView(LoginRequiredMixin, DeleteView):
             send_mail(subject, success_msg, from_email, recipients)
             messages.add_message(self.request, messages.INFO, 'Email message has been sent to the skater!')
             self.success_url = reverse_lazy('yeti_skate:yeti-skate')
-        #except:
-            #messages.add_message(self.request, messages.ERROR, 'Oops, something went wrong!  Please try again.')
-            #return reverse('contact:contact-form', kwargs={ 'form': form.cleaned_data })
         except Exception as e:
             messages.add_message(self.request, messages.ERROR, f'Failed to send email: {str(e)}')
-        # Set success message and return
         messages.add_message(self.request, messages.SUCCESS, 'You have been removed from that skate session!')
         return super().delete(*args, **kwargs)
 
-################ The following views are for staff only ##########################################################
+# The following views are for staff only.
 
 class YetiSkateDateStaffListView(LoginRequiredMixin, ListView):
     '''Displays page with list of upcoming Yeti Skate skates with buttons for viewing registered skaters.'''

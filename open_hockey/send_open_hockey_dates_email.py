@@ -1,3 +1,4 @@
+'''Cron script: on Mondays, email users who opted in that this week's open hockey dates are posted.'''
 import os, sys
 from datetime import date
 
@@ -16,7 +17,10 @@ from accounts.models import Profile
 
 
 def send_mail():
-    '''Sends email to Users letting them know open hockey dates for the week are posted'''
+    '''Sends email to Users letting them know open hockey dates for the week are posted.
+
+    NOTE: the subject and body text still say "Yeti Skate" (copy-paste error, see backlog).
+    '''
     recipients = Profile.objects.filter(open_hockey_email=True).select_related('user')
 
     for recipient in recipients:
@@ -40,7 +44,7 @@ def send_mail():
             }
         )
 
-        # Send email to each recipient separately
+        # Send email to each recipient separately; any send failure aborts the whole run
         try:
             mail = EmailMultiAlternatives(
                 subject, text_message, from_email, to_email

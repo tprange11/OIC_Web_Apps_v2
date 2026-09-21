@@ -1,8 +1,6 @@
 from django.contrib import admin
 from ament.models import AmentSkateDate, AmentSkateSession
 
-# Register your models here.
-
 
 class AmentSkateDateAdmin(admin.ModelAdmin):
     list_display = ['skate_date', 'start_time', 'end_time']

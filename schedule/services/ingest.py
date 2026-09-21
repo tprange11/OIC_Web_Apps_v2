@@ -1,3 +1,5 @@
+"""Snapshot-based schedule ingest: fetch, normalize, enrich, assign lockers, and store
+one RinkScheduleSnapshot per event under a ScheduleIngestRun."""
 import uuid
 from datetime import date, timedelta
 from django.utils import timezone
@@ -15,9 +17,8 @@ from schedule.services.game_enricher import enrich_game_event_name
 from schedule.services.guest_parser import parse_guest_teams
 
 
-# IMPORTANT:
-# This file does NOT import or modify existing scrape scripts.
-# We will call them explicitly and safely.
+# The legacy scraper is reached only through schedulewerks_adapter, which wraps its
+# module-level state; nothing here writes to RinkSchedule.
 
 
 def run_schedule_ingest(
@@ -28,8 +29,11 @@ def run_schedule_ingest(
     days_ahead: int = 3,
 ):
     """
-    Canonical ingest entry point.
-    Safe for manual, scheduled, preview, and rollback runs.
+    Entry point for the management command and trigger_ingest view.
+
+    Always creates a ScheduleIngestRun and marks it completed in the finally block,
+    even on failure (the exception is re-raised after being recorded in run.notes).
+    With dry_run=True the snapshots are built but not saved.
     """
 
     run = ScheduleIngestRun.objects.create(
@@ -47,21 +51,21 @@ def run_schedule_ingest(
         for event in events:
             print("DEBUG EVENT (raw):", event)
 
-            # 1️⃣ Normalize base event name
+            # 1. Apply NameNormalizationRule replacements
             event["event"] = normalize_event_name(event["event"])
 
-            # 2️⃣ Parse guest teams BEFORE enrichment
+            # 2. Parse guest teams before the name gains a " vs " from enrichment
             event["guest_teams"] = parse_guest_teams(event["event"], event.get("usg"))
             if event["guest_teams"]:
                 print("GUEST PARSED:", event["event"], event["guest_teams"])
 
-            # 3️⃣ Enrich event name using USG only
+            # 3. Append the opponent from usg for real games
             event["event"] = enrich_game_event_name(
                 event["event"],
                 event.get("usg", [])
             )
 
-            # 4️⃣ Locker assignment
+            # 4. Locker rooms: admin rules first, then rotation
             home_lr, visitor_lr, reason, evaluation = assign_lockers(event)
 
             snapshots.append(
@@ -106,7 +110,5 @@ def run_schedule_ingest(
 
 
 def _collect_events(days_ahead: int):
-    """
-    Collect real events from ScheduleWerks via scrape_schedule.py.
-    """
+    """Fetch raw events from ScheduleWerks via the legacy scraper adapter."""
     return fetch_schedulewerks_events(days_ahead)

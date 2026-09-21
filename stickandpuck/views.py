@@ -1,3 +1,8 @@
+'''Stick and puck: guardians register their skaters (StickAndPuckSkater) for scheduled sessions.
+
+Session dates come from StickAndPuckDate (populated by scrape_stick_and_puck_dates.py);
+sign-ups are StickAndPuckSession rows. Payment is via user credit or the cart.
+'''
 from django.shortcuts import render
 from django.views.generic import CreateView, TemplateView, ListView, DeleteView, FormView
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -13,10 +18,9 @@ from accounts.models import Profile, UserCredit
 from programs.models import Program
 from datetime import date, timedelta
 
-# Create your views here.
 
 class StickAndPuckIndex(LoginRequiredMixin, TemplateView):
-    '''Displays page with stick and puck index view'''
+    '''Stick and puck landing page; shows the user's credit balance.'''
     template_name = 'stick_and_puck.html'
     credit_model = UserCredit
 
@@ -41,7 +45,7 @@ class CreateStickAndPuckSkaterView(LoginRequiredMixin, CreateView):
     form_class = forms.StickAndPuckSkaterForm
 
     def form_valid(self, form):
-        # Set the user as guardian for the Stick and Puck Skater Model
+        # The logged-in user is always the guardian of the skaters they add
         form.instance.guardian = self.request.user
         try:
             return super(CreateStickAndPuckSkaterView, self).form_valid(form)
@@ -68,19 +72,20 @@ class DeleteStickAndPuckSkater(LoginRequiredMixin, DeleteView):
     template_name = 'stickandpuckskaters_confirm_delete.html'
 
     def delete(self, *args, **kwargs):
-        # Sets message to be displayed on page after skater has been removed.
+        # NOTE: Django 4.0 DeleteView handles POST via form_valid() and does not call delete(),
+        # so this message is never shown (see backlog).
         messages.success(self.request, "Skater has been removed!")
         return super().delete(*args, **kwargs)
 
 
 class StickAndPuckSessionListView(LoginRequiredMixin, ListView):
-    '''Displays page with list of users upcoming stick and puck sessions'''
+    '''Displays page with list of upcoming stick and puck session dates'''
     template_name = 'stickandpucksessions_list.html'
     model = models.StickAndPuckDate
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        # Filter queryset by sessions greater than yesteday and order by session_date and primary key('pk')
+        # Today and later, oldest first
         return queryset.filter(session_date__gte=date.today()).order_by('session_date', 'pk')
 
 
@@ -91,6 +96,7 @@ class StickAndPuckSessionCount(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        # Program id 2 is Stick and Puck
         context['skater_spots'] = Program.objects.get(id=2).max_skaters - self.model.objects.filter(session_date=kwargs['session_date'], session_time=kwargs['session_time']).count()
         return context
 
@@ -116,7 +122,7 @@ class CreateStickAndPuckSession(LoginRequiredMixin, CreateView):
 
     def get_initial(self, *args, **kwargs):
         initial = super().get_initial()
-        # Get stick and puck session date and time from URL and return to populate the form's text inputs
+        # Pre-fill date and time from the URL on GET
         if self.request.method == 'GET':
             initial['session_date'] = self.kwargs['session_date']
             initial['session_time'] = self.kwargs['session_time']
@@ -125,7 +131,6 @@ class CreateStickAndPuckSession(LoginRequiredMixin, CreateView):
             return {}
 
     def form_valid(self, form):
-        # Set user as guardian for stick and puck sessions model
         form.instance.guardian = self.request.user
         user_credit = self.credit_model.objects.get(user=self.request.user)
         credit_used = False
@@ -134,26 +139,28 @@ class CreateStickAndPuckSession(LoginRequiredMixin, CreateView):
         max_skaters = self.program_model.objects.get(id=2).max_skaters
 
         try:
-            # If this session of stick and puck is full, set message and redirect to error page
+            # Session full: render the error page instead of saving
             if self.model.objects.filter(session_date=self.object.session_date, session_time=self.object.session_time).count() >= max_skaters:
                 context = {'user': self.request.user,
                         'message': "Sorry, this session of stick and puck is full!"}
                 return render(None, 'stickandpuck_error.html', context)
-            # Else save the object to the model
             else:
                 self.join_stick_and_puck_group()
                 self.add_stick_and_puck_email_to_profile()
                 self.object.save()
-        # If the skater is already signed up for that session, set message and redirect to error page
+        # Duplicate (guardian, skater, date, time): skater is already signed up
         except IntegrityError:
             context = {'user': self.request.user,
             'message': "Skater is already signed up for this session!"}
             return render(self.request, 'stickandpuck_error.html', context)
 
-        # If all goes well, add stick and puck session to Shopping Cart unless credit is used
+        # Pay from user credit when the balance covers it, otherwise add to the cart.
+        # Note the session was already saved above, so paid=True set here is only
+        # persisted by the ModelForm save in super().form_valid().
         if user_credit.balance >= cost and user_credit.paid:
             self.object.paid = True
             user_credit.balance -= cost
+            # A zero balance is flagged as unpaid so it can't be spent again
             if user_credit.balance == 0:
                 user_credit.paid = False
             user_credit.save()
@@ -177,13 +184,12 @@ class CreateStickAndPuckSession(LoginRequiredMixin, CreateView):
         return
 
     def add_stick_and_puck_email_to_profile(self):
-        '''If no user profile exists, create one and set stick_and_puck_email to True'''
+        '''If no user profile exists, create one (with stick_and_puck_email left off).'''
 
         # If a profile already exists, do nothing
         try:
             self.profile_model.objects.get(user=self.request.user)
             return
-        # If no profile exists, add one and set stick_and_puck_email to True
         except ObjectDoesNotExist:
             profile = self.profile_model(user=self.request.user, slug=self.request.user.id, stick_and_puck_email=False)
             profile.save()
@@ -191,7 +197,6 @@ class CreateStickAndPuckSession(LoginRequiredMixin, CreateView):
 
     def add_to_cart(self, skater):
         '''Adds stick and puck session to shopping cart.'''
-        # Get price of stick and puck program
         program = self.program_model.objects.get(id=2)
         price = program.skater_price
         cart = self.cart_model(customer=self.request.user, item='Stick and Puck', skater_name=skater, event_date=self.object.session_date, event_start_time=self.object.session_time, amount=price)
@@ -205,7 +210,7 @@ class StickAndPuckMySessionsListView(LoginRequiredMixin, ListView):
     
     def get_queryset(self):
         queryset = super().get_queryset()
-        # Filter stick and puck sessions to show sessions greater than or equal to today and ordered by session_date then session_time
+        # The user's own upcoming sessions, soonest first
         return queryset.filter(guardian=self.request.user.id, session_date__gte=date.today()).order_by('session_date', 'session_time')
 
 
@@ -221,13 +226,14 @@ class StickAndPuckSessionDeleteView(LoginRequiredMixin, DeleteView):
         return queryset
 
     def delete(self, *args, **kwargs):
+        # NOTE: Django 4.0 DeleteView handles POST via form_valid() and does not call delete(),
+        # so this cart cleanup does not run (see backlog).
         # If a stick and puck session is removed before paying, remove it from the cart too
         session_date = self.model.objects.filter(id=kwargs['pk']).values_list('session_date', flat=True)
         start_time = self.model.objects.filter(id=kwargs['pk']).values_list('session_time', flat=True)
         skater_id = self.model.objects.filter(id=kwargs['pk']).values_list('skater', flat=True)
         skater = self.skater_model.objects.get(id=skater_id[0])
         cart_item = Cart.objects.filter(event_date=session_date[0], event_start_time=start_time[0], skater_name=skater).delete()
-        # Set message to display on page after skater has been removed from stick and puck session
         messages.success(self.request, 'Skater has been removed from the Stick and Puck Session!')
         return super().delete(*args, **kwargs)
 
@@ -242,7 +248,7 @@ class StickAndPuckPrintListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        # Filter queryset by dates greater than or equal to today, order by primary key('pk')
+        # Upcoming dates in insertion order
         return queryset.filter(session_date__gte=date.today()).order_by('pk')
 
     def get_context_data(self, *, object_list=None, **kwargs):
@@ -257,13 +263,11 @@ class StickAndPuckPrintView(LoginRequiredMixin, ListView):
     template_name = 'stickandpuckprint_view.html'
 
     def get_queryset(self):
-        # Filter queryset by date and time of particular stick and puck session
         queryset = super().get_queryset().filter(session_date=self.kwargs['date'], session_time=self.kwargs['time'])
         return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Get stick and puck session date and time from URL
         context['date'] = self.kwargs['date']
         context['time'] = self.kwargs['time']
         return context

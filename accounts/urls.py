@@ -24,9 +24,8 @@ urlpatterns = [
 
     path('user_credit/purchase/<slug>/', views.UpdateUserCreditView.as_view(), name='purchase-credit'),
 
-    # -----------------------------
-    # PASSWORD RESET WORKFLOW
-    # -----------------------------
+    # Password reset workflow, using Django's built-in views with app-namespaced
+    # success URLs.
 
     # 1) Request password reset
     path(
@@ -64,6 +63,6 @@ urlpatterns = [
     path('download/outstanding-credits/', download_outstanding_credits, name='download-outstanding-credits'),
     path('download/fs-revenue/', download_fs_revenue, name='download-fs-revenue'),
 
-    # Debug helper
+    # Debug helper left in place; responds "LOADED" so a deploy can be smoke-tested.
     path("test_url_check/", lambda r: HttpResponse("LOADED"), name="test-url-check"),
 ]

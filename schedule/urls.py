@@ -11,6 +11,7 @@ urlpatterns = [
     path('rink/update_schedule/', views.scrape_schedule, name='update-schedule'),
 ]
 
+# Ingest pipeline pages (runs, diffs, manual trigger).
 urlpatterns += [
     path("runs/", views.run_list, name="schedule_run_list"),
     path("runs/<int:run_id>/", views.run_detail, name="schedule_run_detail"),

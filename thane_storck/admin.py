@@ -1,7 +1,6 @@
 from django.contrib import admin
 from thane_storck.models import SkateDate, SkateSession
 
-# Register your models here.
 
 class SkateDateAdmin(admin.ModelAdmin):
     list_display = ['skate_date', 'start_time', 'end_time']
@@ -19,5 +18,6 @@ class SkateSessionAdmin(admin.ModelAdmin):
         return f"{obj.skate_date.skate_date} {obj.skate_date.start_time} to {obj.skate_date.end_time}"
 
 
+# Parked: the Thane Storck models are deliberately hidden from the admin site (see backlog).
 # admin.site.register(SkateDate, SkateDateAdmin)
 # admin.site.register(SkateSession, SkateSessionAdmin)

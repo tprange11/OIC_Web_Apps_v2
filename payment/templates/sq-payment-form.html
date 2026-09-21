@@ -6,7 +6,7 @@
 {% endblock %}
 
 {% block extra_head %}
-<!-- Square Web Payments SDK -->
+{# Square Web Payments SDK #}
 <script src="https://web.squarecdn.com/v1/square.js"></script>
 
 <script>
@@ -46,7 +46,7 @@
 
 <div id="payment-status-container"></div>
 
-<!-- Square JS handlers -->
+{# Square JS handlers (static/js) #}
 <script src="{% static 'js/sq-card-pay.js' %}"></script>
 <script src="{% static 'js/sq-payment-flow.js' %}"></script>
 

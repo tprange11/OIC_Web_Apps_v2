@@ -1,8 +1,6 @@
 from django.contrib import admin
 from open_roller.models import OpenRollerSkateDate, OpenRollerSkateSession
 
-# Register your models here.
-
 
 class OpenRollerSkateDateAdmin(admin.ModelAdmin):
     list_display = ['skate_date', 'start_time', 'end_time']

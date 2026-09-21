@@ -1,8 +1,6 @@
 from django.contrib import admin
 from mike_schultz.models import MikeSchultzSkateDate, MikeSchultzSkateSession
 
-# Register your models here.
-
 
 class MikeSchultzSkateDateAdmin(admin.ModelAdmin):
     list_display = ['skate_date', 'start_time', 'end_time']
@@ -17,5 +15,7 @@ class MikeSchultzSkateSessionAdmin(admin.ModelAdmin):
         return f"{obj.user.first_name} {obj.user.last_name}"
 
 
+# Parked: the Mike Schultz models are deliberately hidden from the admin site
+# (program appears to be retired, see backlog).
 # admin.site.register(MikeSchultzSkateDate, MikeSchultzSkateDateAdmin)
 # admin.site.register(MikeSchultzSkateSession, MikeSchultzSkateSessionAdmin)

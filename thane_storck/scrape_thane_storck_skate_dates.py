@@ -1,3 +1,5 @@
+'''Cron script: on Sundays, pull today's "Storck" entries from ScheduleWerks into SkateDate
+and email opted-in users if anything new was added.'''
 from datetime import date, timedelta
 import os, sys, requests, json
 
@@ -19,7 +21,7 @@ from accounts.models import Profile
 skate_dates = []
 
 def get_schedule_data(from_date, to_date):
-    '''Request schedule data from Schedule Werks for the specified period.'''
+    '''Fetches the ScheduleWerks calendar and appends Storck entries to skate_dates.'''
     
     url = f"https://ozaukeeicecenter.schedulewerks.com/public/ajax/swCalGet?tid=-1&from={from_date}&to={to_date}&Complex=-1"
 
@@ -27,11 +29,11 @@ def get_schedule_data(from_date, to_date):
         response = requests.get(url)
         data = json.loads(response.text)
     except requests.exceptions.RequestException as e:
-        # print(e)
         return
 
     for item in data:
         if "Storck" in item["text"]:
+            # start_date is "MM/DD/YYYY HH:MM"; convert to ISO date
             skate_date = item["start_date"].split(" ")[0]
             skate_date = f"{skate_date[6:]}-{skate_date[:2]}-{skate_date[3:5]}"
             start_time = item["st"].replace("P", " PM").replace("A", " AM")
@@ -42,7 +44,10 @@ def get_schedule_data(from_date, to_date):
 
 
 def add_skate_dates(sessions):
-    '''Adds Thane Storck skate dates and times SkateDates model.'''
+    '''Adds Thane Storck skate dates and times to the SkateDate model.
+
+    Returns True if at least one date was new.
+    '''
     model = SkateDate
     new_dates = False
 
@@ -53,7 +58,6 @@ def add_skate_dates(sessions):
             new_dates = True
         except IntegrityError:
             continue
-    # print(new_dates)
     return new_dates
 
 
@@ -83,7 +87,7 @@ def send_skate_dates_email():
                 }
             )
 
-            # Send email to each recipient separately
+            # Send email to each recipient separately; any send failure aborts the whole run
             try:
                 mail = EmailMultiAlternatives(
                     subject, text_message, from_email, to_email
@@ -100,14 +104,12 @@ if __name__ == "__main__":
     to_date = from_date
     send_email = False
 
-    # Every Monday scrape the next four weeks for Saturday Thane Storck skate dates
+    # Every Sunday (weekday 6) fetch today's schedule only
     if date.today().weekday() == 6:
         get_schedule_data(from_date, to_date)
 
     if len(skate_dates) != 0:
         send_email = add_skate_dates(skate_dates)
 
-    # print(skate_dates)
-    # print(send_email)
     if send_email:
         send_skate_dates_email()

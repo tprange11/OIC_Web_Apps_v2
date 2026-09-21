@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 class StickAndPuckSkaterForm(forms.ModelForm):
-    '''Displays page with form where users can add minor skaters to their account'''
+    '''Form for adding a (minor) skater to the user's account.'''
     
     class Meta:
         model = StickAndPuckSkater
@@ -15,13 +15,13 @@ class StickAndPuckSkaterForm(forms.ModelForm):
         
 
 class StickAndPuckSignupForm(forms.ModelForm):
-    '''Displays page where users can sign up for stick and puck sessions'''
+    '''Form for signing a skater up for a stick and puck session.'''
 
     
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user')
         super().__init__(*args, **kwargs)
-        
+        # Only offer the skaters that belong to this user
         self.fields['skater'].queryset = StickAndPuckSkater.objects.filter(guardian=self.user)
     
 

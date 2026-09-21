@@ -1,18 +1,5 @@
-"""OIC_Web_Apps URL Configuration
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/2.2/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
+"""Root URL configuration. Public info pages live at the top level; every skating
+program app is mounted under web_apps/, and the staff reports under web_apps/reports/."""
 from django.contrib import admin
 from django.urls import path, include
 from . import views
@@ -24,14 +11,13 @@ handler404 = 'OIC_Web_Apps.views.handler404'
 handler500 = 'OIC_Web_Apps.views.handler500'
 
 def trigger_error(request):
-    '''Used for testing Sentry SDK'''
+    '''Raises on purpose so the Sentry integration can be tested at /sentry_debug/.'''
     division_by_zero = 1 / 0
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.HomePage.as_view(), name='home'),
     path('accounts/', include('accounts.urls', namespace='accounts')),
-#    path('accounts/', include('django.contrib.auth.urls')),
     path('thanks/', views.ThanksPage.as_view(), name='thanks'),
     path('info/open_hockey/', views.OpenHockeyPage.as_view(),
          name='info-open-hockey'),
@@ -50,7 +36,7 @@ urlpatterns = [
     path('web_apps/thane_storck/', include('thane_storck.urls')),
     path('web_apps/', views.WebAppsPage.as_view(), name='web_apps'),
     path('web_apps/shopping_cart/', include('cart.urls')),
-    # path('web_apps/open_hockey/', include('open_hockey.urls')),
+    # Open Hockey is retired; its app is still in the repo but no longer routed.
     path('web_apps/stick_and_puck/', include('stickandpuck.urls')),
     path('web_apps/adult_skills/', include('adult_skills.urls')),
     path('web_apps/mike_schultz/', include('mike_schultz.urls')),
@@ -69,6 +55,7 @@ urlpatterns = [
     path('web_apps/kranich/', include('kranich.urls')),
     path('web_apps/nacho_skate/', include('nacho_skate.urls')),
     path('web_apps/ament/', include('ament.urls')),
+    # The service worker is served as a template so it sits at the site root (scope /).
     path('serviceworker.js', (TemplateView.as_view(
         template_name='serviceworker.js',
         content_type='application/javascript'

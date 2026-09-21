@@ -1,7 +1,8 @@
-// THIS JS IS USED IF EITHER NORTH OR SOUTH RINKS ARE BEING VIEWED //
+// Resurface countdowns for the side-by-side (rink = "separate") view: one timer per
+// rink. Expects north_start_times, north_resurface_times, south_start_times and
+// south_resurface_times from the template, all "YYYY-MM-DD HH:MM:SS" strings.
 
-// resurfaceNotificationPermission() requests user permission to send resurface
-// notifications
+// Ask once for permission to show resurface notifications
 function resurfaceNotificationPermission() {
     Notification.requestPermission(function(result) {
         console.log('Resurface Notification Choice: ', result);
@@ -13,13 +14,11 @@ function resurfaceNotificationPermission() {
     });
 }
 
-// If the browser supports notifications, send permission request
 if ('Notification' in window) {
     resurfaceNotificationPermission();
 }
 
-// sendNotification utilizes the service worker to send the resurface notification
-// to the device
+// Show the "10 minutes till next resurface" notification through the service worker
 function sendNotification() {
     if ('serviceWorker' in navigator) {
     var options = {
@@ -44,11 +43,10 @@ function sendNotification() {
     }
 }
 
-// This was taken from w3schools.com and modified by Brian Christensen
-// Set the date we're counting down to
-// var resurface_time = document.getElementById("resurface-time1").innerHTML;
-// If the end time and the next start time are the same, use the next resurface time (There is no resurface between events)
-// Only checking three consecutive events
+// Countdown adapted from w3schools.com by Brian Christensen.
+// Pick each rink's next resurface time, skipping back-to-back events (an end time
+// equal to the next start time means no resurface). Only three consecutive events
+// are checked, and the same block is repeated for north and south.
 if ( north_start_times.length == north_resurface_times.length ) {
     if ( north_resurface_times[0] == north_start_times[1] ) {
         if ( north_resurface_times[1] == north_start_times[2] ) {
@@ -93,6 +91,8 @@ if ( south_start_times.length == south_resurface_times.length ) {
     }
 }
 
+// Skip a rink with no remaining events. Note the north check tests
+// north_resurface_times twice instead of north_start_times.
 var south = true;
 if ( south_resurface_times.length === 0 && south_start_times.length === 0 ){
     south = false;
@@ -118,20 +118,17 @@ var x = setInterval(function() {
     
   
 if (south) {
-    // Find the distance between now and the count down date
     var southDistance = southCountDownDate - now;
-    // Time calculations for days, hours, minutes and seconds
-    //  var days = Math.floor(distance / (1000 * 60 * 60 * 24));
     var southHours = Math.floor((southDistance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     var southMinutes = Math.floor((southDistance % (1000 * 60 * 60)) / (1000 * 60));
     var southSeconds = Math.floor((southDistance % (1000 * 60)) / 1000);
-    // Output the result in an element with id="resurface"
     document.getElementById("south-resurface-timer").innerHTML = southHours + " Hours "
     + southMinutes + " Mins " + southSeconds + " Secs";
     // 10 minutes prior to the next resurface, send notification to device
     if (southHours == 0 && southMinutes == 10 && southSeconds == 0) {
         sendNotification();
     }
+    // Highlight the current event's row for the last ten minutes (styles differ per rink)
     if (southHours == 0 && southMinutes <= 9 && southSeconds <= 59) {
         document.getElementById("south-schedule-row1").style.backgroundColor = "lightgray";
         document.getElementById("south-schedule-row1").style.color = "black";
@@ -153,12 +150,11 @@ if (north) {
     }
 }
     
-  // If the count down is over, write some text and reload the page
+  // Either countdown over: reload so the view recomputes from the next events
   if (southDistance < 0 || northDistance < 0) {
     clearInterval(x);
     document.getElementById("south-resurface-timer").innerHTML = "Refresh Page to Reset Resurface Countdown";
     document.getElementById("north-resurface-timer").innerHTML = "Refresh Page to Reset Resurface Countdown";
-    // Reload the page to update the count down
     window.location.href = window.location.href
   }
 }, 1000);

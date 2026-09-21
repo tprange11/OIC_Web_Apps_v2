@@ -8,13 +8,17 @@ from django.db import IntegrityError
 from open_hockey.models import OpenHockeyMember, OpenHockeySessions
 from datetime import date, timedelta
 
+# Legacy cron script for the retired Open Hockey membership program: enrols active
+# members in this week's Tuesday/Friday sessions and expires lapsed memberships.
+# It imports open_hockey.models, so it only runs if that app is still installed.
+
 the_date = date.today()
-# List that holds the Tuesday and Friday open hockey dates for the current week
+# Tuesday and Friday open hockey dates for the current week
 open_hockey_dates = []
 
 
 def get_open_hockey_dates(the_date):
-    '''Get the open hockey dates for the week.'''
+    '''Collects the Tuesday (1) and Friday (4) dates from the_date to the end of the work week.'''
 
     while the_date.weekday() < 5:
         if the_date.weekday() == 1:
@@ -25,7 +29,7 @@ def get_open_hockey_dates(the_date):
     return
 
 def add_members_to_open_hockey_sessions():
-    '''Add active open hockey members to this weeks open hockey sessions.'''
+    '''Adds active open hockey members to this week's sessions; duplicates are skipped.'''
     model = OpenHockeyMember
     members = model.objects.all()
 

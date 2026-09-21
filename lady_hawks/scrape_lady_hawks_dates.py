@@ -1,11 +1,14 @@
+'''Standalone script (run by cron) that pulls Lady Hawks skate dates from the Schedule Werks
+calendar, adds new ones to LadyHawksSkateDate and emails subscribed users.'''
 from datetime import date, timedelta
 import os, sys, requests, json
 
 if os.name == 'nt':
     sys.path.append("C:\\Users\\brian\\Documents\\Python\\OIC_Web_Apps\\")
 else:
-    sys.path.append("/home/OIC/OIC_Web_Apps/") # Uncomment on production server
-    # sys.path.append("/home/BrianC68/oicdev/OIC_Web_Apps/") # Uncomment on development server
+    sys.path.append("/home/OIC/OIC_Web_Apps/") # Production server project path
+    # Parked: development server project path, swap in when running there
+    # sys.path.append("/home/BrianC68/oicdev/OIC_Web_Apps/")
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'OIC_Web_Apps.settings')
 
 import django
@@ -29,11 +32,11 @@ def get_schedule_data(from_date, to_date):
         response = requests.get(url)
         data = json.loads(response.text)
     except requests.exceptions.RequestException as e:
-        # print(e)
         return
 
     for item in data:
         if "Lady Hawks" in item["text"]:
+            # Convert MM/DD/YYYY to YYYY-MM-DD; times become e.g. "7:30 PM"
             skate_date = item["start_date"].split(" ")[0]
             skate_date = f"{skate_date[6:]}-{skate_date[:2]}-{skate_date[3:5]}"
             start_time = item["st"].replace("P", " PM").replace("A", " AM")
@@ -44,7 +47,8 @@ def get_schedule_data(from_date, to_date):
 
 
 def add_skate_dates(sessions):
-    '''Adds Lady Hawks skate dates and times AdultSkillsSkateDates model.'''
+    '''Adds Lady Hawks skate dates and times to the LadyHawksSkateDate model.
+    Returns True if the last date processed was new.'''
     model = LadyHawksSkateDate
     new_dates = False
 
@@ -56,7 +60,6 @@ def add_skate_dates(sessions):
         except IntegrityError:
             new_dates = False
             continue
-    # print(new_dates)
     return new_dates
 
 def send_skate_dates_email():
@@ -102,14 +105,12 @@ if __name__ == "__main__":
     to_date = from_date
     send_email = False
 
-    # Every Saturday request data for Lady Hawks skate dates
+    # Every Saturday request tomorrow's (Sunday's) schedule and parse it for Lady Hawks dates
     if date.today().weekday() == 5:
         get_schedule_data(from_date, to_date)
 
     if len(skate_dates) != 0:
         send_email = add_skate_dates(skate_dates)
                
-    # print(skate_dates)
-    # print(send_email)
     if send_email:
         send_skate_dates_email()

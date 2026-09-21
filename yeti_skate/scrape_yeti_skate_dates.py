@@ -1,3 +1,8 @@
+"""
+Yeti Skate scheduler script (cron): on Sundays, pull today's "Yeti" entries from
+ScheduleWerks into YetiSkateDate, auto-register user 359 for all future skates and
+email opted-in users if anything new was added. Logs to /home/OIC/logs/yeti_skate.log.
+"""
 from datetime import date, datetime
 import os
 import sys
@@ -31,6 +36,7 @@ User = get_user_model()
 # Logging
 # ---------------------------------------------------
 LOG_PATH = "/home/OIC/logs/yeti_skate.log"
+# Logger name is a copy-paste leftover from the nacho script (see backlog)
 logger = logging.getLogger("nacho_skate")
 logger.setLevel(logging.INFO)
 
@@ -44,7 +50,8 @@ logger.addHandler(handler)
 def convert_time(t):
     """
     Convert ScheduleWerks time strings like '6:00 AM' / '9:15 PM'
-    into MySQL TIME format '06:00:00'.
+    into '06:00:00'. Note YetiSkateDate.start_time is a CharField, so this
+    string is what the templates display.
     """
     try:
         return datetime.strptime(t, "%I:%M %p").strftime("%H:%M:%S")
@@ -98,7 +105,7 @@ def get_schedule_data(from_date, to_date):
         if not parsed_date:
             continue
 
-        # Extract time
+        # Extract time: "st"/"et" look like "6:00A" / "9:15P"
         raw_start = item["st"].replace("P", " PM").replace("A", " AM")
         raw_end   = item["et"].replace("P", " PM").replace("A", " AM")
 
@@ -146,9 +153,10 @@ def add_skate_dates(sessions):
 
 
 # ---------------------------------------------------
-# Auto-add Nick to all future sessions
+# Auto-add user 359 to all future sessions
 # ---------------------------------------------------
 def add_nick_to_skate():
+    """Register user pk 359 (skates free, see views) as paid for every future skate date."""
     try:
         user = User.objects.get(pk=359)
     except User.DoesNotExist:
@@ -170,6 +178,7 @@ def add_nick_to_skate():
 # Send notification emails
 # ---------------------------------------------------
 def send_skate_dates_email():
+    """Email every active user whose Profile has yeti_skate_email set."""
     recipients = Profile.objects.filter(yeti_skate_email=True).select_related("user")
 
     for profile in recipients:
@@ -212,13 +221,14 @@ if __name__ == "__main__":
 
     today = date.today()
 
+    # Only today's schedule is fetched
     from_date = today.strftime("%m/%d/%Y")
     to_date = from_date
 
     logger.info("=== YETI SKATE CRON START ===")
 
     # Only pull new dates on Sunday
-    if today.weekday() == 6:   # Sunday
+    if today.weekday() == 6:
         sessions = get_schedule_data(from_date, to_date)
     else:
         sessions = []

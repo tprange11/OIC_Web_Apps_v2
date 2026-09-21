@@ -6,7 +6,7 @@ User = get_user_model()
 
 
 class PrivateSkate(models.Model):
-    '''Model that holds data for ad-hoc private skates.'''
+    '''An ad-hoc private skate: name, caps, prices and the slug that doubles as its access group.'''
     name = models.CharField(max_length=75, unique=True)
     max_skaters = models.IntegerField(blank=True, null=True, default=None, help_text="If no maximum, leave blank! Enter 0 for no skaters.")
     max_goalies = models.IntegerField(blank=True, null=True, default=None, help_text="If no maximum, leave blank! Enter 0 for no goalies.")
@@ -38,14 +38,17 @@ class PrivateSkateDate(models.Model):
         return f"{self.date}, {self.start_time.strftime('%I:%M %p')} to {self.end_time.strftime('%I:%M %p')}"
 
     def registered_skaters(skate_date):
-        '''Returns the number of skaters and goalies registered for a skate date.'''
+        '''Returns the number of skaters and goalies registered for a skate date.
+
+        Called on the class (PrivateSkateDate.registered_skaters(obj)); it has no self.
+        '''
         num_goalies = PrivateSkateSession.objects.filter(skate_date=skate_date, goalie=True).count()
         num_skaters = PrivateSkateSession.objects.filter(skate_date=skate_date, goalie=False).count()
         return {'num_skaters': num_skaters, 'num_goalies': num_goalies}
 
 
 class PrivateSkateSession(models.Model):
-    '''Model that holds skater sessions for private skates.'''
+    '''One ChildSkater's sign-up for one PrivateSkateDate, registered by user.'''
 
     # Fields
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -53,9 +56,6 @@ class PrivateSkateSession(models.Model):
     skate_date = models.ForeignKey(PrivateSkateDate, on_delete=models.CASCADE, related_name='session_skaters')
     goalie = models.BooleanField(default=False)
     paid = models.BooleanField(default=False)
-
-    # def get_absolute_url(self):
-    #     return reverse('private_skates:skate-dates', kwargs={'slug': PrivateSkate.objects.get(pk=self.skate_date).slug})
 
     class Meta:
         unique_together = ['user', 'skater', 'skate_date']

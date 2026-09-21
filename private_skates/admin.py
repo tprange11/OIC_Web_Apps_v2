@@ -14,12 +14,10 @@ class PrivateSkateAdmin(admin.ModelAdmin):
 class PrivateSkateDateAdmin(admin.ModelAdmin):
     list_display = ['private_skate', 'date', 'start_time', 'end_time']
     list_filter = ['date']
-    # search_fields = ['']
 
 
 class PrivateSkateSessionAdmin(admin.ModelAdmin):
     list_display = ['private_skate', 'user_name', 'skater_name', 'skate_date', 'goalie', 'paid']
-    # list_filter = ['skate_date', 'skater']
     search_fields = [
         'skate_date__private_skate__name', 
         'user__first_name', 

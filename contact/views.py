@@ -9,7 +9,8 @@ from .forms import ContactForm
 
 
 class ContactFormView(LoginRequiredMixin, FormView):
-    '''Displays contact page where users can submit a message to all superusers.'''
+    '''Contact form that emails the two admin accounts (user ids 1 and 2) from the
+    logged-in user's address.'''
 
     template_name = 'contact_form.html'
     form_class = ContactForm

@@ -1,8 +1,6 @@
 from django.contrib import admin
 from womens_hockey.models import WomensHockeySkateDate, WomensHockeySkateSession
 
-# Register your models here.
-
 
 class WomensHockeySkateDateAdmin(admin.ModelAdmin):
     list_display = ['skate_date', 'start_time', 'end_time']

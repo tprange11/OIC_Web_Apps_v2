@@ -2,9 +2,12 @@ from django.db import models
 
 
 class Program(models.Model):
-    '''Model holds details for OIC skating programs.'''
+    '''One row per skating program (Stick and Puck, Figure Skating, ...).
 
-    # Model Fields
+    Other apps look programs up by hard-coded id (cart/views.py, OIC_Web_Apps/views.py)
+    and by program_name (cart items, payment notes), so neither should be edited casually.
+    Skater/goalie limits and prices here are the defaults the program apps enforce.'''
+
     program_name = models.CharField(max_length=100, unique=True)
     description = models.TextField(
         null=True, 
@@ -33,10 +36,10 @@ class Program(models.Model):
 
 
 class UserCreditIncentive(models.Model):
-    '''Model that holds price point incentives for purchasing User Credits.
-    These apply to the accounts/UserCredit model.'''
+    '''Bonus tiers for User Credit purchases: buying at least `price_point` dollars
+    adds `incentive` percent extra credits (see accounts.views.UpdateUserCreditView).
+    Ordered highest tier first, which that view relies on.'''
 
-    # Model Fields
     price_point = models.PositiveSmallIntegerField(help_text='The price at which the incentive kicks in.', null=False, blank=False)
     incentive = models.PositiveSmallIntegerField(help_text='Percentage of free credits for this price point. Enter as whole number.', null=False, blank=False)
 

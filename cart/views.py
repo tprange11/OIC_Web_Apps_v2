@@ -1,4 +1,5 @@
-# cart/views.py
+"""Shopping cart: lists the user's unpaid items and lets them remove one, which also
+deletes the matching session registration in the owning program app."""
 import os
 from django.http import Http404
 from django.views.generic import ListView, DeleteView
@@ -11,7 +12,6 @@ from . import models
 from accounts.models import ChildSkater, UserCredit
 from programs.models import Program
 from figure_skating.models import FigureSkatingSession, FigureSkater, FigureSkatingDate
-# from open_hockey.models import OpenHockeySessions, OpenHockeyMember
 from stickandpuck.models import StickAndPuckSession, StickAndPuckSkater
 from thane_storck.models import SkateSession, SkateDate
 from adult_skills.models import AdultSkillsSkateDate, AdultSkillsSkateSession
@@ -30,6 +30,7 @@ from ament.models import AmentSkateDate, AmentSkateSession
 
 
 class CartView(LoginRequiredMixin, ListView):
+    '''Cart page with the total and the embedded Square card form.'''
     model = models.Cart
     template_name = 'shopping_cart.html'
     context_object_name = 'shopping_cart_items'
@@ -51,7 +52,7 @@ class CartView(LoginRequiredMixin, ListView):
 
         context['cart_total'] = total
 
-        # 👇 These are used by the JS in the template
+        # Used by the inline Square checkout script in shopping_cart.html.
         context['square_app_id'] = os.getenv('SQUARE_APP_ID')
         context['square_location_id'] = os.getenv('SQUARE_LOCATION_ID')
 
@@ -59,11 +60,13 @@ class CartView(LoginRequiredMixin, ListView):
 
 class RemoveItemFromCartView(LoginRequiredMixin, DeleteView):
     """
-    View removes an item from the cart and deletes the corresponding session record.
+    Removes a cart row and deletes the session registration it represents.
 
-    Modernized to avoid DeleteViewCustomDeleteWarning:
-    - We override post() to handle stale cart items gracefully.
-    - We put the deletion side-effects into form_valid(), per Django's recommendation.
+    The cart row only stores the program name, skater name, date and start time, so
+    each branch in form_valid() re-finds the session from those strings. The program
+    is identified by its Program id (hard-coded below), so the Program table ids must
+    not change. The side-effects live in form_valid() rather than delete() as Django
+    4 recommends; post() is overridden so a stale row just redirects instead of 404ing.
     """
 
     model = models.Cart
@@ -72,8 +75,6 @@ class RemoveItemFromCartView(LoginRequiredMixin, DeleteView):
     fs_model = FigureSkatingSession
     fs_skater_model = FigureSkater
     fs_date_model = FigureSkatingDate
-    # oh_model = OpenHockeySessions
-    # oh_member_model = OpenHockeyMember
     snp_model = StickAndPuckSession
     snp_skater_model = StickAndPuckSkater
     ts_model = SkateSession
@@ -109,12 +110,7 @@ class RemoveItemFromCartView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy("cart:shopping-cart")
 
     def post(self, request, *args, **kwargs):
-        """
-        Handle POST safely when the cart item might already be gone.
-
-        If the Cart row doesn't exist (e.g. overnight cleanup + cached page),
-        we just redirect back to the cart instead of 404ing.
-        """
+        """Redirect instead of 404 when the row is already gone (nightly cleanup, cached page)."""
         try:
             self.object = self.get_object()
         except Http404:
@@ -123,15 +119,13 @@ class RemoveItemFromCartView(LoginRequiredMixin, DeleteView):
         return super().post(request, *args, **kwargs)
 
     def form_valid(self, form):
-        """
-        Run all the side-effects for the associated session models,
-        then let DeleteView delete the Cart row and redirect.
-        """
+        """Delete the session behind this cart row, then let DeleteView delete the row."""
         request = self.request
         cart_item = self.object  # already fetched in post()
 
-        # NOTE: All of this logic is lifted from your old delete() method,
-        # just adapted to use self.request / self.object instead of kwargs.
+        # Skater names are split on spaces to look the skater up again, so a skater
+        # with a multi-word first or last name will not be found (only the Figure
+        # Skating branch handles a three-part name).
 
         if cart_item.item == Program.objects.all().get(id=2).program_name:  # Stick and Puck
             skater_name = cart_item.skater_name.split(" ")
@@ -146,8 +140,8 @@ class RemoveItemFromCartView(LoginRequiredMixin, DeleteView):
                 session_time=cart_item.event_start_time,
             ).delete()
 
-        # elif cart_item.item == Program.objects.all().get(id=1).program_name:  # Open Hockey
-        #     self.oh_model.objects.filter(skater=request.user, date=cart_item.event_date).delete()
+        # Program id 1 (Open Hockey) is retired: its URLs are commented out in
+        # OIC_Web_Apps/urls.py, so no cart rows are created for it any more.
 
         elif cart_item.item == Program.objects.all().get(id=4).program_name:  # Thane Storck
             skate_date = self.ts_skate_date_model.objects.filter(
@@ -295,15 +289,16 @@ class RemoveItemFromCartView(LoginRequiredMixin, DeleteView):
                 skater=request.user, skate_date=skate_date[0]
             ).delete()
 
-        # elif cart_item.item == 'OH Membership':
-        #     self.oh_member_model.objects.filter(member=request.user).delete()
-
         elif cart_item.item == "User Credits":
+            # Credits are never "registered"; just cancel the pending purchase.
             self.user_credit_model.objects.filter(user=request.user).update(pending=0)
 
+        # Private skates are matched by name against the PrivateSkate table. The
+        # lookup raises DoesNotExist for any other item, so this must stay the last
+        # elif: anything that is not a known program has to be caught above it.
         elif cart_item.item == PrivateSkate.objects.all().get(
             name=cart_item.item
-        ).name:  # Private Skate KEEP THIS AS THE LAST ELIF STATEMENT
+        ).name:  # Private Skate
             skate_date = self.private_skate_date_model.objects.filter(
                 date=cart_item.event_date
             )
@@ -317,5 +312,4 @@ class RemoveItemFromCartView(LoginRequiredMixin, DeleteView):
                 skater=skater_id[0], skate_date=skate_date[0]
             ).delete()
 
-        # Finally: delete the Cart row and redirect to success_url
         return super().form_valid(form)

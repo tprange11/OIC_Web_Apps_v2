@@ -5,16 +5,15 @@ User = get_user_model()
 
 
 class Board(models.Model):
-    '''Model that stores message board name and description.'''
+    '''A message board. `group` is an optional auth Group the board is meant for;
+    it is not enforced by the views.'''
 
-    # Model Fields
     name = models.CharField(max_length=30, unique=True)
     description = models.CharField(max_length=100)
     group = models.ForeignKey(Group, on_delete=models.CASCADE, null=True, blank=True)
     slug = models.SlugField(null=True)
 
     class Meta:
-        # Default order message board name ascending
         ordering = ['pk']
 
     def __str__(self):
@@ -28,9 +27,8 @@ class Board(models.Model):
 
 
 class Topic(models.Model):
-    '''Model that stores Message Board Topic data.'''
+    '''A thread on a board. Sticky topics sort first, then most recently updated.'''
 
-    # Model Fields
     subject = models.CharField(max_length=60)
     last_updated = models.DateTimeField(auto_now=True)
     board = models.ForeignKey(Board, related_name='topics', on_delete=models.CASCADE)
@@ -46,9 +44,8 @@ class Topic(models.Model):
 
 
 class Post(models.Model):
-    '''Model that stores individual post data.'''
+    '''A post within a topic; the first post is created together with the topic.'''
 
-    # Model Fields
     message = models.TextField(max_length=4000)
     topic = models.ForeignKey(Topic, related_name='posts', on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)

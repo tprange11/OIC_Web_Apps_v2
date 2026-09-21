@@ -1,3 +1,4 @@
+'''Views for the Kranich Skate program: list upcoming skates, register for one, remove a registration.'''
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, DeleteView
@@ -19,7 +20,6 @@ from cart.models import Cart
 
 from datetime import date
 
-# Create your views here.
 
 class KranichSkateDateListView(LoginRequiredMixin, ListView):
     '''Page that displays upcoming Kranich skates.'''
@@ -34,9 +34,9 @@ class KranichSkateDateListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Join the Kranich Group
+        # Silently add the user to the Kranich group (used for communication)
         self.join_kranich_group()
-        # Get all skaters signed up for each session to display the list of skaters for each session
+        # All registrations for upcoming skates, so the template can list who is skating
         skate_sessions = self.session_model.objects.filter(skate_date__skate_date__gte=date.today()).order_by('pk')
         context['skate_sessions'] = skate_sessions
         # Create a user credit object if one does not exist
@@ -50,14 +50,15 @@ class KranichSkateDateListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        queryset = queryset.filter(skate_date__gte=date.today()).values('pk', 'skate_date', 'start_time', 'end_time').order_by('skate_date', 'pk')#.annotate(num_skaters=Count('session_skaters'))
+        queryset = queryset.filter(skate_date__gte=date.today()).values('pk', 'skate_date', 'start_time', 'end_time').order_by('skate_date', 'pk')
         skater_sessions = self.session_model.objects.filter(skater=self.request.user).values_list('skate_date','pk', 'paid', 'goalie')
-        # If user is already signed up for the skate, add key value pair to disable button
+        # Annotate each skate date with head counts and, if the user is already signed up,
+        # with their session details so the template can disable the register button
+        # and show the Remove Me button.
         for item in queryset:
-            # item['is_in_future'] = date.today() < item['skate_date'] # This is used for the Remove Me button if already paid.
             item['registered_skaters'] = self.model.registered_skaters(skate_date=item['pk'])
             for session in skater_sessions:
-                # If the session date and skate date match and paid is True, add disabled = True to queryset
+                # User already has a session for this skate date (paid or unpaid): disable registration
                 if item['pk'] == session[0] and session[2] == True:
                     item['disabled'] = True
                     item['session_pk'] = session[1]
@@ -78,7 +79,8 @@ class KranichSkateDateListView(LoginRequiredMixin, ListView):
         return queryset
 
     def join_kranich_group(self, join_group='Kranich'):
-        '''Adds user to Kranich group "behind the scenes", for communication purposes.'''
+        '''Adds user to the Kranich group "behind the scenes", for communication purposes,
+        and creates a Profile for the user if one does not exist.'''
         
         try:
             group = self.group_model.objects.get(name=join_group)
@@ -90,14 +92,14 @@ class KranichSkateDateListView(LoginRequiredMixin, ListView):
             # If a profile already exists, do nothing
             profile = self.profile_model.objects.get(user=self.request.user)
         except ObjectDoesNotExist:
-            # If no profile exists, create one and set kranich_email to False
+            # If no profile exists, create one; Kranich email notifications default to off
             profile = self.profile_model(user=self.request.user, kranich_email=False, slug=self.request.user.id)
             profile.save()
 
         return
 
 class CreateKranichSkateSessionView(LoginRequiredMixin, CreateView):
-    '''Page that displays form for user to register for skate sessions.'''
+    '''Page that displays form for user to register for a Kranich skate session.'''
 
     model = KranichSkateSession
     form_class = CreateKranichSkateSessionForm
@@ -124,13 +126,15 @@ class CreateKranichSkateSessionView(LoginRequiredMixin, CreateView):
         return context
 
     def form_valid(self, form):
+        '''Enforces skater/goalie limits, then marks the session paid (staff, John Kranich,
+        free, or paid from credit balance) or adds it to the cart for payment.'''
 
         # Get the user credit model instance
         user_credit = UserCredit.objects.get(user=self.request.user)
         credit_used = False # Used to set the message
         self.object = form.save(commit=False)
 
-        # Get the program skater/goalie cost
+        # Get the program skater/goalie cost (Program id 14 is the Kranich Skate)
         if self.object.goalie == True:
             cost = self.program_model.objects.get(id=14).goalie_price
         else:
@@ -145,19 +149,20 @@ class CreateKranichSkateSessionView(LoginRequiredMixin, CreateView):
             elif self.object.goalie == False and self.model.objects.filter(goalie=False, skate_date=self.object.skate_date).count() == Program.objects.get(pk=14).max_skaters:
                 messages.add_message(self.request, messages.ERROR, 'Sorry, skater spots are full!')
                 return redirect('kranich:kranich')
-            # If spots are not full do the following
-            
-            if self.request.user.is_staff or self.request.user.id == 870 or cost == 0: # Employees and John Kranich(id 870) skate for free
+            # Spots are available: staff, John Kranich (user id 870) and $0-cost sessions are free
+            if self.request.user.is_staff or self.request.user.id == 870 or cost == 0:
                 self.object.paid = True
                 cost = 0 # Set cost = 0 for correct message
+            # Pay from credit balance when the user has enough credit
             elif user_credit.balance >= cost and user_credit.paid:
                 self.object.paid = True
                 user_credit.balance -= cost
-                # Check to see if there's a $0 balance, if so, set paid to false
+                # A $0 balance means there is no credit left to pay with
                 if user_credit.balance == 0:
                     user_credit.paid = False
                 user_credit.save()
                 credit_used = True # Used to set the message
+            # Otherwise the session goes in the cart to be paid for
             else:
                 credit_used = self.add_to_cart(cost)
             self.object.save()
@@ -173,7 +178,7 @@ class CreateKranichSkateSessionView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
 
     def add_to_cart(self, cost):
-        '''Adds Kranich Skate session to shopping cart.'''
+        '''Adds Kranich Skate session to shopping cart. Always returns False (credit not used).'''
         price = cost
         item_name = self.program_model.objects.get(id=14).program_name
         start_time = self.skate_date_model.objects.filter(skate_date=self.object.skate_date.skate_date).values_list('start_time', flat=True)
@@ -184,7 +189,7 @@ class CreateKranichSkateSessionView(LoginRequiredMixin, CreateView):
 
 
 class DeleteKranichSkateSessionView(LoginRequiredMixin, DeleteView):
-    '''Allows user to remove themself from a skate session'''
+    '''Allows user (or staff) to remove a skater from a skate session.'''
     model = KranichSkateSession
     skate_date_model = KranichSkateDate
     credit_model = UserCredit
@@ -192,15 +197,14 @@ class DeleteKranichSkateSessionView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy('kranich:kranich')
 
     def delete(self, *args, **kwargs):
-        '''Things that need doing once a session is removed.'''
+        '''Refunds credit for a paid session, or clears the cart item for an unpaid one,
+        emails the admins and skater, then deletes the session.'''
 
         user = User.objects.get(pk=kwargs['skater_pk'])
-        # print(user.id)
-        if user.is_staff or user.id == 870: # John Kranich is id 870
+        if user.is_staff or user.id == 870: # Staff and John Kranich (id 870) skate free, nothing to refund
             success_msg = 'Skater has been removed from that skate session!'
         elif kwargs['paid'] == 'True':
-            # If the session is paid for, issue credit to the user
-            # Get the program skater/goalie cost
+            # If the session is paid for, issue credit to the user for the skater/goalie price
             session = self.model.objects.get(pk=kwargs['pk'])
             if session.goalie:
                 price = self.program_model.objects.get(id=14).goalie_price
@@ -221,7 +225,7 @@ class DeleteKranichSkateSessionView(LoginRequiredMixin, DeleteView):
             cart_item.delete()
             success_msg = 'You have been removed from that skate session!'
                 
-        # Send email to user about the credit
+        # Email the removal message to the site admins (ids 1 and 2), John Kranich and the skater
         recipients = User.objects.filter(id__in=['1', '2', '870', user.id]).values_list('email', flat=True)
         subject = 'Credit Issued for Kranich Skate Session'
         from_email = 'no-reply@oicwebapp.com'
@@ -230,9 +234,6 @@ class DeleteKranichSkateSessionView(LoginRequiredMixin, DeleteView):
             send_mail(subject, success_msg, from_email, recipients)
             messages.add_message(self.request, messages.INFO, 'Email message has been sent to the skater!')
             self.success_url = reverse_lazy('kranich:kranich')
-        #except:
-            #messages.add_message(self.request, messages.ERROR, 'Oops, something went wrong!  Please try again.')
-            #return reverse('contact:contact-form', kwargs={ 'form': form.cleaned_data })
         except Exception as e:
             messages.add_message(self.request, messages.ERROR, f'Failed to send email: {str(e)}')
 

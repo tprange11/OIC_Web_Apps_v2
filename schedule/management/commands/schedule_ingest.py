@@ -33,7 +33,7 @@ class Command(BaseCommand):
         run = run_schedule_ingest(
             triggered_by=triggered_by,
             dry_run=dry_run,
-            user=None,  # PythonAnywhere / cron safe
+            user=None,  # no request user when run from cron
             days_ahead=days,
         )
 

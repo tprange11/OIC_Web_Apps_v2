@@ -1,3 +1,8 @@
+'''Open hockey: Tuesday/Friday morning drop-in sessions plus prepaid memberships.
+
+Unlike the newer program apps, session dates are not stored in a model; the
+views generate the current week's Tuesday and Friday on the fly.
+'''
 from django.shortcuts import render
 from django.views.generic import TemplateView, CreateView, ListView, DeleteView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -13,7 +18,6 @@ from . import forms
 from cart.models import Cart
 from programs.models import Program
 
-# Create your views here.
 
 class OpenHockeySessionsPage(LoginRequiredMixin, TemplateView):
     '''Page that displays available open hockey dates'''
@@ -25,7 +29,7 @@ class OpenHockeySessionsPage(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        # Check to see if the user is an open hockey member.  If user is a member, return member context.
+        # Members (prepaid) get their membership details shown on the page.
         try:
             is_member = self.member_model.objects.get(member=self.request.user, active=True)
             context['is_member'] = True
@@ -34,11 +38,12 @@ class OpenHockeySessionsPage(LoginRequiredMixin, TemplateView):
             pass
 
         the_date = date.today()
-        # Lists that hold the open hockey session date and the number of skater and goalie spots available
+        # Each list is [date, goalie spots left, skater spots left] for this week's session.
         tuesday = []
         friday = []
 
-        # Append open hockey date and number of skater and goalie spots available for those dates
+        # Walk from today to Friday, so on Saturday/Sunday no sessions are listed.
+        # Caps are hard-coded (2 goalies, 22 skaters) rather than read from Program.
         while the_date.weekday() < 5:
             if the_date.weekday() == 1:
                 tuesday.append(the_date)
@@ -50,9 +55,7 @@ class OpenHockeySessionsPage(LoginRequiredMixin, TemplateView):
                 friday.append(22 - self.model.objects.skater_count(the_date))
             the_date += timedelta(days=1)
 
-        # If tuesday and friday are empty, return an empty list as context
-        # else if tuesday is empty, just return friday as context
-        # else return both tuesday and friday as context
+        # Only include sessions that are still ahead of us this week.
         if len(tuesday) == 0 and len(friday) == 0:
             context['data'] = []
         elif len(tuesday) == 0:
@@ -70,7 +73,7 @@ class CreateOpenHockeySessions(LoginRequiredMixin, CreateView):
     profile_model = Profile
     program_model = Program
     cart_model = Cart
-    fields = ('date', 'goalie') # Do not need skater or paid fields
+    fields = ('date', 'goalie') # skater is set from request.user; paid is set by the payment flow
     template_name = 'openhockeysessions_form.html'
     success_url = '/web_apps/open_hockey/success'
     
@@ -87,29 +90,28 @@ class CreateOpenHockeySessions(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         try:
             self.object = form.save(commit=False)
-            # If the user has signed up as goalie and the goalie spots are full, redirect to error page
+            # Goalie spots full (cap of 2): render the error page instead of saving
             if self.model.objects.goalie_count(self.object.date) == 2 and self.object.goalie == True:
                 context = { 'user': self.request.user, 
                     'message': "Sorry, goalie spots are full for that session!" }
                 return render(None, 'open_hockey_error.html', context)
-            # If the user has signed up as a skater and the skater spots are full, redirect to error page
+            # Skater spots full (cap of 22): render the error page instead of saving
             if self.model.objects.skater_count(self.object.date) == 22 and self.object.goalie == False:
                 context = { 'user': self.request.user,
                     'message': "Sorry, skater spots are full for that session!"}
                 return render(None, 'open_hockey_error.html', context)
-            # If spots are available, try and save the object to the model
             else:
                 self.object.skater = self.request.user
                 self.join_open_hockey_group()
                 self.add_open_hockey_email_to_profile()
                 self.object.save()
-        # If this is a duplicate entry, redirect to error page
+        # Duplicate (skater, date) pair: the user is already signed up
         except IntegrityError:
             context = { 'user': self.request.user, 
                 'message': "You are already signed up for this session!" }
             return render(self.request, 'open_hockey_error.html', context)
 
-        # If all goes well, add open hockey session to Shopping Cart if skater is NOT a goalie
+        # Goalies skate for free, so only skaters get a cart item
         if self.object.goalie == False:
             self.add_to_cart()
         messages.add_message(self.request, messages.WARNING, 'Please make sure to view your cart and pay for your session(s)!')
@@ -139,7 +141,7 @@ class CreateOpenHockeySessions(LoginRequiredMixin, CreateView):
 
     def add_to_cart(self):
         '''Adds open hockey session to shopping cart.'''
-        # Get price of open hockey program
+        # Program id 1 is Open Hockey
         program = self.program_model.objects.get(id=1)
         price = program.skater_price
         cart = self.cart_model(customer=self.request.user, item='Open Hockey', skater_name=self.request.user.get_full_name(), event_date=self.object.date, event_start_time='6:15 AM', amount=price)
@@ -178,10 +180,11 @@ class DeleteOpenHockeySessions(LoginRequiredMixin, DeleteView):
         return queryset.filter(skater_id=self.request.user.id)
 
     def delete(self, *args, **kwargs):
+        # NOTE: Django 4.0 DeleteView handles POST via form_valid() and no longer calls
+        # delete(), so this cart cleanup does not run (see backlog).
         # If someone removes themselves from an open hockey session before paying, remove it from the cart too
         session_date = self.model.objects.filter(id=kwargs['pk']).values_list('date', flat=True)
         cart_item = Cart.objects.filter(item=Program.objects.all().get(id=1).program_name, event_date=session_date[0]).delete()
-        # Continue with removing the open hockey session
         messages.success(self.request, 'You have been removed from the Open Hockey Session!')
         return super().delete(*args, **kwargs)
 
@@ -226,14 +229,13 @@ class CreateOpenHockeyMemberView(LoginRequiredMixin, CreateView):
             return {}
 
     def form_valid(self, form):
-        '''If the form is valid set value for end_date based on duration from OpenHockeyMemberType Model'''
+        '''Sets end_date from the chosen membership type's duration and adds the fee to the cart.'''
 
         member_type = form.cleaned_data['member_type'].id
         duration = self.type_model.objects.get(id=member_type).duration
         expires = date.today() + timedelta(days=duration)
         form.instance.end_date = expires
         amount = self.type_model.objects.get(id=member_type).cost
-        # Add membership fee to cart
         self.add_to_cart(amount)
         messages.add_message(self.request, messages.WARNING, 'To activate your membership, you must view your cart and pay for your membership!')
         return super().form_valid(form)
@@ -255,13 +257,13 @@ class UpdateOpenHockeyMemberView(LoginRequiredMixin, UpdateView):
     cart_model = Cart
 
     def form_valid(self, form):
+        '''Same as CreateOpenHockeyMemberView: recompute end_date and add the fee to the cart.'''
 
         member_type = form.cleaned_data['member_type'].id
         duration = self.type_model.objects.get(id=member_type).duration
         expires = date.today() + timedelta(days=duration)
         form.instance.end_date = expires
         amount = self.type_model.objects.get(id=member_type).cost
-        # Add membership fee to cart
         self.add_to_cart(amount)
         messages.add_message(self.request, messages.WARNING, 'To activate your membership, you must view your cart and pay for your membership!')
         return super().form_valid(form)
@@ -272,7 +274,7 @@ class UpdateOpenHockeyMemberView(LoginRequiredMixin, UpdateView):
         cart.save()
 
 
-# The following views are for staff when they are logged in.
+# The following views are for staff.
 class OpenHockeySessionsPrint(LoginRequiredMixin, TemplateView):
     '''Displays a page with open hockey sessions available to print'''
 
@@ -286,6 +288,7 @@ class OpenHockeySessionsPrint(LoginRequiredMixin, TemplateView):
         open_hockey_dates = []
         skater_lists = []
 
+        # Same Tuesday/Friday walk as OpenHockeySessionsPage
         while the_date.weekday() < 5:
             if the_date.weekday() == 1:
                 open_hockey_dates.append(the_date)

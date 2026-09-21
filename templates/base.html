@@ -150,7 +150,7 @@
                         <li class="nav-item">
                             <a class="nav-link" target="_blank" rel="noopener noreferrer" href="/admin">Admin</a>
                         </li>
-                        {% endif %}{# user.is_authenticated #}
+                        {% endif %}{# user.is_superuser #}
                         {% if user.is_staff %}
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="staffNavbarDropdown" role="button"
@@ -197,7 +197,7 @@
                 <div class="container rounded content">
                     {% if cart_has_items and user.is_authenticated %}
                     <div class="alert alert-danger alert-dismissible alert-link" role="alert">
-                        <!-- <button class="close" type="button" data-dismiss="alert" aria-label="close">&#215;</button> -->
+                        {# No dismiss button: the unpaid-cart warning stays visible until the cart is paid or emptied. #}
                         You have unpaid items in your cart!  You must pay for your sessions to complete your registration and skate!
                         <a href="{% url 'cart:shopping-cart' %}" class="btn btn-sm btn-danger">View Cart</a>
                     </div>

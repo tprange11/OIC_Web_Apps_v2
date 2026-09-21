@@ -1,3 +1,5 @@
+'''Views for the Open Figure Skating program: manage a user's skaters, register a skater for a
+session, remove a registration, past sessions, and a staff list of registered skaters.'''
 from django.shortcuts import render, redirect
 from django.views.generic import TemplateView, CreateView, DeleteView, ListView
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -48,7 +50,7 @@ class FigureSkatingView(LoginRequiredMixin, TemplateView):
 
 
 class CreateFigureSkaterView(LoginRequiredMixin, CreateView):
-    '''Page where user adds Figure Skaters to the FigureSkater model.'''
+    '''Page where user adds skaters to their My Skaters list (FigureSkater model).'''
 
     model = FigureSkater
     form_class = CreateFigureSkaterForm
@@ -74,7 +76,6 @@ class DeleteFigureSkaterView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy('figure_skating:figure-skating')
 
     def delete(self, *args, **kwargs):
-        # Set success message and return
         messages.add_message(self.request, messages.SUCCESS,
                              'Skater has been removed from My Skaters!')
         return super().delete(*args, **kwargs)
@@ -108,6 +109,8 @@ class CreateFigureSkatingSessionView(LoginRequiredMixin, CreateView):
             return {}
 
     def form_valid(self, form):
+        '''Enforces the session's available_spots limit, then pays from credit balance or
+        adds the session to the cart, and joins the user to the Figure Skating group.'''
 
         # Get the user credit model instance, or create if it does not exist
         try:
@@ -121,22 +124,21 @@ class CreateFigureSkatingSessionView(LoginRequiredMixin, CreateView):
         form.instance.guardian = self.request.user
         self.object = form.save(commit=False)
         try:
-            # If skater spots are full, do not save object
-            # if self.model.objects.filter(session=form.instance.session.id).count() >= self.program_model.objects.get(pk=3).max_skaters:
+            # If the session is full (capacity is per skate date, not per program), do not save object
             if self.model.objects.filter(session=form.instance.session.id).count() >= FigureSkatingDate.objects.get(pk=form.instance.session.id).available_spots:
                 messages.add_message(
                     self.request, messages.ERROR, 'Sorry, this session is now full!')
                 return redirect('figure_skating:figure-skating')
         except:
             pass
-        # Do the following and then save the Figure Skating Session
-        # Get price of Figure Skating program, add up or down charge for that skate date session
+        # Price is the Figure Skating program (id 3) skater price plus the session's up/down charge
         cost = self.program_model.objects.get(id=3).skater_price + FigureSkatingDate.objects.get(pk=self.object.session.pk).up_down_charge
 
+        # Pay from credit balance when the user has enough credit, otherwise add to cart
         if user_credit.balance >= cost:
             self.object.paid = True
             user_credit.balance -= cost
-            # Check to see if there's a $0 balance, if so, set paid to false
+            # A $0 balance means there is no credit left to pay with
             if user_credit.balance == 0:
                 user_credit.paid = False
             user_credit.save()
@@ -186,7 +188,7 @@ class CreateFigureSkatingSessionView(LoginRequiredMixin, CreateView):
 
 
 class DeleteFigureSkatingSessionView(LoginRequiredMixin, DeleteView):
-    '''Allows user to remove skater from a skate session.'''
+    '''Allows user to remove a skater from a skate session, refunding credit if it was paid.'''
     model = FigureSkatingSession
     skate_date_model = FigureSkatingDate
     skater_model = FigureSkater
@@ -195,12 +197,13 @@ class DeleteFigureSkatingSessionView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy('figure_skating:figure-skating')
 
     def delete(self, *args, **kwargs):
-        '''Things that need doing once a session is removed.'''
+        '''Refunds credit for a paid session, or clears the cart item for an unpaid one,
+        before the session is deleted.'''
 
         credit_refund = False # Used to set the message.
 
         if self.model.objects.get(pk=kwargs['pk']).paid:
-            # skate_date = 
+            # Refund the program price plus the session's up/down charge to the user's credit
             credits_to_refund = self.program_model.objects.get(id=3).skater_price + self.model.objects.get(pk=kwargs['pk']).session.up_down_charge
             user_credit = self.credit_model.objects.get(user=self.request.user)
             user_credit.balance += credits_to_refund

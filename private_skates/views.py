@@ -1,3 +1,9 @@
+'''Private skates: ad-hoc, invite-only skates configured in the admin (PrivateSkate).
+
+Access is by Django group: a user who visits /private_skates/<slug>/ is added to the
+group named <slug>, and the index lists the skates whose slug matches one of their groups.
+Caps and prices live on the PrivateSkate row rather than in programs.Program.
+'''
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.checks import messages
 from django.contrib import messages
@@ -42,6 +48,7 @@ class PrivateSkateDatesListView(LoginRequiredMixin, ListView):
 
     def get(self, *args, **kwargs):
         '''Add user to private skate group, create user profile and add user to ChildSkater model when the page is requested.'''
+        # Knowing the URL is the only access control: the group named after the slug is joined here
         try:
             group = self.group_model.objects.get(name=kwargs['slug'])
             self.request.user.groups.add(group)
@@ -56,11 +63,11 @@ class PrivateSkateDatesListView(LoginRequiredMixin, ListView):
             profile = self.profile_model(user=self.request.user, slug=self.request.user.id)
             profile.save()
 
+        # Sessions are registered against a ChildSkater, so the user gets a ChildSkater
+        # row for themselves (adults skate too)
         try:
-            # Check if user is already in ChildSkater model
             ChildSkater.objects.get(user=self.request.user, first_name=self.request.user.first_name, last_name=self.request.user.last_name)
         except ObjectDoesNotExist:
-            # Add user to ChildSkater model
             ChildSkater.objects.create(user=self.request.user, first_name=self.request.user.first_name, last_name=self.request.user.last_name, date_of_birth=None)
             pass
 
@@ -109,6 +116,7 @@ class PrivateSkateSessionCreateView(LoginRequiredMixin, CreateView):
         return context
 
     def form_valid(self, form):
+        '''Enforce the skate's goalie/skater caps, then pay from user credit or add to the cart.'''
         self.object = form.save(commit=False)
         # Get the slug for the PrivateSkate object to use in the success_url
         slug = self.object.skate_date.private_skate.slug
@@ -121,7 +129,8 @@ class PrivateSkateSessionCreateView(LoginRequiredMixin, CreateView):
         registered_skaters = models.PrivateSkateDate.registered_skaters(self.object.skate_date)
 
         try:
-            # If goalie or skater spots are full, do not save object and set message
+            # If goalie or skater spots are full, do not save object and set message.
+            # A max of None means no limit (the == never matches); 0 means no spots.
             if self.object.goalie and registered_skaters['num_goalies'] == self.object.skate_date.private_skate.max_goalies:
                 messages.add_message(self.request, messages.ERROR, 'Sorry, goalie spots are full!')
                 return redirect('private_skates:skate-dates', slug=slug)
@@ -137,10 +146,11 @@ class PrivateSkateSessionCreateView(LoginRequiredMixin, CreateView):
             else:
                 price = self.object.skate_date.private_skate.skater_price
 
-            # Determine if user credit was used to register
+            # Pay from user credit when the balance covers it, otherwise add to the cart
             if user_credit.balance >= price and user_credit.paid:
                 self.object.paid = True
                 user_credit.balance -= price
+                # A zero balance is flagged as unpaid so it can't be spent again
                 if user_credit.balance == 0:
                     user_credit.paid = False
                 user_credit.save()
@@ -149,6 +159,7 @@ class PrivateSkateSessionCreateView(LoginRequiredMixin, CreateView):
                 if price != 0:
                     self.add_to_cart(price)
             self.object.save()
+        # Bare except swallows everything, not just the duplicate IntegrityError (see backlog)
         except:
             pass
 
@@ -182,6 +193,8 @@ class PrivateSkateSessionDeleteView(LoginRequiredMixin, DeleteView):
     model = models.PrivateSkateSession
     
     def delete(self, *args, **kwargs):
+        # NOTE: Django 4.0 DeleteView handles POST via form_valid() and does not call delete(),
+        # so this cleanup does not run and the success_url set below is never applied (see backlog).
         # Clear the session from the cart
         skate_date = self.model.objects.filter(id=kwargs['pk']).values_list('skate_date', flat=True)
         skate_date_object = models.PrivateSkateDate.objects.all().filter(id=skate_date[0])
@@ -195,7 +208,6 @@ class PrivateSkateSessionDeleteView(LoginRequiredMixin, DeleteView):
             skater_name=skater_name
             ).delete()
 
-        # Set success message and return
         messages.add_message(self.request, messages.SUCCESS, 'Skater has been removed from the skate session!')
         self.success_url = reverse_lazy('private_skates:skate-dates', kwargs={'slug': skate_date_object[0].private_skate.slug})
         return super().delete(*args, **kwargs)

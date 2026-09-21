@@ -1,7 +1,6 @@
 from django.contrib import admin
 from .models import Profile, ReleaseOfLiability, ChildSkater, UserCredit
 
-# Register your models here.
 
 class ProfileAdmin(admin.ModelAdmin):
     list_display = ['user_name']
@@ -27,7 +26,6 @@ class ReleaseOfLiabilityAdmin(admin.ModelAdmin):
 
 class ChildSkaterAdmin(admin.ModelAdmin):
     list_display = ['user_name', 'first_name', 'last_name', 'date_of_birth']
-    # readonly_fields = ['user', 'user_name', 'first_name', 'last_name', 'date_of_birth']
 
     def user_name(self, obj):
         return f"{obj.user.first_name} {obj.user.last_name}"

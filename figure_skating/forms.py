@@ -4,7 +4,7 @@ from datetime import date
 
 
 class CreateFigureSkaterForm(forms.ModelForm):
-    '''Displays page with form where users add skaters to the Figure Skater model.'''
+    '''Form where users add skaters to the FigureSkater model.'''
 
     class Meta:
         model = FigureSkater
@@ -15,15 +15,14 @@ class CreateFigureSkaterForm(forms.ModelForm):
 
 
 class CreateFigureSkatingSessionForm(forms.ModelForm):
-    '''Displays page where users sign up skaters for Figure Skating sessions.'''
+    '''Form where users sign up one of their skaters for a Figure Skating session.'''
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user')
-        # self.session = kwargs.pop('session')
         super().__init__(*args, **kwargs)
 
+        # Only offer the user's own skaters and upcoming sessions
         self.fields['skater'].queryset = FigureSkater.objects.filter(guardian=self.user)
-        # self.fields['session'] = self.session
         self.fields['session'].queryset = FigureSkatingDate.objects.filter(skate_date__gte=date.today())
 
 

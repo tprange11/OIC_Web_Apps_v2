@@ -1,3 +1,5 @@
+'''Views for the Lady Hawks skate program: list upcoming skates, register a child skater,
+remove a registration, and a staff list of registered skaters.'''
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, DeleteView
@@ -28,7 +30,8 @@ class LadyHawksSkateDateListView(LoginRequiredMixin, ListView):
     context_object_name = 'skate_dates'
 
     def get(self, request, *args, **kwargs):
-        '''Adds user to Lady Hawks group "behind the scenes", for communication purposes.'''
+        '''Adds user to the Lady Hawks group "behind the scenes", for communication purposes,
+        and creates a Profile for the user if one does not exist.'''
         
         try:
             group = self.group_model.objects.get(name='Lady Hawks')
@@ -40,14 +43,14 @@ class LadyHawksSkateDateListView(LoginRequiredMixin, ListView):
             # If a profile already exists, do nothing
             profile = self.profile_model.objects.get(user=self.request.user)
         except ObjectDoesNotExist:
-            # If no profile exists, create one and set lady_hawks_email to True
+            # If no profile exists, create one with Lady Hawks email notifications on
             profile = self.profile_model(user=self.request.user, lady_hawks_email=True, slug=self.request.user.id)
             profile.save()
         return super().get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Get all skaters signed up for each session to display the list of skaters for each session
+        # All registrations for upcoming skates, so the template can list who is skating
         skate_sessions = self.session_model.objects.filter(skate_date__skate_date__gte=date.today()).order_by('pk')
         context['skate_sessions'] = skate_sessions
         # Create a user credit object if one does not exist
@@ -61,12 +64,11 @@ class LadyHawksSkateDateListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         queryset = super().get_queryset()
         queryset = queryset.filter(skate_date__gte=date.today()).values('pk', 'skate_date', 'start_time', 'end_time').annotate(num_skaters=Count('session_skaters')).order_by('skate_date', 'pk')
-        # skater_sessions = self.session_model.objects.filter(user=self.request.user).values_list('skate_date','pk', 'paid')
         return queryset
 
 
 class CreateLadyHawksSkateSessionView(LoginRequiredMixin, CreateView):
-    '''Page that displays form for user to register for skate sessions.'''
+    '''Page that displays form for user to register one of their child skaters for a Lady Hawks skate session.'''
 
     model = models.LadyHawksSkateSession
     form_class = forms.CreateLadyHawksSkateSessionForm
@@ -99,6 +101,8 @@ class CreateLadyHawksSkateSessionView(LoginRequiredMixin, CreateView):
         return context
 
     def form_valid(self, form):
+        '''Enforces skater/goalie limits, then marks the session paid (from credit balance or
+        free) or adds it to the cart for payment.'''
 
         user_credit = self.credit_model.objects.get(user=self.request.user) # User credit model
         credit_used = False # Used to set the success message
@@ -116,7 +120,7 @@ class CreateLadyHawksSkateSessionView(LoginRequiredMixin, CreateView):
                 messages.add_message(self.request, messages.ERROR, 'Sorry, skater spots are full!')
                 return redirect('lady_hawks:lady-hawks')
 
-            # If spots are not full do the following
+            # Spots are available: get the skater/goalie cost (Program id 10 is Lady Hawks)
             skater_cost = self.program_model.objects.get(id=10).skater_price
             goalie_cost = self.program_model.objects.get(id=10).goalie_price
 
@@ -127,7 +131,7 @@ class CreateLadyHawksSkateSessionView(LoginRequiredMixin, CreateView):
                 price = skater_cost
 
             if user_credit.balance == 0:
-                # If user credit has been depleted, make sure user credit paid is set to False
+                # A $0 balance means there is no credit left to pay with
                 user_credit.paid = False
                 
             # If the user has enough credits, deduct credits and set session as paid
@@ -135,7 +139,7 @@ class CreateLadyHawksSkateSessionView(LoginRequiredMixin, CreateView):
                 self.object.paid = True
                 user_credit.balance -= price
                 credit_used = True
-            # If the user doesn't have enough credits
+            # Not enough credit: free sessions are marked paid, everything else goes in the cart
             else:
                 if price == 0:
                     self.object.paid = True
@@ -144,7 +148,6 @@ class CreateLadyHawksSkateSessionView(LoginRequiredMixin, CreateView):
 
             # Save the user credit model
             user_credit.save()
-            # self.add_lady_hawks_email_to_profile()
             self.object.save()
         except IntegrityError:
             pass
@@ -166,35 +169,20 @@ class CreateLadyHawksSkateSessionView(LoginRequiredMixin, CreateView):
         cart.save()
         return False
 
-    # def add_lady_hawks_email_to_profile(self):
-    #     '''If no user profile exists, create one and set lady_hawks_email to True.'''
-        
-    #     # If a profile already exists, do nothing
-    #     try:
-    #         self.profile_model.objects.get(user=self.request.user)
-    #         return
-    #     # If no profile exists, add one and set open_hockey_email to True
-    #     except ObjectDoesNotExist:
-    #         profile = self.profile_model(user=self.request.user, slug=self.request.user.id, lady_hawks_email=True)
-    #         profile.save()
-    #         return
-
 
 class DeleteLadyHawksSkateSessionView(LoginRequiredMixin, DeleteView):
-    '''Allows user to remove themself from a skate session'''
+    '''Allows user to remove a child skater from a skate session (no credit refund; only the cart item is cleared).'''
     model = models.LadyHawksSkateSession
     skate_date_model = models.LadyHawksSkateDate
     success_url = reverse_lazy('lady_hawks:lady-hawks')
 
     def delete(self, *args, **kwargs):
-        '''Things that need doing once a session is removed.'''
+        '''Clears the matching cart item before the session is deleted.'''
 
         # Clear session from the cart
         skate_date = self.model.objects.filter(id=kwargs['pk']).values_list('skate_date', flat=True)
         skater_id = self.model.objects.filter(id=kwargs['pk']).values_list('skater', flat=True)
         skater = ChildSkater.objects.get(id=skater_id[0])
-        # print(skater_id[0])
-        # print(skater)
         cart_date = self.skate_date_model.objects.filter(id=skate_date[0])
         cart_item = Cart.objects.filter(item=Program.objects.all().get(id=10), skater_name=skater, event_date=cart_date[0].skate_date).delete()
 

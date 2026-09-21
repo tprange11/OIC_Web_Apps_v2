@@ -1,7 +1,8 @@
-// THIS JS IS USED IF EITHER NORTH OR SOUTH RINKS ARE BEING VIEWED //
+// Resurface countdown for a single rink (north or south) and for "both" rinks on
+// one list. Expects the template to define two arrays of "YYYY-MM-DD HH:MM:SS"
+// strings: start_times (upcoming event starts) and resurface_times (event ends).
 
-// resurfaceNotificationPermission() requests user permission to send resurface
-// notifications
+// Ask once for permission to show resurface notifications
 function resurfaceNotificationPermission() {
     Notification.requestPermission(function(result) {
         console.log('Resurface Notification Choice: ', result);
@@ -13,13 +14,11 @@ function resurfaceNotificationPermission() {
     });
 }
 
-// If the browser supports notifications, send permission request
 if ('Notification' in window) {
     resurfaceNotificationPermission();
 }
 
-// sendNotification utilizes the service worker to send the resurface notification
-// to the device
+// Show the "10 minutes till next resurface" notification through the service worker
 function sendNotification() {
     if ('serviceWorker' in navigator) {
     var options = {
@@ -44,11 +43,11 @@ function sendNotification() {
     }
 }
 
-// This was taken from w3schools.com and modified by Brian Christensen
-// Set the date we're counting down to
-// var resurface_time = document.getElementById("resurface-time1").innerHTML;
-// If the end time and the next start time are the same, use the next resurface time (There is no resurface between events)
-// Only checking three consecutive events
+// Countdown adapted from w3schools.com by Brian Christensen.
+// Pick the next resurface time. When an event ends exactly when the next one starts
+// there is no resurface in between, so skip ahead; only three consecutive events are
+// checked. If neither branch matches (more starts than ends, or no events at all)
+// resurface_time stays undefined and the .replace() below throws.
 if ( start_times.length == resurface_times.length ) {
     if ( resurface_times[0] == start_times[1] ) {
         if ( resurface_times[1] == start_times[2] ) {
@@ -70,11 +69,6 @@ if ( start_times.length == resurface_times.length ) {
         var resurface_time = resurface_times[0];
     }
 }
-// if ( start_time[0] == resurface_time[0] ) {
-//     var resurface_time = resurface_time[1];
-// } else {
-//     var resurface_time = resurface_time[0];
-// }
 var countDownDate = new Date(resurface_time.replace(/-/g, '/')).getTime();
 
 // Update the count down every 1 second
@@ -86,13 +80,11 @@ var x = setInterval(function() {
   // Find the distance between now and the count down date
   var distance = countDownDate - now;
     
-  // Time calculations for days, hours, minutes and seconds
-//  var days = Math.floor(distance / (1000 * 60 * 60 * 24));
+  // Time calculations for hours, minutes and seconds
   var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
   var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
   var seconds = Math.floor((distance % (1000 * 60)) / 1000);
     
-  // Output the result in an element with id="resurface"
   document.getElementById("resurface-timer").innerHTML = hours + " Hours "
   + minutes + " Mins " + seconds + " Secs";
     
@@ -101,15 +93,15 @@ var x = setInterval(function() {
     sendNotification();
 }
 
+// Highlight the current event's row for the last ten minutes
 if (hours == 0 && minutes <= 9 && seconds <= 59) {
     document.querySelectorAll(".schedule-row")[1].style.backgroundColor = "lightgreen";
 }
     
-  // If the count down is over, write some text 
+  // Countdown over: reload so the view recomputes from the next event
   if (distance < 0) {
     clearInterval(x);
     document.getElementById("resurface-timer").innerHTML = "Refresh Page to Reset Resurface Countdown";
-    // Reload the page to update the count down
     window.location.href = window.location.href
   }
 }, 1000);

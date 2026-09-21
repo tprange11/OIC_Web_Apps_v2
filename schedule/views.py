@@ -1,3 +1,5 @@
+"""Rink resurface schedule pages, the schedule JSON API, the legacy "Update Schedule"
+scraper trigger, and the ingest-run review pages."""
 from django.shortcuts import redirect
 from django.views.generic import ListView, TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -5,29 +7,33 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from . import models
 from datetime import datetime, date, timedelta
+# Importing scrape_schedule runs django.setup() and appends to sys.path at import time.
 from .scrape_schedule import get_schedule_data, process_data, add_locker_rooms_to_schedule, \
         add_schedule_to_model, oic_schedule
-        # add_schedule_to_model, scrape_ochl_teams, team_events, oic_schedule
 
 from rest_framework.generics import ListAPIView
 from .serializers import RinkScheduleSerializer
 from schedule.services.ingest import run_schedule_ingest
 
 
-# Create your views here.
-
 class ChooseRink(LoginRequiredMixin, TemplateView):
+    '''Landing page: pick North, South, both, or both side by side.'''
     template_name = 'choose_rink.html'
 
 
 class RinkScheduleListView(LoginRequiredMixin, ListView):
+    '''Today's remaining events for the requested rink, plus the start/end time lists
+    the countdown JS (static/js/schedule*.js) uses to work out the next resurface.
+
+    `rink` is north, south, both, or separate. For "separate" the queryset is a dict
+    with a north and a south queryset rather than a single queryset.
+    '''
     template_name = 'rinkschedule_list.html'
     model = models.RinkSchedule
 
     def get_queryset(self, **kwargs):
-        # queryset = super().get_queryset().filter()
+        # Events that have not ended yet today (naive local time).
         todays_date = date.isoformat(datetime.today())
-        # print(todays_date)
         queryset = super().get_queryset().filter(schedule_date=todays_date).filter(end_time__gte=datetime.now()).order_by('end_time')
         if self.kwargs['rink'] == 'north':
             return queryset.filter(rink__contains='North')
@@ -42,14 +48,15 @@ class RinkScheduleListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['rink'] = self.kwargs['rink'] # Send rink back to page for display purposes
+        context['rink'] = self.kwargs['rink']
         north_start_times = []
         south_start_times = []
         north_end_times = []
         south_end_times = []
         todays_date = date.isoformat(datetime.today())
 
-        # Return event start times as context
+        # Upcoming start times; the JS compares these to end times to detect
+        # back-to-back events (no resurface in between).
         start_times = self.model.objects.values('start_time').filter(schedule_date=todays_date, start_time__gte=datetime.now()).order_by('start_time')
         if self.kwargs['rink'] == 'north':
             start_times = start_times.filter(rink__contains='North')
@@ -61,7 +68,7 @@ class RinkScheduleListView(LoginRequiredMixin, ListView):
         else:
             start_times = start_times.exclude(rink__contains='Meeting/Party Room')
 
-        # Return event end times as context
+        # End times are the resurface times.
         end_times = self.model.objects.values('end_time').filter(schedule_date=todays_date, end_time__gte=datetime.now()).order_by('end_time')
         if self.kwargs['rink'] == 'north':
             end_times = end_times.filter(rink__contains='North')
@@ -73,7 +80,7 @@ class RinkScheduleListView(LoginRequiredMixin, ListView):
         else:
             end_times = end_times.exclude(rink__contains='Meeting/Party Room')
 
-        # Convert date time format for use in Javascript resurface countdown timer
+        # Format as "YYYY-MM-DD HH:MM:SS" strings for the JavaScript countdown timer
         next_start_times = []
         north_next_start_times = []
         south_next_start_times = []
@@ -90,7 +97,7 @@ class RinkScheduleListView(LoginRequiredMixin, ListView):
                 next_start_times.append(date.isoformat(datetime.now())+" "+item['start_time'].strftime('%H:%M:%S'))
             context['start_times'] = next_start_times
 
-        # Convert date time format for use in Javacript resurface countdown timer
+        # Same formatting for the resurface (end) times
         resurface_times = []
         north_resurface_times = []
         south_resurface_times = []
@@ -111,67 +118,45 @@ class RinkScheduleListView(LoginRequiredMixin, ListView):
 
 
 def scrape_schedule(request):
-    '''This view is called when the Update Schedule button is clicked. I will update the zamboni resurface
-    schedule if the online schedule has changed.'''
+    '''"Update Schedule" button handler: re-runs the legacy scraper for today (and, on
+    Fridays, the weekend) so the resurface schedule picks up online changes.
+
+    This is a trimmed copy of the __main__ block in scrape_schedule.py without the
+    OCHL/OWHL team-name merge. Unlike that script it never calls process_data() for
+    today, so on weekdays oic_schedule is empty and nothing is written; only the
+    Friday weekend branch actually adds rows. Rows are inserted, never replaced, so
+    an event whose time changed keeps its old row (unique_together skips the new one).
+    '''
 
     todays_date = date.today()
-    # print(todays_date.strftime("%m-%d-%Y"))
     formatted_date = date.isoformat(todays_date)
     start_date = f"{formatted_date[5:7]}/{formatted_date[8:]}/{formatted_date[0:4]}"
-    data_removed = False # used to check if the database table has been cleared once
+    data_removed = False # add_schedule_to_model() purges old rows only on its first call
 
-
-    # def swap_team_names():
-    #     ''' Replace schedule event with team names if they match times'''
-    #     if len(team_events) != 0:
-    #         for item in team_events:
-    #             for oic in oic_schedule:
-    #                 if item[0] == oic[1] and item[3] == oic[3]:
-    #                     if item[2] == "":
-    #                         oic[4] = f"{item[1]}"
-    #                     else:
-    #                         oic[4] = f"{item[1]} vs {item[2]}"
-
-    # If it's not Saturday or Sunday, scrape oic schedule
+    # Weekends are skipped; Friday's run covers Saturday and Sunday
     if date.weekday(date.today()) not in [5, 6]:
         data = get_schedule_data(start_date, start_date)
-        # swap_team_names()
         add_locker_rooms_to_schedule()
         add_schedule_to_model(oic_schedule, data_removed)
         data_removed = True
         oic_schedule.clear()
-        # team_events.clear()
 
-        # If it is Friday, scrape Saturday and Sunday too
         if date.weekday(date.today()) == 4:
             saturday = (date.today() + timedelta(days=1)).strftime("%m/%d/%Y")
-            # print(saturday)
             process_data(data, saturday)
             sunday = (date.today() + timedelta(days=2)).strftime("%m/%d/%Y")
-            # print(sunday)
             process_data(data, sunday)
-            # add_locker_rooms_to_schedule()
-            # add_schedule_to_model(oic_schedule, data_removed)
-            # oic_schedule.clear()
-            # team_events.clear()
 
-            # try:
-            #     scrape_ochl_teams()
-            # except Exception as e:
-            #     print(f"{e}, scrape_ochl_teams()")
-
-            # swap_team_names()
             add_locker_rooms_to_schedule()
             add_schedule_to_model(oic_schedule, data_removed)
             oic_schedule.clear()
-            # team_events.clear()
 
     messages.add_message(request, messages.SUCCESS, 'Rink Resurface Schedule has been updated.')
     return redirect('schedule:choose-rink')
 
 
 class RinkScheduleListAPIView(ListAPIView):
-    '''Return rink schedule.'''
+    '''JSON schedule for one day: ?date=YYYY-MM-DD, defaulting to today.'''
 
     serializer_class = RinkScheduleSerializer
 
@@ -187,15 +172,16 @@ class RinkScheduleListAPIView(ListAPIView):
             schedule_date=date.today()
         ).order_by('start_time')
 
-#    todays_date = date.isoformat(datetime.today())
-#    queryset = models.RinkSchedule.objects.filter(schedule_date=date.today()).order_by('start_time')
 
+# Ingest pipeline review pages. Only trigger_ingest requires login; the run list,
+# detail and diff pages are open.
 from django.shortcuts import render, get_object_or_404
 from schedule.models import ScheduleIngestRun
 from schedule.services.diff import diff_runs
 
 
 def run_list(request):
+    '''All ingest runs, newest first, with a flag if one is still in progress.'''
     runs = ScheduleIngestRun.objects.order_by("-started_at")
 
     ingest_in_progress = ScheduleIngestRun.objects.filter(
@@ -214,6 +200,7 @@ def run_list(request):
 
 
 def run_detail(request, run_id):
+    '''The snapshots captured by a single ingest run.'''
     run = get_object_or_404(ScheduleIngestRun, id=run_id)
     snapshots = run.snapshots.all().order_by(
         "schedule_date", "start_time"
@@ -229,6 +216,7 @@ def run_detail(request, run_id):
 
 
 def run_diff(request, run_a, run_b):
+    '''Added/removed/changed events between two runs (see services/diff.py).'''
     diff = diff_runs(run_a, run_b)
     return render(
         request,
@@ -242,11 +230,13 @@ def run_diff(request, run_a, run_b):
 
 @login_required
 def trigger_ingest(request):
+    '''POST handler behind the "Run ingest" button; pulls 1-14 days, optionally as a dry run.'''
     if request.method != "POST":
         messages.error(request, "Invalid request.")
         return redirect("schedule:schedule_run_list")
 
-    # Block concurrent runs
+    # Block concurrent runs. A run killed mid-way (worker timeout, restart) leaves
+    # completed_at null and blocks every later run until it is fixed in the admin.
     if ScheduleIngestRun.objects.filter(completed_at__isnull=True).exists():
         messages.warning(
             request,
@@ -254,7 +244,6 @@ def trigger_ingest(request):
         )
         return redirect("schedule:schedule_run_list")
 
-    # Parse + clamp days
     try:
         days = int(request.POST.get("days", 3))
     except (TypeError, ValueError):

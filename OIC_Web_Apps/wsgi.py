@@ -3,8 +3,7 @@ WSGI config for OIC_Web_Apps project.
 
 It exposes the WSGI callable as a module-level variable named ``application``.
 
-For more information on this file, see
-https://docs.djangoproject.com/en/2.2/howto/deployment/wsgi/
+reload_website.py touches the production copy of this file to force a reload.
 """
 
 import os

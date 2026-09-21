@@ -1,9 +1,14 @@
+"""Rink schedule models.
+
+RinkSchedule is the live table the resurface countdown pages and the API read; it is
+rewritten by schedule/scrape_schedule.py. The models below the marker belong to the
+newer snapshot-based ingest pipeline (schedule/services/) and do not touch RinkSchedule yet.
+"""
 from django.db import models
 
-# Create your models here.
 
 class RinkSchedule(models.Model):
-    '''Model that holds daily rink schedule.'''
+    '''One rink booking for a day, with the locker rooms assigned to each team.'''
     schedule_date = models.DateField()
     start_time = models.TimeField()
     end_time = models.TimeField()
@@ -22,7 +27,8 @@ class RinkSchedule(models.Model):
         return f"{self.schedule_date} Start: {self.start_time}, End: {self.end_time}, Rink: {self.rink}, Event: {self.event}, Notes: {self.notes}"
 
 # ================================
-# NEW MODELS – DO NOT MODIFY ABOVE
+# Ingest pipeline models (schedule/services/). RinkSchedule above is still the live
+# table; nothing below is read by the public schedule pages yet.
 # ================================
 
 import uuid
@@ -32,10 +38,8 @@ from django.db import models
 User = settings.AUTH_USER_MODEL
 
 class AuditModel(models.Model):
-    """
-    Abstract base model for created/updated tracking.
-    Safe for cron, manual runs, and system tasks.
-    """
+    """Abstract created/updated tracking; both user fields are optional so cron and
+    management-command runs can leave them null."""
     created_by = models.ForeignKey(
         User,
         null=True,
@@ -59,9 +63,8 @@ class AuditModel(models.Model):
 
 
 class ScheduleIngestRun(AuditModel):
-    """
-    One record per ingest execution (manual, scheduled, preview, rollback).
-    """
+    """One record per ingest execution. completed_at is null while a run is in
+    progress, which trigger_ingest() uses as a concurrency lock."""
     run_id = models.UUIDField(default=uuid.uuid4, unique=True)
     triggered_by = models.CharField(
         max_length=50,
@@ -79,9 +82,8 @@ class ScheduleIngestRun(AuditModel):
         ordering = ["-started_at"]
 
 class RinkScheduleSnapshot(AuditModel):
-    """
-    Immutable snapshot of schedule data for a single ingest run.
-    """
+    """One event as seen by a single ingest run. Runs are compared with
+    schedule.services.diff.diff_runs()."""
     run = models.ForeignKey(
         ScheduleIngestRun,
         on_delete=models.CASCADE,
@@ -112,10 +114,9 @@ class RinkScheduleSnapshot(AuditModel):
 
 
 class LockerRoomRule(AuditModel):
-    """
-    Configurable locker room assignment rules.
-    Evaluated in ascending priority order.
-    """
+    """Admin-editable locker room rule, evaluated in ascending priority order by
+    schedule.services.locker_engine before it falls back to rotation.
+    lock_during_games is stored but not yet enforced anywhere."""
     active = models.BooleanField(default=True)
     priority = models.IntegerField(help_text="Lower number = higher priority")
 
@@ -151,9 +152,7 @@ class LockerRoomRule(AuditModel):
 
 
 class ScheduleRunAcknowledgment(models.Model):
-    """
-    Records that ops has reviewed and approved a run.
-    """
+    """Records that a staff member reviewed a run. No view creates these yet."""
     run = models.ForeignKey(
         ScheduleIngestRun,
         on_delete=models.CASCADE,
@@ -166,6 +165,8 @@ class ScheduleRunAcknowledgment(models.Model):
         unique_together = ("run", "user")
 
 class NameNormalizationRule(models.Model):
+    '''Admin-editable substring replacement applied to event names during ingest
+    (schedule.services.name_normalizer).'''
     priority = models.PositiveIntegerField(
         help_text="Lower number = higher priority"
     )

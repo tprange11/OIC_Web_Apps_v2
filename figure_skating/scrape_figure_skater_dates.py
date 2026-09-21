@@ -1,3 +1,5 @@
+'''Standalone script (run by cron) that pulls next month's Open Figure Skating dates from the
+Schedule Werks calendar, adds new ones to FigureSkatingDate and emails subscribed users.'''
 from datetime import date, timedelta
 import os, sys, json, requests
 from calendar import monthrange
@@ -5,8 +7,9 @@ from calendar import monthrange
 if os.name == 'nt':
     sys.path.append("C:\\Users\\2990wx\\Documents\\workspaces\\OIC_Web_Apps_v2")
 else:
-    # sys.path.append("/home/BrianC68/oicdev/OIC_Web_Apps/") # Uncomment in development
-    sys.path.append("/home/OIC/OIC_Web_Apps/") # Uncomment in production
+    # Parked: development server project path, swap in when running there
+    # sys.path.append("/home/BrianC68/oicdev/OIC_Web_Apps/")
+    sys.path.append("/home/OIC/OIC_Web_Apps/") # Production server project path
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'OIC_Web_Apps.settings')
 
 import django
@@ -29,6 +32,7 @@ def get_schedule_data(from_date, to_date):
 
     for item in data:
         if "Open Figure" in item["usg"]:
+            # Convert MM/DD/YYYY to YYYY-MM-DD; times become e.g. "7:30 PM"
             skate_date = item["start_date"].split(" ")[0]
             skate_date = f"{skate_date[6:]}-{skate_date[:2]}-{skate_date[3:5]}"
             start_time = item["st"].replace("P", " PM").replace("A", " AM")
@@ -39,7 +43,8 @@ def get_schedule_data(from_date, to_date):
 
 
 def add_skate_dates(sessions):
-    '''Adds Figure Skating skate dates and times SkateDates model.'''
+    '''Adds Figure Skating dates and times to the FigureSkatingDate model with 15 available spots.
+    Returns True if the last date processed was new.'''
     model = FigureSkatingDate
     new_dates = ''
     for session in sessions:
@@ -95,7 +100,7 @@ if __name__ == "__main__":
     from calendar import monthrange
 
     today = date.today()
-    # Calculate the first day of next month
+    # First day of next month (rolls the year over in December)
     next_month = date(today.year + (today.month % 12 == 0), 
                       (today.month % 12) + 1, 
                       1)

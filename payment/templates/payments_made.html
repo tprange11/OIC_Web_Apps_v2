@@ -10,7 +10,7 @@
 <div class="list-group">
 
     {% for payment in payments %}
-    <!-- Payment Row -->
+    {# One row per payment; clicking it opens the detail modal below #}
     <button type="button"
             class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3"
             data-toggle="modal"
@@ -26,7 +26,7 @@
         </span>
     </button>
 
-    <!-- Modal -->
+    {# Payment detail modal #}
     <div class="modal fade"
          id="paymentModal{{ forloop.counter }}"
          tabindex="-1"
@@ -82,7 +82,7 @@
     {% endfor %}
 </div>
 
-<!-- Pagination -->
+{# Pagination #}
 {% if page_obj %}
 <div class="pagination justify-content-center mt-4">
     <div class="btn-group">

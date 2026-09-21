@@ -2,9 +2,8 @@ from .models import Cart
 from django.contrib.auth.decorators import login_required
 
 
-# If the cart has items return True, else return False
-# @login_required
 def cart_has_items(request):
+    '''Context processor: exposes `cart_has_items` so base.html can show the cart badge.'''
     model = Cart
     if request.user.is_anonymous:
         return {'cart_has_items': False}

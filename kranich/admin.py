@@ -1,8 +1,6 @@
 from django.contrib import admin
 from kranich.models import KranichSkateDate, KranichSkateSession
 
-# Register your models here.
-
 
 class KranichSkateDateAdmin(admin.ModelAdmin):
     list_display = ['skate_date', 'start_time', 'end_time']

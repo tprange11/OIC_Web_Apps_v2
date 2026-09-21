@@ -1,3 +1,5 @@
+"""Accounts: sign-up, profile/email preferences, release of liability, child skaters,
+user credit purchases and the staff revenue/credit reports."""
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.urls import reverse_lazy, reverse
@@ -22,6 +24,7 @@ import os
 import calendar
 
 class SignUp(CreateView):
+    '''Public sign-up page; new users are sent to the login page.'''
     form_class = forms.UserCreateForm
     success_url = reverse_lazy('accounts:login')
     template_name = 'accounts/signup.html'
@@ -34,6 +37,8 @@ class UpdateProfileView(LoginRequiredMixin, UpdateView):
     template_name = 'accounts/profile_form.html'
 
     def get(self, request, *args, **kwargs):
+        # Make sure the user has a UserCredit row; the template and
+        # get_context_data() assume one exists.
         try:
             UserCredit.objects.get(user=self.request.user)
         except ObjectDoesNotExist:
@@ -42,13 +47,13 @@ class UpdateProfileView(LoginRequiredMixin, UpdateView):
         return super().get(request, *args, **kwargs)
 
     def get_queryset(self):
-        # Try to create a profile object
+        # Profiles are created on first visit: try to insert one and fall back to the
+        # existing row when the unique (user, slug) constraint rejects the insert.
         try:
             profile = self.model(user=self.request.user, slug=self.request.user.id)
             profile.save()
             queryset = self.model.objects.filter(user=self.request.user)
             return queryset
-        # If a profile already exists, return the user profile object
         except IntegrityError:
             queryset = super().get_queryset()
             return queryset
@@ -60,13 +65,13 @@ class UpdateProfileView(LoginRequiredMixin, UpdateView):
         return context
 
     def form_valid(self, form):
-        # Return a message if the profile has been updated successfully
         messages.add_message(self.request, messages.SUCCESS, 'Your profile has been successfully updated!')
         return super().form_valid(form)
 
 
 class ReleaseOfLiablityView(LoginRequiredMixin, CreateView):
-    '''Displays page where user must sign Release of Liablity form.'''
+    '''Displays page where user must sign the Release of Liability form. Users who
+    have already signed are sent straight to the web apps page.'''
     model = ReleaseOfLiability
     form_class = forms.ReleaseOfLiablityForm
     success_url = reverse_lazy('web_apps')
@@ -98,16 +103,21 @@ class CreateChildSkaterView(LoginRequiredMixin, CreateView):
         try:
             self.object.save()
         except IntegrityError:
+            # unique_together on (user, first_name, last_name)
             messages.add_message(self.request, messages.ERROR, 'This skater is already in your skater list!')
             return render(self.request, template_name=self.template_name, context=self.get_context_data())
-        # If all goes well add success message
         messages.add_message(self.request, messages.SUCCESS, 'Skater successfully added to your list!')
 
         return super().form_valid(form)
 
 
 class DeleteChildSkaterView(LoginRequiredMixin, DeleteView):
-    '''Displays page where user can remove child or dependent skaters.'''
+    '''Removes a child skater (POSTed from the profile page).
+
+    Under Django 4 DeleteView handles POST through form_valid(), so the delete()
+    override below is never reached: success_url stays '' and get_success_url()
+    raises ImproperlyConfigured before anything is deleted.
+    '''
     model = ChildSkater
     success_url = ''
 
@@ -118,7 +128,18 @@ class DeleteChildSkaterView(LoginRequiredMixin, DeleteView):
 
 
 class UpdateUserCreditView(LoginRequiredMixin, UpdateView):
-    '''Displays page where user can purchase credits to use toward skate sessions.'''
+    '''Displays page where user can purchase credits to use toward skate sessions.
+
+    Purchase rule: the dollar amount entered goes into the cart as a "User Credits"
+    item, and the credits to be granted (amount plus any incentive bonus) are stored in
+    UserCredit.pending. Nothing is spendable until payment/views.py moves pending into
+    balance; unpaid pending credits are zeroed by the nightly cleanup.
+
+    The row edited is whichever UserCredit matches the <slug> in the URL (the
+    username); it is not restricted to the logged-in user. Each submission overwrites
+    `pending` but adds a new cart row, so submitting twice before paying charges for
+    both while only the last amount is credited.
+    '''
 
     model = UserCredit
     incentives_model = UserCreditIncentive
@@ -141,7 +162,8 @@ class UpdateUserCreditView(LoginRequiredMixin, UpdateView):
         user_credit = self.model.objects.get(user=self.request.user)
         form.instance.user = self.request.user
         self.object = form.save(commit=False)
-        # pending credits are added to balance upon payment in payment/views.py
+        # Order matters: the cart gets the dollar amount before the incentive
+        # inflates `pending` into the credit total.
         self.add_to_cart(self.object.pending)
         self.apply_incentive(self.object.pending)
         messages.add_message(self.request, messages.SUCCESS, 'Credits added to your Shopping Cart.  \
@@ -151,7 +173,7 @@ class UpdateUserCreditView(LoginRequiredMixin, UpdateView):
         return super().form_valid(form)
 
     def add_to_cart(self, credits):
-        '''Adds credits to shopping cart.'''
+        '''Adds a "User Credits" cart item for the dollar amount purchased.'''
 
         price = credits
         item_name = 'User Credits'
@@ -165,9 +187,13 @@ class UpdateUserCreditView(LoginRequiredMixin, UpdateView):
         return
 
     def apply_incentive(self, credits):
-        '''Applies credit incentive percentage to amount of credits purchased.'''
+        '''Bumps `pending` by the bonus percentage of the highest price point reached.
 
-        # Get user credit incentives model
+        UserCreditIncentive is ordered by price_point descending, so the first match is
+        the best tier and `incentives.last()` is the lowest tier. Only one tier applies.
+        The `credits` argument is unused; the method reads self.object.pending directly.
+        '''
+
         incentives = self.incentives_model.objects.all()
 
         if self.object.pending < incentives.last().price_point:
@@ -180,12 +206,18 @@ class UpdateUserCreditView(LoginRequiredMixin, UpdateView):
                 return
 
 
+# Report views. Note the mixin order (TemplateView first) means LoginRequiredMixin
+# never runs its dispatch() check, so these are effectively public.
+
 class ReportView(TemplateView, LoginRequiredMixin):
+    '''Landing page linking to the individual reports.'''
 
     template_name = 'accounts/reports.html'
 
 
 class OutstandingUserCreditsView(TemplateView, LoginRequiredMixin):
+    '''Outstanding credit balances and last-12-month credit revenue. Also writes both
+    data sets to CSV files under STATIC_ROOT/reports/ for download.'''
 
     template_name = 'accounts/user_credits_report.html'
 
@@ -225,6 +257,7 @@ class OutstandingUserCreditsView(TemplateView, LoginRequiredMixin):
 
         user_credit_records = []
         user_credit_revenue = 0
+        # Pull the "(User Credits $N)" chunk out of each payment note and total N.
         for record in payment_records:
             writer.writerow([record.payer.get_full_name(),record.amount,record.note,record.date.strftime('%Y-%m-%d')])
             credits = record.note.split(') (')
@@ -283,6 +316,8 @@ def download_outstanding_credits(request):
 
 
 class FigureSkatingRevenueReport(TemplateView, LoginRequiredMixin):
+    '''Writes the last 12 months of payments by members of the "Figure Skating" group
+    to STATIC_ROOT/reports/FSRevenueReport.csv; the page itself only links to it.'''
     template_name = 'accounts/fs_revenue_report.html'
 
     def in_group_figure(self, user):
@@ -342,7 +377,8 @@ def download_fs_revenue(request):
 
 @login_required
 def revenue_report(request, **kwargs):
-    '''View that renders the revenue report form template of the revenue report results template.'''
+    '''GET renders the date-range form; POST totals payments per program between the
+    two dates by parsing the "(Program $amount) ..." payment notes.'''
 
     context = None
 

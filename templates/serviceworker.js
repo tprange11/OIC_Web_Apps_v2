@@ -1,13 +1,17 @@
+// Service worker (served at /serviceworker.js by a TemplateView). Precaches the app
+// shell and answers from cache first, falling back to the network and then to
+// /offline/. Bump STATIC_CACHE whenever a precached file changes; activate()
+// deletes every other cache.
+// Nothing is cached at runtime: dynamic caching was tried and dropped because it
+// served logged-in pages to the wrong state (see the old handler at the bottom).
 
 var STATIC_CACHE = 'oicwebapps-v26';
-// var DYNAMIC_CACHE = 'oicwebapps-dyn-v1';
 
 self.addEventListener('install', function(event) {
-    // console.log('[Service Worker] Installing Service Worker....');
     event.waitUntil(
         caches.open(STATIC_CACHE)
             .then(function(cache) {
-                // console.log('[Service Worker] Precaching App Shell!');
+                // addAll() fails as a whole if any one URL 404s, so keep this list current
                 cache.addAll([
                     '/',
                     '/offline/',
@@ -38,13 +42,11 @@ self.addEventListener('install', function(event) {
 });
 
 self.addEventListener('activate', function(event) {
-    // console.log('[Service Worker] Activating Service Worker....');
     event.waitUntil(
         caches.keys()
             .then(function(keyList) {
                 return Promise.all(keyList.map(function(key) {
                     if (key !== STATIC_CACHE) {
-                        // console.log('[Service Worker] Removing old cache.', key);
                         return caches.delete(key);
                     }
                 }));
@@ -53,6 +55,8 @@ self.addEventListener('activate', function(event) {
     return self.clients.claim();
 });
 
+// Cache first, then network, then the offline page. Applies to every request,
+// including POSTs, which caches.match() simply never matches.
 self.addEventListener('fetch', function(event) {
     event.respondWith(
         caches.match(event.request)
@@ -76,10 +80,9 @@ self.addEventListener('notificationclick', function(event) {
     var notification = event.notification;
     var action = event.action;
 
-    // console.log(notification);
-
+    // The "confirm" (Open App) action is not offered by the resurface notification at
+    // the moment (see static/js/schedule*.js); the handler below is parked for when it is.
     if (action === 'confirm') {
-        // console.log('Open App pressed.')
         // event.waitUntil(
         //     clients.matchAll()
         //         .then(function(clis) {
@@ -97,16 +100,12 @@ self.addEventListener('notificationclick', function(event) {
         //         })
         // )
     } else {
-        // console.log('Dismiss pressed.');
         notification.close();
     }
 });
 
-// self.addEventListener('notificationclose', function(event) {
-//     console.log('Notification was closed!', event);
-// })
-
-// BELOW IS WITH DYNAMIC CACHING, NOT GOOD WHEN LOGGED IN
+// Parked: runtime (dynamic) caching. Disabled because cached responses leaked
+// logged-in pages between sessions. Kept for reference only.
 // self.addEventListener('fetch', function(event) {
 //     event.respondWith(
 //         caches.match(event.request)

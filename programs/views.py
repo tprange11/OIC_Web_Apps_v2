@@ -6,7 +6,7 @@ from . import models
 
 
 class PublicProgramListAPIView(ListAPIView):
-    '''Return public programs.'''
+    '''Read-only JSON list of programs that are not marked private.'''
 
     serializer_class = ProgramSerializer
     queryset = models.Program.objects.filter(private=False)

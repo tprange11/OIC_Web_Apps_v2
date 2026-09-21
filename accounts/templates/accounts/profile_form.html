@@ -16,7 +16,7 @@
 {% if in_group_womens_hockey or in_group_lady_hawks or in_group_open_roller_hockey or in_group_whaley%}
 <button type="button" class="btn btn-primary btn-sm mb-3" data-toggle="modal" data-target="#mySkatersModal">My
     Skaters</button>
-<!-- My Skater Modal -->
+{# My Skaters modal (only for programs that register dependent skaters) #}
 <div class="modal fade" id="mySkatersModal" tabindex="-1" role="dialog" aria-labelledby="mySkatersModal"
     aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
@@ -56,7 +56,7 @@
         </div>
     </div>
 </div>
-<!-- End My Skater Modal -->
+{# End My Skaters modal #}
 {% endif %}
 <p class="mb-0">
     <button class="btn btn-primary btn-sm mb-3" href="{% url 'accounts:purchase-credit' slug=user.username %}">Credit

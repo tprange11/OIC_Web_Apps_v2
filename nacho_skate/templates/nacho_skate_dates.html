@@ -78,7 +78,7 @@
                             <div>
                                 {{skater.skater.first_name}} {{skater.skater.last_name}}
                                 {% if skater.goalie %}<b>(Goalie)</b>{% endif %}
-                                {% if user.is_superuser or user.id == 870 %} {% comment %}{{ John Kranich is user.id 870 }}{% endcomment %}
+                                {% if user.is_superuser or user.id == 870 %} {# user 870 is John Kranich, who also organizes Nacho Skate #}
                                 {% if skater.paid %}<b>(Paid)</b>{% else %}<b>(Not Paid)</b>{% endif %}
                             </div>
                             <div>
@@ -93,7 +93,7 @@
                                     <input type="submit" value="Remove/Refund" class="btn btn-danger btn-sm">
                                 </form>
                                 {% endif %}
-                                {% endif %}{% comment %}{{ endif for superuser and John Kranich }}{% endcomment %}
+                                {% endif %}{# endif superuser or John Kranich #}
                             </div>
                         </li>
                         {% endif %}{% endfor %}

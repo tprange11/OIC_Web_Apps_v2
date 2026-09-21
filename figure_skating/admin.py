@@ -1,7 +1,6 @@
 from django.contrib import admin
 from .models import FigureSkater, FigureSkatingDate, FigureSkatingSession
 
-# Register your models here.
 
 class FigureSkaterAdmin(admin.ModelAdmin):
     list_display = ['guardian', 'first_name', 'last_name', 'date_of_birth']

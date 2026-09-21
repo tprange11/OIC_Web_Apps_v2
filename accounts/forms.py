@@ -22,7 +22,8 @@ class UserCreateForm(UserCreationForm):
 
 
 class ProfileForm(forms.ModelForm):
-    '''Form used to update a users profile'''
+    '''Form used to update a user's email preferences. Retired programs (Thane Storck,
+    Mike Schultz, CHS Alumni) are left out of the form; their fields still exist on the model.'''
 
     class Meta:
         model = Profile
@@ -34,14 +35,11 @@ class ProfileForm(forms.ModelForm):
         labels = {
             'stick_and_puck_email': 'Receive Stick and Puck emails.',
             'figure_skating_email': 'Receive Figure Skating emails.',
-            # 'thane_storck_email': 'Receive Thane Storck Skate emails.',
             'adult_skills_email': 'Receive Adult Skills emails.',
-            # 'mike_schultz_email': 'Receive Mike Schultz Skate emails.',
             'yeti_skate_email': 'Receive Yeti Skate emails.',
             'womens_hockey_email': 'Receive Womens Hockey Emails.',
             'bald_eagles_email': 'Receive Bald Eagles Skate Emails.',
             'lady_hawks_email': 'Receive Lady Hawks Skate Emails.',
-            # 'chs_alumni_email': 'Receive CHS Alumni Skate Emails.',
             'kranich_email': 'Receive Kranich Skate Emails.',
             'nacho_skate_email': 'Receive Nacho Skate Emails.',
             'ament_email': 'Receive Ament Skate Emails.',
@@ -66,7 +64,6 @@ class CreateChildSkaterForm(forms.ModelForm):
     class Meta:
         model = ChildSkater
         fields = ['first_name', 'last_name', 'date_of_birth']
-        # widgets = {'user': forms.HiddenInput()}
         labels = {
             'first_name': 'First Name',
             'last_name': 'Last Name',
@@ -78,7 +75,8 @@ class CreateChildSkaterForm(forms.ModelForm):
 
 
 class CreateUserCreditForm(forms.ModelForm):
-    '''Form used to purchase user credits.'''
+    '''Form used to purchase user credits. `pending` is the dollar amount entered;
+    UpdateUserCreditView turns it into a cart item and applies any incentive bonus.'''
 
     class Meta:
         model = UserCredit

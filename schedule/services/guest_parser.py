@@ -1,17 +1,18 @@
+"""Extracts home/guest team pairs from an event name or its usg field. The result is
+attached to the event dict during ingest but is not stored on the snapshot yet."""
 import re
 from typing import List, Dict
 
 
 def parse_guest_teams(event_name: str, usg=None) -> List[Dict]:
     """
-    Parse home/guest teams from event name OR usg.
+    Return [{"home": ..., "guest": ...}, ...] parsed from the event name, or, if the
+    name has no "vs", from a "game vs <opponent>" usg entry. TBD guests are dropped.
     """
 
     guests = []
 
-    # -------------------------------------------------
-    # Case 1: Already has "Team A vs Team B"
-    # -------------------------------------------------
+    # Case 1: the name already reads "Team A vs Team B" (comma-separated for doubles)
     parts = [p.strip() for p in event_name.split(",")]
 
     for part in parts:
@@ -30,9 +31,7 @@ def parse_guest_teams(event_name: str, usg=None) -> List[Dict]:
         print("GUEST PARSED:", event_name, guests)
         return guests
 
-    # -------------------------------------------------
-    # Case 2: Single-game youth → pull from USG
-    # -------------------------------------------------
+    # Case 2: single youth game, opponent only present in usg
     if usg:
         if isinstance(usg, list):
             usg = " ".join(usg)

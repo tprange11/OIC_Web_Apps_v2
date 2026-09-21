@@ -20,21 +20,21 @@
 {% include 'accounts/user_credits_include.html' %}
 {% include 'accounts/user_credits_modal_include.html' %}
 <ul class="list-group" style="display: inline-block; margin-bottom: 10px;">
-    <li class="list-group-item d-flex justify-content-between"><!-- Button trigger myskater modal -->
+    <li class="list-group-item d-flex justify-content-between">
     <button type="button" class="btn btn-warning" data-toggle="modal" data-target="#myskaters">
         My Skaters</button>
     <a class="btn btn-success" href="{% url 'figure_skating:add-skater' %}">Add Skater</a></li>
-    <li class="list-group-item d-flex justify-content-between"><!-- Button trigger mysessions modal -->
+    <li class="list-group-item d-flex justify-content-between">
         <button type="button" class="btn btn-warning" data-toggle="modal" data-target="#mysessions">
         My Sessions</button>
         <a class="btn btn-success" href="{% url 'figure_skating:past-sessions' %}">My Past Sessions</a>
     </li>
-    <li class="list-group-item"><!-- Button trigger upcomingsessions modal -->
+    <li class="list-group-item">
         <button type="button" class="btn btn-warning" data-toggle="modal" data-target="#upcomingsessions">
         Upcoming Figure Skating Sessions</button></li>
 </ul>
 <br>
-<!-- myskaters modal -->
+{# My Skaters modal #}
 <div class="modal fade" id="myskaters" tabindex="-1" role="dialog" aria-labelledby="mySkatersBackdropLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
       <div class="modal-content">
@@ -70,7 +70,7 @@
       </div>
     </div>
   </div>
-<!-- mysessions Modal -->
+{# My Sessions modal #}
 <div class="modal fade" id="mysessions" tabindex="-1" role="dialog" aria-labelledby="mySessionsBackdropLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
       <div class="modal-content">
@@ -112,7 +112,7 @@
       </div>
     </div>
   </div>
-<!-- upcomingsessions Modal -->
+{# Upcoming Sessions modal #}
 <div class="modal fade" id="upcomingsessions" tabindex="-1" role="dialog" aria-labelledby="upcomingSessionsBackdropLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
       <div class="modal-content">

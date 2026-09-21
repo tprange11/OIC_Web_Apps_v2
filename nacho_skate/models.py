@@ -4,7 +4,7 @@ User = get_user_model()
 
 
 class NachoSkateDate(models.Model):
-    '''Model holds dates for the Nacho Skate.'''
+    '''A scheduled Nacho skate. Uses real TimeFields, unlike the CharField times in the sibling apps.'''
 
     # Model Fields
     skate_date = models.DateField()
@@ -12,7 +12,6 @@ class NachoSkateDate(models.Model):
     end_time = models.TimeField()
 
     class Meta:
-        # Default ordering skate_date descending
         ordering = ['skate_date']
         # Prevent duplicate dates
         unique_together = ['skate_date', 'start_time', 'end_time']
@@ -21,14 +20,17 @@ class NachoSkateDate(models.Model):
         return f"{self.skate_date}"
 
     def registered_skaters(skate_date):
-        '''Returns the number of skaters and goalies registered for a skate date.'''
+        '''Returns the number of skaters and goalies registered for a skate date.
+
+        Called on the class (NachoSkateDate.registered_skaters(pk)); it has no self.
+        '''
         num_goalies = NachoSkateSession.objects.filter(skate_date=skate_date, goalie=True).count()
         num_skaters = NachoSkateSession.objects.filter(skate_date=skate_date, goalie=False).count()
         return {'num_skaters': num_skaters, 'num_goalies': num_goalies}
 
 
 class NachoSkateSession(models.Model):
-    '''Model that stores skate session data.'''
+    '''One user's sign-up for one NachoSkateDate.'''
 
     # Model Fields
     skater = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -39,12 +41,14 @@ class NachoSkateSession(models.Model):
     class Meta:
         # Prevent duplicate entries
         unique_together = ['skater', 'skate_date']
-        # Default ordering date descending
         ordering = ['-skate_date']
 
 
 class NachoSkateRegular(models.Model):
-    '''Model that stores skaters who are automatically registered for skates.\n
-    They must maintain a credit balance.'''
+    '''Skaters that fetch_nacho_skate_dates.py auto-registers for every new skate date.
+
+    They are only added when their credit balance covers the skater price (user
+    credit pk 870 is exempt).
+    '''
 
     regular = models.ForeignKey(User, on_delete=models.CASCADE)

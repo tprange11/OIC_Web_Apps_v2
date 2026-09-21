@@ -1,11 +1,14 @@
+'''Standalone script (run by cron) that pulls Kranich Skate dates from the Schedule Werks
+calendar, adds new ones to KranichSkateDate, pre-registers John Kranich and emails subscribed users.'''
 from datetime import date, timedelta
 import os, sys, requests, json
 
 if os.name == 'nt':
     sys.path.append("C:\\Users\\brian\\Documents\\Python\\OIC_Web_Apps\\")
 else:
-    sys.path.append("/home/OIC/OIC_Web_Apps/") # Uncomment on production server
-    # sys.path.append("/home/BrianC68/oicdev/OIC_Web_Apps/") # Uncomment on development server
+    sys.path.append("/home/OIC/OIC_Web_Apps/") # Production server project path
+    # Parked: development server project path, swap in when running there
+    # sys.path.append("/home/BrianC68/oicdev/OIC_Web_Apps/")
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'OIC_Web_Apps.settings')
 
 import django
@@ -32,11 +35,11 @@ def get_schedule_data(from_date, to_date):
         response = requests.get(url)
         data = json.loads(response.text)
     except requests.exceptions.RequestException as e:
-        # print(e)
         return
 
     for item in data:
         if "Kranich" in item["text"]:
+            # Convert MM/DD/YYYY to YYYY-MM-DD; times are HH:MM with the A/P suffix stripped
             skate_date = item["start_date"].split(" ")[0]
             skate_date = f"{skate_date[6:]}-{skate_date[:2]}-{skate_date[3:5]}"
             start_time = item["st"].replace("P", "").replace("A", "")
@@ -46,7 +49,8 @@ def get_schedule_data(from_date, to_date):
     return
 
 def add_skate_dates(sessions):
-    '''Adds Kranich Skate dates and times to the KranichSkateDate model.'''
+    '''Adds Kranich Skate dates and times to the KranichSkateDate model.
+    Returns True if at least one new date was added.'''
     model = KranichSkateDate
     new_dates = False
 
@@ -57,11 +61,10 @@ def add_skate_dates(sessions):
             new_dates = True
         except IntegrityError:
             continue
-    # print(new_dates)
     return new_dates
 
 def add_john_to_skate():
-    '''Adds John Kranich to skate.'''
+    '''Registers John Kranich (user id 870) as paid for every upcoming Kranich skate.'''
     skate_dates = KranichSkateDate.objects.filter(skate_date__gt=date.today())
     user = User.objects.get(pk=870)
     print(user)
@@ -115,7 +118,7 @@ if __name__ == "__main__":
     from_date = from_date.strftime("%m/%d/%Y")
     send_email = False
 
-    # Every Thursday request schedule data and parse for Kranich Skate dates
+    # Every Thursday request the schedule three days out and parse it for Kranich Skate dates
     if date.today().weekday() == 3:
         get_schedule_data(from_date, from_date)
 

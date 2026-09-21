@@ -1,8 +1,6 @@
 from django.contrib import admin
 from adult_skills.models import AdultSkillsSkateDate, AdultSkillsSkateSession
 
-# Register your models here.
-
 
 class AdultSkillsSkateDateAdmin(admin.ModelAdmin):
     list_display = ['skate_date', 'start_time', 'end_time']

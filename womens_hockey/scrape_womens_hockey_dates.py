@@ -1,10 +1,11 @@
+'''Cron script: on Mondays, pull "Womens Open Hockey" entries for the next 1-4 weeks from
+ScheduleWerks into WomensHockeySkateDate and email opted-in users if anything new was added.'''
 from datetime import date, timedelta
 import os, sys, requests, json
 
 if os.name == 'nt':
     sys.path.append("C:\\Users\\brian\\Documents\\Python\\OIC_Web_Apps\\")
 else:
-    # Uncomment on production server
     sys.path.append("/home/OIC/OIC_Web_Apps/")
     # sys.path.append("/home/BrianC68/oicdev/OIC_Web_Apps/") # Uncomment on development server
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'OIC_Web_Apps.settings')
@@ -22,7 +23,7 @@ skate_dates = []
 
 
 def get_schedule_data(from_date, to_date):
-    '''Request schedule data from Schedule Werks for the specified period.'''
+    '''Fetches the ScheduleWerks calendar and appends Womens Open Hockey entries to skate_dates.'''
     
     url = f"https://ozaukeeicecenter.schedulewerks.com/public/ajax/swCalGet?tid=-1&from={from_date}&to={to_date}&Complex=-1"
 
@@ -30,11 +31,11 @@ def get_schedule_data(from_date, to_date):
         response = requests.get(url)
         data = json.loads(response.text)
     except requests.exceptions.RequestException as e:
-        # print(e)
         return
 
     for item in data:
         if "Womens Open Hockey" in item["text"]:
+            # start_date is "MM/DD/YYYY HH:MM"; convert to ISO date
             skate_date = item["start_date"].split(" ")[0]
             skate_date = f"{skate_date[6:]}-{skate_date[:2]}-{skate_date[3:5]}"
             start_time = item["st"].replace("P", " PM").replace("A", " AM")
@@ -45,7 +46,10 @@ def get_schedule_data(from_date, to_date):
 
 
 def add_skate_dates(sessions):
-    '''Adds Womens Hockey skate dates and times AdultSkillsSkateDates model.'''
+    '''Adds Womens Hockey skate dates and times to the WomensHockeySkateDate model.
+
+    Returns whether the LAST session was new (see backlog).
+    '''
     model = WomensHockeySkateDate
 
     for session in sessions:
@@ -57,7 +61,6 @@ def add_skate_dates(sessions):
         except IntegrityError:
             new_dates = False
             continue
-    # print(new_dates)
     return new_dates
 
 
@@ -88,7 +91,7 @@ def send_skate_dates_email():
                 }
             )
 
-            # Send email to each recipient separately
+            # Send email to each recipient separately; any send failure aborts the whole run
             try:
                 mail = EmailMultiAlternatives(
                     subject, text_message, from_email, to_email
@@ -103,10 +106,9 @@ if __name__ == "__main__":
 
     from_date = (date.today() + timedelta(days=7)).strftime("%m/%d/%Y")
     to_date = (date.today() + timedelta(days=28)).strftime("%m/%d/%Y")
-    # to_date = from_date
     send_email = False
 
-    # Every Sunday request the next week for Sunday Womens Hockey
+    # Every Monday (weekday 0) fetch the window 7 to 28 days out
     if date.today().weekday() == 0:
         get_schedule_data(from_date, to_date)
 

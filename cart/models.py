@@ -2,12 +2,12 @@ from django.db import models
 from django.contrib.auth import get_user_model
 User = get_user_model()
 
-# Create your models here.
 
 class Cart(models.Model):
-    '''Shopping cart model.'''
+    '''One unpaid line item in a user's cart. `item` is the program name (or
+    "User Credits"), which cart/views.py and payment/views.py match on by string.
+    `amount` is whole dollars. Rows are wiped nightly by clear_cart_and_unpaid_items.py.'''
 
-    # Model fields
     customer = models.ForeignKey(User, on_delete=models.CASCADE)
     item = models.CharField(max_length=100)
     skater_name = models.CharField(max_length=100)

@@ -1,9 +1,11 @@
+"""Compares the snapshots of two ingest runs, keyed by (date, start time, rink)."""
 from collections import defaultdict
 from typing import Dict, List
 
 from schedule.models import RinkScheduleSnapshot, ScheduleIngestRun
 
 
+# Fields compared for "changed"; the key fields (date, start_time, rink) are implied.
 DIFF_FIELDS = [
     "end_time",
     "event",
@@ -14,13 +16,13 @@ DIFF_FIELDS = [
 
 def diff_runs(run_a_id, run_b_id):
     """
-    Compare two ingest runs.
+    Compare two ingest runs (a = before, b = after).
 
     Returns:
       {
         "added": [...],
         "removed": [...],
-        "changed": [...],
+        "changed": [{"key", "before", "after", "changes"}, ...],
         "unchanged": [...]
       }
     """
@@ -68,9 +70,7 @@ def diff_runs(run_a_id, run_b_id):
 # -----------------------------
 
 def _load_snapshots(run) -> Dict:
-    """
-    Return snapshots keyed by (date, time, rink)
-    """
+    """Return snapshots keyed by (date, start_time, rink)."""
     snaps = {}
 
     for s in RinkScheduleSnapshot.objects.filter(run=run):
@@ -85,10 +85,7 @@ def _load_snapshots(run) -> Dict:
 
 
 def _compare_snapshots(a, b) -> Dict:
-    """
-    Compare two snapshots field-by-field.
-    Returns dict of changed fields.
-    """
+    """Return {field: {"before", "after"}} for each DIFF_FIELDS value that differs."""
     changes = {}
 
     for field in DIFF_FIELDS:
@@ -102,9 +99,7 @@ def _compare_snapshots(a, b) -> Dict:
 
 
 def _serialize(snap) -> Dict:
-    """
-    Serialize snapshot to dict for UI / export.
-    """
+    """Serialize a snapshot to a plain dict for the diff template."""
     return {
         "id": snap.id,
         "schedule_date": snap.schedule_date,

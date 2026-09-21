@@ -1,11 +1,14 @@
+'''Standalone script (run by cron) that pulls Adult Skills skate dates from the Schedule Werks
+calendar, adds new ones to AdultSkillsSkateDate and emails subscribed users.'''
 from datetime import date, timedelta
 import os, sys, requests, json
 
 if os.name == 'nt':
     sys.path.append("C:\\Users\\brian\\Documents\\Python\\OIC_Web_Apps\\")
 else:
-    sys.path.append("/home/OIC/OIC_Web_Apps/")
-    # sys.path.append("/home/BrianC68/oicdev/OIC_Web_Apps/") # Uncomment on development server
+    sys.path.append("/home/OIC/OIC_Web_Apps/") # Production server project path
+    # Parked: development server project path, swap in when running there
+    # sys.path.append("/home/BrianC68/oicdev/OIC_Web_Apps/")
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'OIC_Web_Apps.settings')
 
 import django
@@ -29,11 +32,11 @@ def get_schedule_data(from_date, to_date):
         response = requests.get(url)
         data = json.loads(response.text)
     except requests.exceptions.RequestException as e:
-        # print(e)
         return
 
     for item in data:
-        if "Adlt Skill" in item["text"]:
+        if "Adlt Skill" in item["text"]: # Schedule Werks abbreviates the program name
+            # Convert MM/DD/YYYY to YYYY-MM-DD; times become e.g. "7:30 PM"
             skate_date = item["start_date"].split(" ")[0]
             skate_date = f"{skate_date[6:]}-{skate_date[:2]}-{skate_date[3:5]}"
             start_time = item["st"].replace("P", " PM").replace("A", " AM")
@@ -43,7 +46,8 @@ def get_schedule_data(from_date, to_date):
     return
 
 def add_skate_dates(sessions):
-    '''Adds Adult Skills skate dates and times AdultSkillsSkateDates model.'''
+    '''Adds Adult Skills skate dates and times to the AdultSkillsSkateDate model.
+    Returns True if the last date processed was new.'''
     model = AdultSkillsSkateDate
 
     for session in sessions:
@@ -54,7 +58,6 @@ def add_skate_dates(sessions):
         except IntegrityError:
             new_dates = False
             continue
-    # print(new_dates)
     return new_dates
 
 def send_skate_dates_email():
@@ -97,12 +100,10 @@ def send_skate_dates_email():
 if __name__ == "__main__":
     
     from_date = date.today().strftime("%m/%d/%Y")
-    # from_date = "2019-09-14"
     to_date = (date.today() + timedelta(days=7)).strftime("%m/%d/%Y")
     send_email = False
-    # print(f'From: {from_date} to {to_date}')
 
-    # Every Thursday request two weeks of schedule data and parse for Adult Skills dates
+    # Every Thursday request the next seven days of schedule data and parse for Adult Skills dates
     if date.today().weekday() == 3:
         get_schedule_data(from_date, to_date)
 

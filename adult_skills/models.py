@@ -12,7 +12,7 @@ class AdultSkillsSkateDate(models.Model):
     end_time = models.CharField(max_length=10)
 
     class Meta:
-        #Default ordering
+        # Default ordering skate_date ascending (soonest first)
         ordering = ['skate_date']
         # Prevent duplicate dates
         unique_together = ['skate_date', 'start_time', 'end_time']
@@ -21,7 +21,8 @@ class AdultSkillsSkateDate(models.Model):
         return(f"{self.skate_date}")
 
     def registered_skaters(skate_date):
-        '''Returns the number of skaters and goalies registered for a skate date.'''
+        '''Returns the number of skaters and goalies registered for a skate date.
+        Called on the class (not an instance) with the skate date pk.'''
         num_goalies = AdultSkillsSkateSession.objects.filter(skate_date=skate_date, goalie=True).count()
         num_skaters = AdultSkillsSkateSession.objects.filter(skate_date=skate_date, goalie=False).count()
         return {'num_skaters': num_skaters, 'num_goalies': num_goalies}
@@ -39,5 +40,5 @@ class AdultSkillsSkateSession(models.Model):
     class Meta:
         # Prevent duplicate entries
         unique_together = ['skater', 'skate_date']
-        # Default ordering
+        # Default ordering by skate date FK descending
         ordering = ['-skate_date']

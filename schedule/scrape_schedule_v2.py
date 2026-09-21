@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """
-OIC DAILY SCHEDULE SCRAPER — FULL CLEAN REWRITE (2025)
+Rewritten daily schedule scraper (2025), a drop-in replacement for scrape_schedule.py.
 
-Pulls events from ScheduleWerks
-Normalizes names
-Merges weekend OCHL + OWHL games
-Assigns locker rooms
-Writes schedule to RinkSchedule
+Pulls three days of events from ScheduleWerks, shortens names, merges OCHL/OWHL
+league games on Fridays, assigns locker rooms and writes RinkSchedule rows. Logs to
+/home/OIC/logs/oic_schedule.log. Nothing imports this module; it is only run as a
+script, and it is not yet wired into cron in place of scrape_schedule.py.
 
-Author: Todd + ChatGPT (Rewritten for reliability)
+Behavioural differences from the legacy script: Stick & Puck gets no locker room,
+Lakeshore Lightning never gets a visitor room, "game" is detected from "vs" in the
+name or usg rather than "Game" in usg, and the OYHA opponent is not appended.
 """
 
 # -------------------------------------------------------------------
@@ -93,7 +94,7 @@ SHORT_NAME = {
     "Nacho": "Nacho Skate",
 }
 
-# Locker room rotation
+# Locker room rotation: each rink alternates between its two pairs, event by event
 NORTH_LR = [[1, 3], [2, 4]]
 SOUTH_LR = [[6, 9], [5, 8]]
 ACHA_LR = "7"
@@ -104,6 +105,7 @@ LKL_LR = "9"
 # UTILITIES
 # -------------------------------------------------------------------
 def http_get(url, attempts=3):
+    '''GET with a 10s timeout and simple retry; returns the body or None.'''
     for i in range(attempts):
         try:
             r = requests.get(url, timeout=10)
@@ -117,6 +119,7 @@ def http_get(url, attempts=3):
 
 
 def parse_time(raw):
+    '''Parses "7:30 PM", "7:30PM" or "19:30" (optionally with a CST/CDT/CT suffix) to a time.'''
     if not raw:
         return None
 
@@ -139,6 +142,7 @@ def parse_time(raw):
 
 
 def clean_text(raw):
+    '''Decodes the ScheduleWerks HTML text field to plain text and strips the printer emoji.'''
     decoded = raw.encode().decode("unicode_escape")
     cleaned = BeautifulSoup(decoded, "html.parser").get_text()
     cleaned = cleaned.replace("🖨️", "").replace("\u200b", "").replace("\xa0", " ").strip()
@@ -155,6 +159,7 @@ def fetch_schedule(start, end):
 
 
 def extract_schedule(raw, target_date):
+    '''Returns [date, start, end, rink, event, usg] rows for one MM/DD/YYYY date.'''
     events = []
 
     for item in raw:
@@ -182,6 +187,7 @@ def extract_schedule(raw, target_date):
 # TEAM SCRAPING (OCHL + OWHL)
 # -------------------------------------------------------------------
 def convert_to_24(raw):
+    '''"7:30 PM" -> "19:30"; returns None if the text does not parse.'''
     try:
         r = raw.strip().upper().replace(" AM", "").replace(" PM", "")
         h, m = map(int, r.split(":"))
@@ -193,6 +199,8 @@ def convert_to_24(raw):
 
 
 def fetch_team_games(league):
+    '''Scrapes the OCHL/OWHL league page into [start, home, visitor, rink] rows.
+    The league_instance/subseason ids in TEAM_URLS change every season.'''
     url = TEAM_URLS[league]
     html = http_get(url)
     if not html:
@@ -214,6 +222,7 @@ def fetch_team_games(league):
 
 
 def merge_team_events(oic, league_data):
+    '''Renames an event to "Home vs Visitor" where a league game matches its start time and rink.'''
     for t in league_data:
         for event in oic:
             start_time = event[1]
@@ -231,9 +240,12 @@ def merge_team_events(oic, league_data):
 
 
 # -------------------------------------------------------------------
-# LOCKER ROOM ASSIGNMENT (FULLY REWRITTEN)
+# LOCKER ROOM ASSIGNMENT
 # -------------------------------------------------------------------
 def assign_locker_rooms(oic):
+    '''Appends (home_lr, visitor_lr) to each row. Games only get a visitor room from
+    the rotation; practices get both rooms of the current pair. Concordia ACHA and
+    Lakeshore Lightning have fixed rooms and do not advance the rotation.'''
     logger.info("---- ASSIGN LOCKER ROOMS ----")
 
     north_flag = 0
@@ -252,7 +264,7 @@ def assign_locker_rooms(oic):
             oic[i].extend(["", ""])
             continue
 
-        # Hard-coded LR rules
+        # Fixed-room teams (do not advance the rotation)
         if "Concordia ACHA" in customer:
             oic[i].extend([ACHA_LR, ""])
             continue
@@ -296,6 +308,8 @@ def assign_locker_rooms(oic):
 # DATABASE WRITE
 # -------------------------------------------------------------------
 def write_to_db(oic):
+    '''Purges rows older than two weeks, then inserts each event; rows that violate
+    unique_together (same date, times, rink) are logged and skipped, never updated.'''
     RinkSchedule.objects.filter(
         schedule_date__lte=date.today() - timedelta(days=15)
     ).delete()
@@ -323,6 +337,7 @@ def write_to_db(oic):
 # MAIN
 # -------------------------------------------------------------------
 def run():
+    '''Scrapes today plus the next two days. Runs on weekends too, unlike the legacy script.'''
     logger.info("===== SCRAPER START =====")
 
     today = date.today()
