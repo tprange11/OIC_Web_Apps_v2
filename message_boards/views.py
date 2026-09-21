@@ -26,7 +26,7 @@ class BoardTopicListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        queryset = queryset.filter(board=Board.objects.get(slug=self.kwargs['slug'])).annotate(replies=Count('posts'))
+        queryset = queryset.filter(board=Board.objects.get(slug=self.kwargs['slug'])).annotate(replies=Count('posts')).order_by('-sticky', '-last_updated')
         return queryset
 
     def get_context_data(self, **kwargs):
