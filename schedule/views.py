@@ -1,6 +1,7 @@
 from django.shortcuts import redirect
 from django.views.generic import ListView, TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from . import models
 from datetime import datetime, date, timedelta
@@ -10,6 +11,8 @@ from .scrape_schedule import get_schedule_data, process_data, add_locker_rooms_t
 
 from rest_framework.generics import ListAPIView
 from .serializers import RinkScheduleSerializer
+from schedule.services.ingest import run_schedule_ingest
+
 
 # Create your views here.
 
@@ -194,11 +197,20 @@ from schedule.services.diff import diff_runs
 
 def run_list(request):
     runs = ScheduleIngestRun.objects.order_by("-started_at")
+
+    ingest_in_progress = ScheduleIngestRun.objects.filter(
+        completed_at__isnull=True
+    ).exists()
+
     return render(
         request,
         "schedule/run_list.html",
-        {"runs": runs},
+        {
+            "runs": runs,
+            "ingest_in_progress": ingest_in_progress,
+        },
     )
+
 
 
 def run_detail(request, run_id):
@@ -228,3 +240,47 @@ def run_diff(request, run_a, run_b):
         },
     )
 
+@login_required
+def trigger_ingest(request):
+    if request.method != "POST":
+        messages.error(request, "Invalid request.")
+        return redirect("schedule:schedule_run_list")
+
+    # Block concurrent runs
+    if ScheduleIngestRun.objects.filter(completed_at__isnull=True).exists():
+        messages.warning(
+            request,
+            "A schedule ingest is already running. Please wait."
+        )
+        return redirect("schedule:schedule_run_list")
+
+    # Parse + clamp days
+    try:
+        days = int(request.POST.get("days", 3))
+    except (TypeError, ValueError):
+        days = 3
+
+    days = max(1, min(days, 14))
+
+    dry_run = request.POST.get("dry_run") == "on"
+
+    run = run_schedule_ingest(
+        triggered_by="manual",
+        dry_run=dry_run,
+        user=request.user,
+        days_ahead=days,
+    )
+
+    if run.success:
+        messages.success(
+            request,
+            f"{'Dry run' if dry_run else 'Live run'} completed. "
+            f"Pulled {days} day(s). Run ID {run.id}."
+        )
+    else:
+        messages.error(
+            request,
+            f"Schedule ingest failed: {run.notes}"
+        )
+
+    return redirect("schedule:schedule_run_list")

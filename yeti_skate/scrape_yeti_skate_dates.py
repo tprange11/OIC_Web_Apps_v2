@@ -79,7 +79,7 @@ def get_schedule_data(from_date, to_date):
 
     logger.info("Fetching ScheduleWerks data...")
     try:
-        response = requests.get(url, timeout=10)
+        response = requests.get(url, timeout=60)
         response.raise_for_status()
         data = response.json()
     except Exception as e:

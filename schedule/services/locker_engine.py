@@ -4,7 +4,7 @@ from schedule.models import LockerRoomRule
 
 
 # ---------------- CONFIG ----------------
-ROTATION_RESET_GAP = timedelta(hours=2)
+ROTATION_RESET_GAP = timedelta(hours=3)
 
 DEFAULT_LOCKERS = {
     "North": [(1, 3), (2, 4)],
@@ -33,11 +33,25 @@ def assign_lockers(event: Dict) -> Tuple[str, str, str, List[Dict]]:
 
 # ---------------- RULE MATCH ----------------
 def _rule_matches(rule: LockerRoomRule, event: Dict) -> bool:
-    print("RULE CHECK:", rule.id, rule.event_type, event.get("usg"))
-    if rule.rink and rule.rink.lower() not in event["rink"].lower():
-        return False
-    if rule.team_contains and rule.team_contains.lower() not in event["event"].lower():
-        return False
+    # Rink check
+    if rule.rink and rule.rink.lower() != "any":
+        if rule.rink.lower() not in event["rink"].lower():
+            return False
+
+    # Team / event name check
+    if rule.team_contains:
+        if rule.team_contains.lower() not in event["event"].lower():
+            return False
+
+    # Event type check (Game / Practice / etc.)
+    if rule.event_type:
+        usg = event.get("usg", [])
+        if isinstance(usg, str):
+            usg = [usg]
+
+        if not any(rule.event_type.lower() in u.lower() for u in usg):
+            return False
+
     return True
 
 

@@ -2,6 +2,41 @@
   Schedule Ingest Runs
 </h2>
 
+<form
+  method="post"
+  action="{% url 'schedule:schedule_run_trigger' %}"
+  style="margin-bottom:16px; display:flex; gap:12px; align-items:center;"
+>
+  {% csrf_token %}
+
+  <label style="font-size:14px;">
+    Days Ahead:
+    <input
+      type="number"
+      name="days"
+      value="3"
+      min="1"
+      max="14"
+      style="width:60px; margin-left:6px;"
+    />
+  </label>
+
+  <button
+    type="submit"
+    style="
+      background:#2563eb;
+      color:white;
+      border:none;
+      padding:8px 14px;
+      border-radius:6px;
+      cursor:pointer;
+      font-weight:bold;
+    "
+  >
+    Pull Data
+  </button>
+</form>
+
 <div class="table-container">
   <table id="runsTable">
     <thead>

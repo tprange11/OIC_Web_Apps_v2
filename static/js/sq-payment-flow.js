@@ -1,32 +1,44 @@
-async function SquarePaymentFlow() {
+// sq-payment-flow.js
 
-  // Create card payment object and attach to page
-  CardPay(document.getElementById('card-container'), document.getElementById('card-button'));
+document.addEventListener("DOMContentLoaded", async () => {
 
-  // Create Apple pay instance
-  // ApplePay(document.getElementById('apple-pay-button'));
+  // Ensure required DOM elements exist before calling any Square methods
+  window.paymentFlowMessageEl = document.getElementById('payment-flow-message');
 
-  // Create Google pay instance
-  // GooglePay(document.getElementById('google-pay-button'));
+  // Build Square payments instance AFTER template variables exist
+  const appId = window.applicationId;
+  const locationId = window.locationId;
 
-  // Create ACH payment
-  // ACHPay(document.getElementById('ach-button'));
-}
+  if (!appId || !locationId) {
+    console.error("Square app or location ID missing.");
+    return;
+  }
 
-window.payments = Square.payments(window.applicationId, window.locationId);
+  try {
+    window.payments = Square.payments(appId, locationId);
+  } catch (err) {
+    console.error("Failed initializing Square Payments:", err);
+    return;
+  }
 
-window.paymentFlowMessageEl = document.getElementById('payment-flow-message');
+  // Initialize card payment UI
+  await CardPay(
+    document.getElementById('card-container'),
+    document.getElementById('card-button')
+  );
+});
 
+// Simple helpers for error/success messages
 window.showSuccess = function(message) {
-  window.paymentFlowMessageEl.classList.add('success');
-  window.paymentFlowMessageEl.classList.remove('error');
-  window.paymentFlowMessageEl.innerText = message;
+  if (!window.paymentFlowMessageEl) return;
+  paymentFlowMessageEl.classList.add('success');
+  paymentFlowMessageEl.classList.remove('error');
+  paymentFlowMessageEl.innerText = message;
 }
 
 window.showError = function(message) {
-  window.paymentFlowMessageEl.classList.add('error');
-  window.paymentFlowMessageEl.classList.remove('success');
-  window.paymentFlowMessageEl.innerText = message;
+  if (!window.paymentFlowMessageEl) return;
+  paymentFlowMessageEl.classList.add('error');
+  paymentFlowMessageEl.classList.remove('success');
+  paymentFlowMessageEl.innerText = message;
 }
-
-SquarePaymentFlow();

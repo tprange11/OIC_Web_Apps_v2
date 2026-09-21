@@ -1,41 +1,71 @@
+// sq-card-pay.js
+
 async function CardPay(fieldEl, buttonEl) {
-  // Create a card payment object and attach to page, payment/templates/sq-payment-form.html
-  const card = await window.payments.card({
+  const appId = window.applicationId;
+  const locationId = window.locationId;
+
+  if (!appId || !locationId) {
+    console.error("Square configuration missing.");
+    return;
+  }
+
+  // Initialize Square Payments
+  let payments;
+  try {
+    payments = Square.payments(appId, locationId);
+  } catch (err) {
+    console.error("Failed to initialize Square Payments:", err);
+    return;
+  }
+
+  // Create card instance
+  const card = await payments.card({
     style: {
-      '.input-container.is-focus': {
-        borderColor: '#006AFF'
-      },
-      '.message-text.is-error': {
-        color: '#BF0020'
-      }
+      '.input-container.is-focus': { borderColor: '#006AFF' },
+      '.message-text.is-error': { color: '#BF0020' }
     }
   });
+
   await card.attach(fieldEl);
 
+  // Message element for displaying errors
+  const messageEl = document.getElementById("payment-flow-message");
+
   async function eventHandler(event) {
-    // Clear any existing messages
-    window.paymentFlowMessageEl.innerText = '';
+    // Clear old messages
+    if (messageEl) messageEl.innerText = "";
 
     try {
       const result = await card.tokenize();
-      if (result.status === 'OK') {
-        // Use global method from sq-payment-flow.js
-        // window.createPayment(result.token);
-        // Changed by Brian Christensen, instead submit the form and process the payment in the view.
-        document.getElementById('payment-token').value = result.token;
-        document.getElementById('fast-checkout').submit();
-        document.getElementById('card-button').disabled = true;
+
+      if (result.status === "OK") {
+        // Put the token into the hidden input
+        document.getElementById("payment-token").value = result.token;
+
+        // Disable button to prevent double-click
+        buttonEl.disabled = true;
+
+        // Submit the Django form
+        document.getElementById("fast-checkout").submit();
+        return;
       }
+
+      // If result wasn't OK, show error
+      if (messageEl) {
+        messageEl.innerText = result.errors?.[0]?.message || "Payment failed.";
+      }
+
     } catch (e) {
-      if (e.message) {
-        window.showError(`Error: ${e.message}`);
-        document.getElementById('card-button').disabled = false;
-      } else {
-        window.showError('Something went wrong');
-        document.getElementById('card-button').disabled = false;
+      console.error("Tokenization Error:", e);
+
+      if (messageEl) {
+        messageEl.innerText = e.message || "Something went wrong.";
       }
+
+      buttonEl.disabled = false;
     }
   }
 
-  buttonEl.addEventListener('click', eventHandler);
+  // Bind click event
+  buttonEl.addEventListener("click", eventHandler);
 }

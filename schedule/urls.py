@@ -19,4 +19,10 @@ urlpatterns += [
         views.run_diff,
         name="schedule_run_diff",
     ),
+    path(
+        "runs/trigger/",
+        views.trigger_ingest,
+        name="schedule_run_trigger",
+    ),
+
 ]
