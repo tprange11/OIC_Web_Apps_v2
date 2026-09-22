@@ -52,8 +52,9 @@ class SessionRemovalMixin(LoginRequiredMixin):
     free_user_ids = ()
     # Non-staff users who may remove other people's sessions (legacy organizer ids).
     manager_user_ids = ()
-    # Email the owner and these admin users when a refund is issued.
-    notify_on_refund = False
+    # Email the owner and these admin users on every removal (paid, unpaid or
+    # free) -- the message says whether credit was issued.
+    notify_on_removal = False
     admin_notify_ids = (1, 2)
     notify_subject = 'Credit Issued for Skate Session'
     notify_from = 'no-reply@oicwebapp.com'
@@ -173,6 +174,8 @@ class SessionRemovalMixin(LoginRequiredMixin):
             send_mail(self.notify_subject, message, self.notify_from, recipients)
         except Exception as exc:  # email failure must not undo the removal
             messages.error(self.request, f'Failed to send email: {exc}')
+        else:
+            messages.info(self.request, 'Email message has been sent to the skater!')
 
     def form_valid(self, form):
         session = self.object
@@ -190,7 +193,7 @@ class SessionRemovalMixin(LoginRequiredMixin):
                 msg = self.removed_message
             session.delete()
         messages.success(self.request, msg)
-        if refunded and self.notify_on_refund:
+        if self.notify_on_removal:
             self.notify(session, msg)
         return HttpResponseRedirect(self.get_success_url())
 

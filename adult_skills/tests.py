@@ -9,6 +9,7 @@ class AdultSkillsTests(ProgramAppTestMixin, TestCase):
     url_ns = 'adult_skills'
     list_url_name = 'adult-skills'
     date_model = AdultSkillsSkateDate
+    emails_on_removal = True
     session_model = AdultSkillsSkateSession
     # The cart item name is hard-coded as 'Adult Skills' in the create/delete views.
     program_kwargs = {'pk': 5, 'program_name': 'Adult Skills'}

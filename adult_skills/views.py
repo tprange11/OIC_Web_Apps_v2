@@ -196,7 +196,7 @@ class DeleteAdultSkillsSkateSessionView(SessionRemovalMixin, DeleteView):
     success_url = reverse_lazy('adult_skills:adult-skills')
     program_filter = {'pk': 5}
     cart_item_name = 'Adult Skills'
-    notify_on_refund = True
+    notify_on_removal = True
     notify_subject = 'Credit Issued for Adult Skills Session'
 
 

@@ -9,6 +9,7 @@ class OWHLTests(ProgramAppTestMixin, TestCase):
     url_ns = 'owhl'
     list_url_name = 'owhl'
     date_model = OWHLSkateDate
+    emails_on_removal = True
     session_model = OWHLSkateSession
     # Caps are read from Program pk 13, prices/cart item by name 'OWHL Hockey'.
     program_kwargs = {'pk': 13, 'program_name': 'OWHL Hockey'}

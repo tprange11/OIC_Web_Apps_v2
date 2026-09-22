@@ -22,6 +22,7 @@ from unittest import SkipTest
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
+from django.core import mail
 from django.urls import reverse
 
 from accounts.models import ChildSkater, UserCredit
@@ -59,6 +60,7 @@ class ProgramAppTestMixin:
     skater_price = 10
     goalie_price = 5
     days_ahead = 7
+    emails_on_removal = False   # app sets notify_on_removal on its DeleteView
     skip_tests = frozenset()    # test method names this app skips (say why in a comment)
 
     # ---- setUp -----------------------------------------------------------------
@@ -320,6 +322,30 @@ class ProgramAppTestMixin:
         # The refund goes to the owner, never to the staff member who removed it.
         self.assertEqual(self.balance_of(a), self.price_of())
         self.assertEqual(self.balance_of(staff), 0)
+
+    def test_remove_emails_skater_and_admins(self):
+        '''Apps that notify email the owner (plus admin ids) on every removal --
+        paid or unpaid -- with the same text shown on screen. Other apps send nothing.'''
+        a = self.make_user()
+        first, second = self.make_date(), self.make_date(**{
+            self.date_attr: date.today() + timedelta(days=self.days_ahead + 1)})
+        paid = self.make_session(a, first, paid=True)
+        unpaid = self.make_session(a, second, paid=False)
+        self.make_cart_row(a, second)
+        self.make_credit(a, 0, paid=False)
+        self.login(a)
+        mail.outbox = []
+        self.remove(self.client, paid)
+        self.remove(self.client, unpaid)
+        if not self.emails_on_removal:
+            self.assertEqual(len(mail.outbox), 0)
+            return
+        self.assertEqual(len(mail.outbox), 2)
+        for message in mail.outbox:
+            self.assertIn(a.email, message.to)
+            self.assertEqual(message.from_email, 'no-reply@oicwebapp.com')
+        self.assertIn('credit balance has been increased', mail.outbox[0].body)
+        self.assertIn('removed from that skate session', mail.outbox[1].body)
 
     def test_remove_get_not_allowed(self):
         a = self.make_user()

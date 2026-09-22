@@ -192,7 +192,7 @@ class DeleteOWHLSkateSessionView(SessionRemovalMixin, DeleteView):
 
     program_filter = {'program_name': 'OWHL Hockey'}
     cart_item_name = 'OWHL Hockey'
-    notify_on_refund = True
+    notify_on_removal = True
     notify_subject = 'Credit Issued for OWHL Skate Session'
 
 # The following views are for staff only.

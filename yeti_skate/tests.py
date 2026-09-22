@@ -9,6 +9,7 @@ class YetiSkateTests(ProgramAppTestMixin, TestCase):
     url_ns = 'yeti_skate'
     list_url_name = 'yeti-skate'
     date_model = YetiSkateDate
+    emails_on_removal = True
     session_model = YetiSkateSession
     program_kwargs = {'pk': 7, 'program_name': 'Yeti Skate'}
     date_defaults = {'start_time': '6:00 AM', 'end_time': '7:30 AM'}

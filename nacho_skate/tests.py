@@ -9,6 +9,7 @@ class NachoSkateTests(ProgramAppTestMixin, TestCase):
     url_ns = 'nacho_skate'
     list_url_name = 'index'
     date_model = NachoSkateDate
+    emails_on_removal = True
     session_model = NachoSkateSession
     program_kwargs = {'pk': 15, 'program_name': 'Nacho Skate'}
     date_defaults = {'start_time': '20:00', 'end_time': '21:30'}

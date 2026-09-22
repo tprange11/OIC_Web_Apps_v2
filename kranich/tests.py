@@ -9,6 +9,7 @@ class KranichTests(ProgramAppTestMixin, TestCase):
     url_ns = 'kranich'
     list_url_name = 'kranich'
     date_model = KranichSkateDate
+    emails_on_removal = True
     session_model = KranichSkateSession
     program_kwargs = {'pk': 14, 'program_name': 'Kranich Skate'}
     date_defaults = {'start_time': '20:00', 'end_time': '21:30'}

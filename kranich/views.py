@@ -194,6 +194,6 @@ class DeleteKranichSkateSessionView(SessionRemovalMixin, DeleteView):
     program_filter = {'pk': 14}
     free_user_ids = (870,)
     manager_user_ids = (870,)
-    notify_on_refund = True
+    notify_on_removal = True
     admin_notify_ids = (1, 2, 870)
     notify_subject = 'Credit Issued for Kranich Skate Session'

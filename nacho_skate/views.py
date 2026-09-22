@@ -193,6 +193,6 @@ class DeleteNachoSkateSessionView(SessionRemovalMixin, DeleteView):
 
     program_filter = {'pk': 15}
     manager_user_ids = (870,)    # organizer; the template shows him the remove buttons
-    notify_on_refund = True
+    notify_on_removal = True
     admin_notify_ids = (1, 2, 870)
     notify_subject = 'Credit Issued for Nacho Skate Session'

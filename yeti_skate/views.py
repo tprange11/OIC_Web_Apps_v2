@@ -217,7 +217,7 @@ class DeleteYetiSkateSessionView(SessionRemovalMixin, DeleteView):
     program_filter = {'pk': 7}
     free_user_ids = (359,)       # user 359 skates for free (see CreateYetiSkateSessionView)
     manager_user_ids = (359,)    # skate organizer; the template shows him the remove buttons
-    notify_on_refund = True
+    notify_on_removal = True
     admin_notify_ids = (1, 2, 359)
     notify_subject = 'Credit Issued for Yeti Skate Session'
 
