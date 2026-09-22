@@ -3,10 +3,12 @@ the purchased sessions/credits as paid. See process_payment() for the full flow.
 from django.views.generic import ListView
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.core.mail import send_mail
 from datetime import date
+import logging
 import uuid
 import os
 
@@ -32,6 +34,8 @@ from kranich.models import KranichSkateSession
 from nacho_skate.models import NachoSkateSession
 from ament.models import AmentSkateSession
 from accounts.models import UserCredit
+
+logger = logging.getLogger(__name__)
 
 
 def get_square_client():
@@ -190,55 +194,63 @@ def process_payment(request):
             "error_message": detail,
         })
 
-    # From here on the card has been charged. Everything below is bookkeeping and
-    # runs outside a transaction, so a failure leaves a charged card with partial records.
+    # From here on the card has been charged. All bookkeeping below runs in one
+    # transaction so a failure cannot leave a charged card with partial records; the
+    # error is logged with the Square payment id and re-raised.
     payment = pay_resp.payment
     amount = payment.amount_money.amount / 100
 
-    models.Payment.objects.create(
-        payer=request.user,
-        square_id=payment.id,
-        square_receipt=getattr(payment, "receipt_number", None),
-        amount=amount,
-        note=payment.note,
-    )
-
-    # Mark the user's unpaid sessions as paid. This is not tied to the cart contents:
-    # every unpaid session for this user is flagged, on the assumption that unpaid
-    # sessions and cart rows always exist together (clear_cart_and_unpaid_items.py
-    # removes both nightly). Only Stick and Puck and Figure Skating limit this to
-    # today or later; Open Roller does not filter on paid at all.
-    today = date.today()
     try:
-        StickAndPuckSession.objects.filter(guardian=request.user, session_date__gte=today, paid=False).update(paid=True)
-        FigureSkatingSession.objects.filter(guardian=request.user, session__skate_date__gte=today, paid=False).update(paid=True)
-        AdultSkillsSkateSession.objects.filter(skater=request.user, paid=False).update(paid=True)
-        YetiSkateSession.objects.filter(skater=request.user, paid=False).update(paid=True)
-        WomensHockeySkateSession.objects.filter(user=request.user, paid=False).update(paid=True)
-        BaldEaglesSession.objects.filter(skater=request.user, paid=False).update(paid=True)
-        LadyHawksSkateSession.objects.filter(user=request.user, paid=False).update(paid=True)
-        OpenRollerSkateSession.objects.filter(user=request.user).update(paid=True)
-        PrivateSkateSession.objects.filter(user=request.user, paid=False).update(paid=True)
-        OWHLSkateSession.objects.filter(skater=request.user, paid=False).update(paid=True)
-        KranichSkateSession.objects.filter(skater=request.user, paid=False).update(paid=True)
-        NachoSkateSession.objects.filter(skater=request.user, paid=False).update(paid=True)
-        AmentSkateSession.objects.filter(skater=request.user, paid=False).update(paid=True)
+        with transaction.atomic():
+            models.Payment.objects.create(
+                payer=request.user,
+                square_id=payment.id,
+                square_receipt=getattr(payment, "receipt_number", None),
+                amount=amount,
+                note=payment.note,
+            )
+
+            # Mark the user's unpaid sessions as paid. This is not tied to the cart contents:
+            # every unpaid session for this user is flagged, on the assumption that unpaid
+            # sessions and cart rows always exist together (clear_cart_and_unpaid_items.py
+            # removes both nightly). Only Stick and Puck and Figure Skating limit this to
+            # today or later.
+            today = date.today()
+            StickAndPuckSession.objects.filter(guardian=request.user, session_date__gte=today, paid=False).update(paid=True)
+            FigureSkatingSession.objects.filter(guardian=request.user, session__skate_date__gte=today, paid=False).update(paid=True)
+            AdultSkillsSkateSession.objects.filter(skater=request.user, paid=False).update(paid=True)
+            YetiSkateSession.objects.filter(skater=request.user, paid=False).update(paid=True)
+            WomensHockeySkateSession.objects.filter(user=request.user, paid=False).update(paid=True)
+            BaldEaglesSession.objects.filter(skater=request.user, paid=False).update(paid=True)
+            LadyHawksSkateSession.objects.filter(user=request.user, paid=False).update(paid=True)
+            OpenRollerSkateSession.objects.filter(user=request.user, paid=False).update(paid=True)
+            PrivateSkateSession.objects.filter(user=request.user, paid=False).update(paid=True)
+            OWHLSkateSession.objects.filter(skater=request.user, paid=False).update(paid=True)
+            KranichSkateSession.objects.filter(skater=request.user, paid=False).update(paid=True)
+            NachoSkateSession.objects.filter(skater=request.user, paid=False).update(paid=True)
+            AmentSkateSession.objects.filter(skater=request.user, paid=False).update(paid=True)
+
+            # User credits: UpdateUserCreditView (accounts/views.py) puts the dollar amount in
+            # the cart and stores the credits to be granted (including any incentive bonus) in
+            # `pending`. Paying moves pending into the spendable balance; `paid` is what the
+            # program apps check before letting a user spend credits.
+            try:
+                user_credit = UserCredit.objects.get(user=request.user)
+                if user_credit.pending > 0:
+                    user_credit.balance += user_credit.pending
+                    user_credit.pending = 0
+                    user_credit.paid = True
+                    user_credit.save()
+            except ObjectDoesNotExist:
+                user_credit = None
+
+            Cart.objects.filter(customer=request.user).delete()
     except IntegrityError:
-        pass
-
-    # User credits: UpdateUserCreditView (accounts/views.py) puts the dollar amount in
-    # the cart and stores the credits to be granted (including any incentive bonus) in
-    # `pending`. Paying moves pending into the spendable balance; `paid` is what the
-    # program apps check before letting a user spend credits.
-    try:
-        user_credit = UserCredit.objects.get(user=request.user)
-        if user_credit.pending > 0:
-            user_credit.balance += user_credit.pending
-            user_credit.pending = 0
-            user_credit.paid = True
-            user_credit.save()
-    except ObjectDoesNotExist:
-        user_credit = None
+        logger.exception(
+            "Post-charge bookkeeping failed for Square payment %s (user %s); rolled back.",
+            payment.id, request.user.id,
+        )
+        raise
 
     # Notify the office of credit purchases (recipient is hard-coded).
     if user_credit and "User Credits" in (payment.note or ""):
@@ -251,8 +263,6 @@ def process_payment(request):
             ["brianc@wi.rr.com"],
             fail_silently=True,
         )
-
-    Cart.objects.filter(customer=request.user).delete()
 
     return render(request, template_name, {
         "message": True,
@@ -292,7 +302,7 @@ def payment_page(request):
     })
 
 
-class PaymentListView(ListView):
+class PaymentListView(LoginRequiredMixin, ListView):
     '''The logged-in user's payment history, newest first.'''
     model = models.Payment
     template_name = "payments_made.html"

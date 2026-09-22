@@ -9,7 +9,7 @@ class Payment(models.Model):
 
     payer = models.ForeignKey(User, on_delete=models.CASCADE)
     square_id = models.CharField(max_length=200)
-    square_receipt = models.CharField(max_length=100)
+    square_receipt = models.CharField(max_length=100, null=True, blank=True)
     amount = models.FloatField()
     note = models.CharField(max_length=200)
     date = models.DateTimeField(auto_now_add=True)

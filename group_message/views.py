@@ -2,15 +2,16 @@ from django.shortcuts import reverse
 from django.views.generic import FormView
 from django.contrib.auth.models import Group
 from django.contrib.auth.mixins import LoginRequiredMixin
+from programs.auth import StaffRequiredMixin
 from django.contrib import messages
 from django.core.mail import send_mass_mail
 
 from .forms import GroupMessageForm
 
 
-class GroupMessageView(LoginRequiredMixin, FormView):
+class GroupMessageView(LoginRequiredMixin, StaffRequiredMixin, FormView):
     '''Form that emails every member of the Django auth Group whose id is in the URL.
-    Only login is required; there is no check that the sender manages the group.'''
+    Staff only; the target group is taken from the URL, not the POSTed hidden field.'''
 
     template_name = 'group_message_form.html'
     form_class = GroupMessageForm
@@ -30,7 +31,8 @@ class GroupMessageView(LoginRequiredMixin, FormView):
         return initial
 
     def form_valid(self, form):
-        group = Group.objects.get(id=form.cleaned_data.get('group'))
+        group_id = self.kwargs['group']
+        group = Group.objects.get(id=group_id)
         recipients = group.user_set.all().values_list('email', flat=True)
         subject = form.cleaned_data.get('subject')
         message = form.cleaned_data.get('message')
@@ -40,8 +42,8 @@ class GroupMessageView(LoginRequiredMixin, FormView):
         try:
             send_mass_mail((group_email, ))
             messages.add_message(self.request, messages.INFO, 'Your message was successfully sent to the group!')
-            self.success_url = reverse('group_message:group-message', kwargs={'group': form.cleaned_data.get('group')})
+            self.success_url = reverse('group_message:group-message', kwargs={'group': group_id})
         except:
             messages.add_message(self.request, messages.ERROR, 'Something went wrong, please try again!')
-            return reverse('group_message:group-message', kwargs={'group': form.cleaned_data.get('group')})
+            return reverse('group_message:group-message', kwargs={'group': group_id})
         return super().form_valid(form)

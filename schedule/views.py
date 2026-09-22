@@ -4,6 +4,7 @@ from django.shortcuts import redirect
 from django.views.generic import ListView, TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
+from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
 from . import models
 from datetime import datetime, date, timedelta
@@ -117,6 +118,7 @@ class RinkScheduleListView(LoginRequiredMixin, ListView):
         return context
 
 
+@staff_member_required
 def scrape_schedule(request):
     '''"Update Schedule" button handler: re-runs the legacy scraper for today (and, on
     Fridays, the weekend) so the resurface schedule picks up online changes.
@@ -173,13 +175,13 @@ class RinkScheduleListAPIView(ListAPIView):
         ).order_by('start_time')
 
 
-# Ingest pipeline review pages. Only trigger_ingest requires login; the run list,
-# detail and diff pages are open.
+# Ingest pipeline review pages: staff only.
 from django.shortcuts import render, get_object_or_404
 from schedule.models import ScheduleIngestRun
 from schedule.services.diff import diff_runs
 
 
+@staff_member_required
 def run_list(request):
     '''All ingest runs, newest first, with a flag if one is still in progress.'''
     runs = ScheduleIngestRun.objects.order_by("-started_at")
@@ -199,6 +201,7 @@ def run_list(request):
 
 
 
+@staff_member_required
 def run_detail(request, run_id):
     '''The snapshots captured by a single ingest run.'''
     run = get_object_or_404(ScheduleIngestRun, id=run_id)
@@ -215,6 +218,7 @@ def run_detail(request, run_id):
     )
 
 
+@staff_member_required
 def run_diff(request, run_a, run_b):
     '''Added/removed/changed events between two runs (see services/diff.py).'''
     diff = diff_runs(run_a, run_b)
@@ -228,7 +232,7 @@ def run_diff(request, run_a, run_b):
         },
     )
 
-@login_required
+@staff_member_required
 def trigger_ingest(request):
     '''POST handler behind the "Run ingest" button; pulls 1-14 days, optionally as a dry run.'''
     if request.method != "POST":
