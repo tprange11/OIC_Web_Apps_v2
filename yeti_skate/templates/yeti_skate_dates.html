@@ -65,7 +65,7 @@
                 {% endif %}
 
                 {% if date.session_pk != None and date.paid == False %}
-                    <form method="POST" action="{% url 'yeti_skate:session-remove' pk=date.session_pk paid=date.paid skater_pk=user.id %}" 
+                    <form method="POST" action="{% url 'yeti_skate:session-remove' pk=date.session_pk %}" 
                           onsubmit="return confirm('Are you sure you want to remove yourself from this skate session?')">
                         {% csrf_token %}
                         <input type="hidden" name="pk" value="{{date.session_pk}}">
@@ -101,7 +101,7 @@
                                     {% comment %}
                                     This form is for superusers and Nick Antonie to remove/refund people from the skate.
                                     {% endcomment %}
-                                    <form method="POST" action="{% url 'yeti_skate:session-remove' pk=skater.pk paid=skater.paid skater_pk=skater.skater.pk %}"
+                                    <form method="POST" action="{% url 'yeti_skate:session-remove' pk=skater.pk %}"
                                       onsubmit="return confirm('Are you sure you want to remove this skater and issue a refund?')">
                                         {% csrf_token %}
                                         <input type="hidden" name="pk" value="{{skater.skater.pk}}">
@@ -124,4 +124,4 @@
         <li class="list-group-item" style="padding: 5px 15px;">Sorry, no skates are available at this time.</li>
     {% endfor %}
 </ul>
-{% endblock content %}
+{% endblock content %}

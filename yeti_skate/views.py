@@ -8,9 +8,7 @@ from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import Group
-from django.contrib.auth import get_user_model
 from django.contrib import messages
-from django.core.mail import send_mail
 from django.db import IntegrityError
 from django.core.exceptions import ObjectDoesNotExist
 
@@ -19,10 +17,10 @@ from .forms import CreateYetiSkateSessionForm
 from accounts.models import Profile, UserCredit
 from programs.models import Program
 from cart.models import Cart
+from programs.removal import SessionRemovalMixin
+from programs.auth import StaffRequiredMixin
 
 from datetime import date
-
-User = get_user_model()
 
 
 class YetiSkateDateListView(LoginRequiredMixin, ListView):
@@ -211,65 +209,27 @@ class CreateYetiSkateSessionView(LoginRequiredMixin, CreateView):
             return False
 
 
-class DeleteYetiSkateSessionView(LoginRequiredMixin, DeleteView):
-    '''Allows user to remove themself from a skate session'''
+class DeleteYetiSkateSessionView(SessionRemovalMixin, DeleteView):
+    '''Allows user to remove themself from a skate session (refund / cart cleanup in the mixin).'''
     model = YetiSkateSession
-    skate_date_model = YetiSkateDate
-    credit_model = UserCredit
-    program_model = Program
     success_url = reverse_lazy('yeti_skate:yeti-skate')
 
-    def delete(self, *args, **kwargs):
-        '''Refund credit (paid session) or clear the cart item (unpaid), then email the skater.
+    program_filter = {'pk': 7}
+    free_user_ids = (359,)       # user 359 skates for free (see CreateYetiSkateSessionView)
+    manager_user_ids = (359,)    # skate organizer; the template shows him the remove buttons
+    notify_on_refund = True
+    admin_notify_ids = (1, 2, 359)
+    notify_subject = 'Credit Issued for Yeti Skate Session'
 
-        NOTE: Django 4.0 DeleteView handles POST via form_valid() and does not call delete(),
-        so none of this runs (see backlog). The paid flag and skater pk also come straight
-        from the URL rather than the session row.
-        '''
-
-        user = User.objects.get(pk=kwargs['skater_pk'])
-
-        if user.is_staff or user.id == 359: # Staff and user 359 skated for free, nothing to refund
-            success_msg = 'Skater has been removed from that skate session!'
-        elif kwargs['paid'] == 'True':
-            # If the session is paid for, refund the skater/goalie price to the user's credit
-            session = self.model.objects.get(pk=kwargs['pk'])
-            if session.goalie:
-                price = self.program_model.objects.get(id=7).goalie_price
-            else:
-                price = self.program_model.objects.get(id=7).skater_price
-            user_credit = self.credit_model.objects.get(slug=user)
-            old_balance = user_credit.balance
-            user_credit.balance += price
-            user_credit.paid = True
-            success_msg = f'{user.get_full_name()} has been removed from the session. The Users credit balance has been increased from ${old_balance} to ${user_credit.balance}.'
-            user_credit.save()
-        else:
-            # Clear session from the cart (not filtered by customer, and .delete() is called
-            # again on the tuple .delete() returns -- see backlog)
-            skate_date = self.model.objects.filter(id=kwargs['pk']).values_list('skate_date', flat=True)
-            cart_date = self.skate_date_model.objects.filter(id=skate_date[0])
-            cart_item = Cart.objects.filter(item=Program.objects.all().get(id=7).program_name, event_date=cart_date[0].skate_date).delete()
-            cart_item.delete()
-            success_msg = 'You have been removed from that skate session!'
-            
-        # Email the skater plus the admin accounts (ids 1, 2) and user 359
-        recipients = User.objects.filter(id__in=['1', '2','359', user.id]).values_list('email', flat=True)
-        subject = 'Credit Issued for Yeti Skate Session'
-        from_email = 'no-reply@oicwebapp.com'
-        
-        try:
-            send_mail(subject, success_msg, from_email, recipients)
-            messages.add_message(self.request, messages.INFO, 'Email message has been sent to the skater!')
-            self.success_url = reverse_lazy('yeti_skate:yeti-skate')
-        except Exception as e:
-            messages.add_message(self.request, messages.ERROR, f'Failed to send email: {str(e)}')
-        messages.add_message(self.request, messages.SUCCESS, 'You have been removed from that skate session!')
-        return super().delete(*args, **kwargs)
+    def get_refund_amount(self, session):
+        # Goalies are never charged in this program (see CreateYetiSkateSessionView), so nothing to refund
+        if session.goalie:
+            return 0
+        return super().get_refund_amount(session)
 
 # The following views are for staff only.
 
-class YetiSkateDateStaffListView(LoginRequiredMixin, ListView):
+class YetiSkateDateStaffListView(LoginRequiredMixin, StaffRequiredMixin, ListView):
     '''Displays page with list of upcoming Yeti Skate skates with buttons for viewing registered skaters.'''
 
     model = YetiSkateDate

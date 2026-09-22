@@ -4,6 +4,8 @@ from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
+from programs.removal import SessionRemovalMixin
+from programs.auth import StaffRequiredMixin
 from django.contrib.auth.models import Group
 from django.contrib import messages
 from django.db import IntegrityError
@@ -11,7 +13,7 @@ from django.db.models import Count
 from django.core.exceptions import ObjectDoesNotExist
 
 from . import models, forms
-from accounts.models import Profile, ChildSkater, UserCredit
+from accounts.models import Profile, UserCredit
 from programs.models import Program
 from cart.models import Cart
 
@@ -170,30 +172,17 @@ class CreateLadyHawksSkateSessionView(LoginRequiredMixin, CreateView):
         return False
 
 
-class DeleteLadyHawksSkateSessionView(LoginRequiredMixin, DeleteView):
-    '''Allows user to remove a child skater from a skate session (no credit refund; only the cart item is cleared).'''
+class DeleteLadyHawksSkateSessionView(SessionRemovalMixin, DeleteView):
+    '''Allows the guardian or staff to remove a child skater from a skate session. Refunds
+    credit for a paid session or clears the cart item for an unpaid one.'''
     model = models.LadyHawksSkateSession
-    skate_date_model = models.LadyHawksSkateDate
     success_url = reverse_lazy('lady_hawks:lady-hawks')
+    owner_field = 'user'
+    program_filter = {'pk': 10}
+    cart_item_name = 'Lady Hawks'
+    removed_message = 'Skater has been removed from that skate session!'
 
-    def delete(self, *args, **kwargs):
-        '''Clears the matching cart item before the session is deleted.'''
-
-        # Clear session from the cart
-        skate_date = self.model.objects.filter(id=kwargs['pk']).values_list('skate_date', flat=True)
-        skater_id = self.model.objects.filter(id=kwargs['pk']).values_list('skater', flat=True)
-        skater = ChildSkater.objects.get(id=skater_id[0])
-        cart_date = self.skate_date_model.objects.filter(id=skate_date[0])
-        cart_item = Cart.objects.filter(item=Program.objects.all().get(id=10), skater_name=skater, event_date=cart_date[0].skate_date).delete()
-
-        # Set success message and return
-        messages.add_message(self.request, messages.SUCCESS, 'Skater has been removed from that skate session!')
-        return super().delete(*args, **kwargs)
-
-################ The following views are for staff only ##########################################################
-
-
-class LadyHawksSkateDateStaffListView(LoginRequiredMixin, ListView):
+class LadyHawksSkateDateStaffListView(LoginRequiredMixin, StaffRequiredMixin, ListView):
     '''Displays page with list of upcoming Lady Hawks skates with buttons for viewing registered skaters.'''
 
     model = models.LadyHawksSkateDate

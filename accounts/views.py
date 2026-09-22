@@ -12,11 +12,14 @@ from django.views.generic.base import TemplateView
 from django.utils import timezone
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.contrib.admin.views.decorators import staff_member_required
 from . import forms
 from accounts.models import Profile, ReleaseOfLiability, ChildSkater, UserCredit
 from cart.models import Cart
 from programs.models import UserCreditIncentive
 from payment.models import Payment
+from programs.removal import OwnedDeleteMixin
+from programs.auth import StaffRequiredMixin
 
 from datetime import date, datetime, timedelta
 import csv
@@ -111,20 +114,14 @@ class CreateChildSkaterView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
 
 
-class DeleteChildSkaterView(LoginRequiredMixin, DeleteView):
-    '''Removes a child skater (POSTed from the profile page).
-
-    Under Django 4 DeleteView handles POST through form_valid(), so the delete()
-    override below is never reached: success_url stays '' and get_success_url()
-    raises ImproperlyConfigured before anything is deleted.
-    '''
+class DeleteChildSkaterView(OwnedDeleteMixin, DeleteView):
+    '''Removes a child skater (POSTed from the profile page); only the owner or staff may delete it.'''
     model = ChildSkater
-    success_url = ''
+    owner_field = 'user'
+    success_message = 'Skater has been removed from your list!'
 
-    def delete(self, *args, **kwargs):
-        messages.add_message(self.request, messages.SUCCESS, 'Skater has been removed from your list!')
-        self.success_url = reverse('accounts:profile', kwargs={'slug': self.request.user.id})
-        return super().delete(*args, **kwargs)
+    def get_success_url(self):
+        return reverse('accounts:profile', kwargs={'slug': self.request.user.id})
 
 
 class UpdateUserCreditView(LoginRequiredMixin, UpdateView):
@@ -135,10 +132,9 @@ class UpdateUserCreditView(LoginRequiredMixin, UpdateView):
     UserCredit.pending. Nothing is spendable until payment/views.py moves pending into
     balance; unpaid pending credits are zeroed by the nightly cleanup.
 
-    The row edited is whichever UserCredit matches the <slug> in the URL (the
-    username); it is not restricted to the logged-in user. Each submission overwrites
-    `pending` but adds a new cart row, so submitting twice before paying charges for
-    both while only the last amount is credited.
+    The row edited is always the logged-in user's own UserCredit (created on demand);
+    the <slug> in the URL is ignored. Submitting again before paying replaces the
+    existing "User Credits" cart row rather than adding a second one.
     '''
 
     model = UserCredit
@@ -153,14 +149,19 @@ class UpdateUserCreditView(LoginRequiredMixin, UpdateView):
         context['incentives'] = self.incentive_model.objects.all().order_by('price_point')
         return context
 
+    def get_object(self, queryset=None):
+        # Ignore the URL slug: users may only ever edit their own credit row.
+        return self.model.objects.get_or_create(
+            user=self.request.user,
+            defaults={'slug': self.request.user.username},
+        )[0]
+
     def get_initial(self):
         initial = super().get_initial()
         initial['pending'] = ''
         return initial
 
     def form_valid(self, form):
-        user_credit = self.model.objects.get(user=self.request.user)
-        form.instance.user = self.request.user
         self.object = form.save(commit=False)
         # Order matters: the cart gets the dollar amount before the incentive
         # inflates `pending` into the credit total.
@@ -181,6 +182,17 @@ class UpdateUserCreditView(LoginRequiredMixin, UpdateView):
         start_time = 'N/A'
         skater_name = self.request.user.get_full_name()
         customer = self.request.user
+
+        # Replace any existing unpaid credit purchase instead of adding a second row,
+        # so re-submitting before paying does not charge for both.
+        existing = self.cart_model.objects.filter(customer=customer, item=item_name).first()
+        if existing:
+            existing.skater_name = skater_name
+            existing.event_date = event_date
+            existing.event_start_time = start_time
+            existing.amount = price
+            existing.save()
+            return
 
         cart = self.cart_model(customer=customer, item=item_name, skater_name=skater_name, event_date=event_date, event_start_time=start_time, amount=price)
         cart.save()
@@ -206,16 +218,15 @@ class UpdateUserCreditView(LoginRequiredMixin, UpdateView):
                 return
 
 
-# Report views. Note the mixin order (TemplateView first) means LoginRequiredMixin
-# never runs its dispatch() check, so these are effectively public.
+# Report views: staff only.
 
-class ReportView(TemplateView, LoginRequiredMixin):
+class ReportView(LoginRequiredMixin, StaffRequiredMixin, TemplateView):
     '''Landing page linking to the individual reports.'''
 
     template_name = 'accounts/reports.html'
 
 
-class OutstandingUserCreditsView(TemplateView, LoginRequiredMixin):
+class OutstandingUserCreditsView(LoginRequiredMixin, StaffRequiredMixin, TemplateView):
     '''Outstanding credit balances and last-12-month credit revenue. Also writes both
     data sets to CSV files under STATIC_ROOT/reports/ for download.'''
 
@@ -275,7 +286,7 @@ class OutstandingUserCreditsView(TemplateView, LoginRequiredMixin):
         return context
 
 
-@login_required
+@staff_member_required
 def download_credit_revenue(request):
     '''Streams the User Credit purchase history for the past 12 months as a CSV download.'''
     today = timezone.now().replace(hour=0, minute=0, second=0)
@@ -301,7 +312,7 @@ def download_credit_revenue(request):
     return response
 
 
-@login_required
+@staff_member_required
 def download_outstanding_credits(request):
     '''Streams the current outstanding user credit balances as a CSV download.'''
     credits = UserCredit.objects.filter(balance__gte=1).select_related('user')
@@ -315,7 +326,7 @@ def download_outstanding_credits(request):
     return response
 
 
-class FigureSkatingRevenueReport(TemplateView, LoginRequiredMixin):
+class FigureSkatingRevenueReport(LoginRequiredMixin, StaffRequiredMixin, TemplateView):
     '''Writes the last 12 months of payments by members of the "Figure Skating" group
     to STATIC_ROOT/reports/FSRevenueReport.csv; the page itself only links to it.'''
     template_name = 'accounts/fs_revenue_report.html'
@@ -351,7 +362,7 @@ class FigureSkatingRevenueReport(TemplateView, LoginRequiredMixin):
         return context
 
 
-@login_required
+@staff_member_required
 def download_fs_revenue(request):
     '''Streams the Figure Skating revenue for the past 12 months as a CSV download.'''
     today = timezone.now().replace(hour=0, minute=0, second=0)
@@ -375,7 +386,7 @@ def download_fs_revenue(request):
     return response
 
 
-@login_required
+@staff_member_required
 def revenue_report(request, **kwargs):
     '''GET renders the date-range form; POST totals payments per program between the
     two dates by parsing the "(Program $amount) ..." payment notes.'''

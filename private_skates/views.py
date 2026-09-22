@@ -7,7 +7,7 @@ Caps and prices live on the PrivateSkate row rather than in programs.Program.
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.checks import messages
 from django.contrib import messages
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.shortcuts import redirect
 from django.views.generic import ListView, DeleteView
 from django.contrib.auth.models import Group
@@ -21,6 +21,7 @@ from django.views.generic.edit import CreateView
 from . import models, forms
 from accounts.models import Profile, UserCredit, ChildSkater
 from cart.models import Cart
+from programs.removal import SessionRemovalMixin
 
 class PrivateSkateListView(LoginRequiredMixin, ListView):
     '''Page that displays private skates for which user is a member of the group.'''
@@ -188,26 +189,32 @@ class PrivateSkateSessionCreateView(LoginRequiredMixin, CreateView):
         return False
 
 
-class PrivateSkateSessionDeleteView(LoginRequiredMixin, DeleteView):
-    '''Allows user to remove themself from a skate session if it is unpaid.'''
-    model = models.PrivateSkateSession
-    
-    def delete(self, *args, **kwargs):
-        # NOTE: Django 4.0 DeleteView handles POST via form_valid() and does not call delete(),
-        # so this cleanup does not run and the success_url set below is never applied (see backlog).
-        # Clear the session from the cart
-        skate_date = self.model.objects.filter(id=kwargs['pk']).values_list('skate_date', flat=True)
-        skate_date_object = models.PrivateSkateDate.objects.all().filter(id=skate_date[0])
-        skater_id = self.model.objects.filter(id=kwargs['pk']).values_list('skater', flat=True)
-        skater = ChildSkater.objects.get(id=skater_id[0])
-        skater_name = f"{skater.first_name} {skater.last_name}"
-        cart_date = skate_date_object[0].date
-        Cart.objects.filter(
-            item=skate_date_object[0].private_skate.name, 
-            event_date=cart_date,
-            skater_name=skater_name
-            ).delete()
+class PrivateSkateSessionDeleteView(SessionRemovalMixin, DeleteView):
+    '''Allows user to remove a skater from a skate session (refund / cart cleanup in the mixin).
 
-        messages.add_message(self.request, messages.SUCCESS, 'Skater has been removed from the skate session!')
-        self.success_url = reverse_lazy('private_skates:skate-dates', kwargs={'slug': skate_date_object[0].private_skate.slug})
-        return super().delete(*args, **kwargs)
+    There is no programs.Program row for a private skate: the name and prices live on
+    the PrivateSkate row, so the lookups below read them from the session's skate date.
+    '''
+    model = models.PrivateSkateSession
+
+    owner_field = 'user'
+    date_attr = 'date'
+    removed_message = 'Skater has been removed from the skate session!'
+
+    def get_cart_item_name(self):
+        return self.object.skate_date.private_skate.name
+
+    def get_session_start_time(self, session):
+        # add_to_cart stores the start time formatted like this
+        return session.skate_date.start_time.strftime('%I:%M %p')
+
+    def get_refund_amount(self, session):
+        owner = self.get_owner(session)
+        if owner.is_staff or owner.id in self.free_user_ids:
+            return 0
+        private_skate = session.skate_date.private_skate
+        price = private_skate.goalie_price if session.goalie else private_skate.skater_price
+        return int(price or 0)
+
+    def get_success_url(self):
+        return reverse('private_skates:skate-dates', kwargs={'slug': self.object.skate_date.private_skate.slug})

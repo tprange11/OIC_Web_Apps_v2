@@ -9,7 +9,7 @@ urlpatterns = [
          views.CreateWomensHockeySkateSessionView.as_view(), name='register'),
     path('register/', views.CreateWomensHockeySkateSessionView.as_view(),
          name='register'),
-    path('session/remove/<pk>',
+    path('session/remove/<int:pk>/',
          views.DeleteWomensHockeySkateSessionView.as_view(), name='session-remove'),
     path('session/list/', views.WomensHockeySkateDateStaffListView.as_view(),
          name='womens-hockey-sessions'),

@@ -3,6 +3,8 @@ session, remove a registration, past sessions, and a staff list of registered sk
 from django.shortcuts import render, redirect
 from django.views.generic import TemplateView, CreateView, DeleteView, ListView
 from django.contrib.auth.mixins import LoginRequiredMixin
+from programs.removal import SessionRemovalMixin, OwnedDeleteMixin
+from programs.auth import StaffRequiredMixin
 from django.urls import reverse_lazy
 from django.db import IntegrityError
 from django.core.exceptions import ObjectDoesNotExist
@@ -70,15 +72,12 @@ class CreateFigureSkaterView(LoginRequiredMixin, CreateView):
             return render(self.request, template_name=self.template_name, context=self.get_context_data())
 
 
-class DeleteFigureSkaterView(LoginRequiredMixin, DeleteView):
-    '''Allows user to remove their skaters from FigureSkater model.'''
+class DeleteFigureSkaterView(OwnedDeleteMixin, DeleteView):
+    '''Allows user to remove their own skaters from FigureSkater model.'''
     model = FigureSkater
+    owner_field = 'guardian'
     success_url = reverse_lazy('figure_skating:figure-skating')
-
-    def delete(self, *args, **kwargs):
-        messages.add_message(self.request, messages.SUCCESS,
-                             'Skater has been removed from My Skaters!')
-        return super().delete(*args, **kwargs)
+    success_message = 'Skater has been removed from My Skaters!'
 
 
 class CreateFigureSkatingSessionView(LoginRequiredMixin, CreateView):
@@ -187,48 +186,28 @@ class CreateFigureSkatingSessionView(LoginRequiredMixin, CreateView):
         return
 
 
-class DeleteFigureSkatingSessionView(LoginRequiredMixin, DeleteView):
-    '''Allows user to remove a skater from a skate session, refunding credit if it was paid.'''
+class DeleteFigureSkatingSessionView(SessionRemovalMixin, DeleteView):
+    '''Allows the guardian or staff to remove a skater from a skate session. Refunds credit
+    (program price plus the session up/down charge) for a paid session, or clears the cart
+    item for an unpaid one.'''
     model = FigureSkatingSession
-    skate_date_model = FigureSkatingDate
-    skater_model = FigureSkater
-    credit_model = UserCredit
-    program_model = Program
     success_url = reverse_lazy('figure_skating:figure-skating')
+    owner_field = 'guardian'
+    date_field = 'session'
+    program_filter = {'pk': 3}
+    cart_item_name = 'Figure Skating'
+    goalie_aware = False
+    removed_message = 'Skater has been removed from the figure skating session!'
 
-    def delete(self, *args, **kwargs):
-        '''Refunds credit for a paid session, or clears the cart item for an unpaid one,
-        before the session is deleted.'''
+    def get_refund_amount(self, session):
+        '''Program skater price plus the session's up/down charge (0 for staff).'''
+        base = super().get_refund_amount(session)
+        if not base:
+            return 0
+        return base + int(session.session.up_down_charge or 0)
 
-        credit_refund = False # Used to set the message.
-
-        if self.model.objects.get(pk=kwargs['pk']).paid:
-            # Refund the program price plus the session's up/down charge to the user's credit
-            credits_to_refund = self.program_model.objects.get(id=3).skater_price + self.model.objects.get(pk=kwargs['pk']).session.up_down_charge
-            user_credit = self.credit_model.objects.get(user=self.request.user)
-            user_credit.balance += credits_to_refund
-            user_credit.save()
-            credit_refund = True
-        else:
-            # Clear session from the cart
-            skate_date = self.model.objects.filter(
-            id=kwargs['pk']).values_list('session__skate_date', flat=True)
-            skate_time = self.model.objects.filter(
-                id=kwargs['pk']).values_list('session__start_time', flat=True)
-            skater_id = self.model.objects.filter(
-                id=kwargs['pk']).values_list('skater', flat=True)
-            skater = self.skater_model.objects.get(id=skater_id[0])
-            cart_item = Cart.objects.filter(item=Program.objects.all().get(
-                id=3).program_name, event_date=skate_date[0], event_start_time=skate_time[0], skater_name=skater).delete()
-
-        # Set success message and return
-        if credit_refund:
-            messages.add_message(self.request, messages.SUCCESS,
-                             f'Skater has been removed from the figure skating session!  ${credits_to_refund} in credit was added to your balance.')
-        else:
-            messages.add_message(self.request, messages.SUCCESS,
-                             'Skater has been removed from the figure skating session!')
-        return super().delete(*args, **kwargs)
+    def get_refund_message(self, session, old, new):
+        return f'Skater has been removed from the figure skating session!  ${new - old} in credit was added to your balance.'
 
 
 class FigureSkatingPastSessionsListView(LoginRequiredMixin, ListView):
@@ -247,7 +226,7 @@ class FigureSkatingPastSessionsListView(LoginRequiredMixin, ListView):
 
 #################### The following view is for staff only ##########################
 
-class FigureSkatingStaffListView(LoginRequiredMixin, ListView):
+class FigureSkatingStaffListView(LoginRequiredMixin, StaffRequiredMixin, ListView):
     '''Displays page for staff that lists upcoming figure skating sessions.'''
 
     model = FigureSkatingDate

@@ -7,6 +7,6 @@ urlpatterns = [
     path('', views.BaldEaglesSkateDateListView.as_view(), name='bald-eagles'),
     path('register/<pk>/', views.CreateBaldEaglesSessionView.as_view(), name='register'),
     path('register/', views.CreateBaldEaglesSessionView.as_view(), name='register'),
-    path('session/remove/<pk>/', views.DeleteBaldEaglesSessionView.as_view(), name='session-remove'),
+    path('session/remove/<int:pk>/', views.DeleteBaldEaglesSessionView.as_view(), name='session-remove'),
     path('session/list/', views.BaldEaglesSessionStaffListView.as_view(), name='bald-eagles-skate-sessions'),
 ]

@@ -6,10 +6,8 @@ from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.models import Group, User
-from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.contrib import messages
-from django.core.mail import send_mail
 from django.db import IntegrityError
 from django.db.models import Count
 from django.core.exceptions import ObjectDoesNotExist
@@ -18,6 +16,8 @@ from . import models, forms
 from accounts.models import UserCredit
 from programs.models import Program
 from cart.models import Cart
+from programs.removal import SessionRemovalMixin
+from programs.auth import StaffRequiredMixin
 
 from datetime import date
 
@@ -125,14 +125,13 @@ class CreateOWHLSkateSessionView(LoginRequiredMixin, CreateView):
 
         try:
             # If goalie spots are full, do not save object.
-            # NOTE: 'owhl:index' is not a defined URL name (see backlog).
             if self.object.goalie == True and self.model.objects.filter(goalie=True, skate_date=self.object.skate_date).count() == Program.objects.get(pk=13).max_goalies:
                 messages.add_message(self.request, messages.ERROR, 'Sorry, goalie spots are full!')
-                return redirect('owhl:index')
+                return redirect('owhl:owhl')
             # If skater spots are full, do not save object
             elif self.object.goalie == False and self.model.objects.filter(goalie=False, skate_date=self.object.skate_date).count() == Program.objects.get(pk=13).max_skaters:
                 messages.add_message(self.request, messages.ERROR, 'Sorry, skater spots are full!')
-                return redirect('owhl:index')
+                return redirect('owhl:owhl')
 
             # If spots are not full do the following
             skater_cost = self.program_model.objects.get(program_name='OWHL Hockey').skater_price
@@ -186,65 +185,19 @@ class CreateOWHLSkateSessionView(LoginRequiredMixin, CreateView):
         return False
 
 
-class DeleteOWHLSkateSessionView(LoginRequiredMixin, DeleteView):
-    '''Allows user to remove skaters from a skate session'''
+class DeleteOWHLSkateSessionView(SessionRemovalMixin, DeleteView):
+    '''Allows user to remove skaters from a skate session (refund / cart cleanup in the mixin).'''
     model = models.OWHLSkateSession
-    skate_date_model = models.OWHLSkateDate
-    credit_model = UserCredit
-    program_model = Program
     success_url = reverse_lazy('owhl:owhl')
 
-    def delete(self, *args, **kwargs):
-        '''Refund credit (paid session) or clear the cart item (unpaid), then email the skater.
-
-        NOTE: Django 4.0 DeleteView handles POST via form_valid() and does not call delete(),
-        so none of this runs (see backlog). The paid flag and skater pk also come straight
-        from the URL rather than the session row.
-        '''
-
-        user = User.objects.get(pk=kwargs['skater_pk'])
-        
-        if kwargs['paid'] == 'True':
-            # If the session is paid for, refund the skater/goalie price to the user's credit
-            session = self.model.objects.get(pk=kwargs['pk'])
-            if session.goalie:
-                price = self.program_model.objects.get(id=13).goalie_price
-            else:
-                price = self.program_model.objects.get(id=13).skater_price
-            
-            user_credit = self.credit_model.objects.get(slug=user)
-            old_balance = user_credit.balance
-            user_credit.balance += price
-            user_credit.paid = True
-            success_msg = f'{user.get_full_name()} has been removed from the session. The Users credit balance has been increased from ${old_balance} to ${user_credit.balance}.'
-            user_credit.save()
-        else:
-            # Clear session from the cart (not filtered by customer, and .delete() is called
-            # again on the tuple .delete() returns -- see backlog)
-            skate_date = self.model.objects.filter(id=kwargs['pk']).values_list('skate_date', flat=True)
-            cart_date = self.skate_date_model.objects.filter(id=skate_date[0])
-            cart_item = Cart.objects.filter(item=Program.objects.all().get(id=13).program_name, event_date=cart_date[0].skate_date).delete()
-            cart_item.delete()
-            success_msg = 'You have been removed from that skate session!'
-    
-        # Email the skater and the two admin accounts (ids 1 and 2)
-        recipients = User.objects.filter(id__in=['1', '2', user.id]).values_list('email', flat=True)
-        subject = 'Credit Issued for OWHL Skate Session'
-        msg = 'test email'
-        from_email = 'no-reply@oicwebapp.com'
-        
-        try:
-            send_mail(subject, success_msg, from_email, recipients)
-            messages.add_message(self.request, messages.INFO, 'Email message has been sent to the skater!')
-            self.success_url = reverse_lazy('owhl:owhl')
-        except Exception as e:
-            messages.add_message(self.request, messages.ERROR, f'Failed to send email: {str(e)}')
-        messages.add_message(self.request, messages.SUCCESS, 'Skater has been removed from that skate session!')
-        return super().delete(*args, **kwargs)
+    program_filter = {'program_name': 'OWHL Hockey'}
+    cart_item_name = 'OWHL Hockey'
+    notify_on_refund = True
+    notify_subject = 'Credit Issued for OWHL Skate Session'
 
 # The following views are for staff only.
 
-class OWHLSkateDateStaffListView(LoginRequiredMixin, ListView):
+class OWHLSkateDateStaffListView(LoginRequiredMixin, StaffRequiredMixin, ListView):
     '''Displays page with list of upcoming OWHL Hockey skates with buttons for viewing registered skaters.'''
 
     model = models.OWHLSkateDate

@@ -8,6 +8,6 @@ urlpatterns = [
     path('', views.CHSAlumniSkateDateListView.as_view(), name='chs-alumni'),
     path('register/', views.CreateCHSAlumniSessionView.as_view(), name='register'),
     path('register/<pk>/', views.CreateCHSAlumniSessionView.as_view(), name='register'),
-    path('session/remove/<pk>', views.DeleteCHSAlumniSessionView.as_view(), name='session-remove'),
+    path('session/remove/<int:pk>/', views.DeleteCHSAlumniSessionView.as_view(), name='session-remove'),
     path('session/list/', views.CHSAlumniSkateDateStaffListView.as_view(), name='skate-sessions')
 ]

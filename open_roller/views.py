@@ -13,9 +13,11 @@ from django.db.models import Count
 from django.core.exceptions import ObjectDoesNotExist
 
 from . import models, forms
-from accounts.models import Profile, ChildSkater, UserCredit
+from accounts.models import Profile, UserCredit
 from programs.models import Program
 from cart.models import Cart
+from programs.removal import SessionRemovalMixin
+from programs.auth import StaffRequiredMixin
 
 from datetime import date
 
@@ -174,34 +176,19 @@ class CreateOpenRollerSkateSessionView(LoginRequiredMixin, CreateView):
         return False
 
 
-class DeleteOpenRollerSkateSessionView(LoginRequiredMixin, DeleteView):
-    '''Allows user to remove skaters from a skate session'''
+class DeleteOpenRollerSkateSessionView(SessionRemovalMixin, DeleteView):
+    '''Allows user to remove skaters from a skate session (refund / cart cleanup in the mixin).'''
     model = models.OpenRollerSkateSession
-    skate_date_model = models.OpenRollerSkateDate
     success_url = reverse_lazy('open_roller:open-roller')
 
-    def delete(self, *args, **kwargs):
-        '''Remove the matching cart item when an unpaid session is dropped.
-
-        NOTE: Django 4.0 DeleteView handles POST via form_valid() and does not call delete(),
-        so this cleanup does not run (see backlog).
-        '''
-
-        # Clear session from the cart (the Program instance is matched against the
-        # item CharField via its __str__, which is the program name)
-        skate_date = self.model.objects.filter(id=kwargs['pk']).values_list('skate_date', flat=True)
-        skater_id = self.model.objects.filter(id=kwargs['pk']).values_list('skater', flat=True)
-        skater = ChildSkater.objects.get(id=skater_id[0])
-        cart_date = self.skate_date_model.objects.filter(id=skate_date[0])
-        cart_item = Cart.objects.filter(item=Program.objects.all().get(program_name='Open Roller Hockey'), skater_name=skater, event_date=cart_date[0].skate_date)
-        cart_item.delete()
-
-        messages.add_message(self.request, messages.SUCCESS, 'Skater has been removed from that skate session!')
-        return super().delete(*args, **kwargs)
+    owner_field = 'user'
+    program_filter = {'program_name': 'Open Roller Hockey'}
+    cart_item_name = 'Open Roller Hockey'   # hard-coded in CreateOpenRollerSkateSessionView.add_to_cart
+    removed_message = 'Skater has been removed from that skate session!'
 
 # The following views are for staff only.
 
-class OpenRollerSkateDateStaffListView(LoginRequiredMixin, ListView):
+class OpenRollerSkateDateStaffListView(LoginRequiredMixin, StaffRequiredMixin, ListView):
     '''Displays page with list of upcoming Open Roller Hockey skates with buttons for viewing registered skaters.'''
 
     model = models.OpenRollerSkateDate

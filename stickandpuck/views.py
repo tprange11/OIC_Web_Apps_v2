@@ -16,6 +16,8 @@ from . import forms
 from cart.models import Cart
 from accounts.models import Profile, UserCredit
 from programs.models import Program
+from programs.removal import SessionRemovalMixin, OwnedDeleteMixin
+from programs.auth import StaffRequiredMixin
 from datetime import date, timedelta
 
 
@@ -65,17 +67,14 @@ class StickAndPuckSkaterListView(LoginRequiredMixin, ListView):
         return queryset.filter(guardian=self.request.user.id)
 
 
-class DeleteStickAndPuckSkater(LoginRequiredMixin, DeleteView):
+class DeleteStickAndPuckSkater(OwnedDeleteMixin, DeleteView):
     '''Display page where user can confirm deletion of a stick and puck skater'''
     model = models.StickAndPuckSkater
     success_url = reverse_lazy('stickandpuck:skater-list')
     template_name = 'stickandpuckskaters_confirm_delete.html'
-
-    def delete(self, *args, **kwargs):
-        # NOTE: Django 4.0 DeleteView handles POST via form_valid() and does not call delete(),
-        # so this message is never shown (see backlog).
-        messages.success(self.request, "Skater has been removed!")
-        return super().delete(*args, **kwargs)
+    owner_field = 'guardian'
+    success_message = 'Skater has been removed!'
+    http_method_names = ['get', 'post']
 
 
 class StickAndPuckSessionListView(LoginRequiredMixin, ListView):
@@ -214,33 +213,25 @@ class StickAndPuckMySessionsListView(LoginRequiredMixin, ListView):
         return queryset.filter(guardian=self.request.user.id, session_date__gte=date.today()).order_by('session_date', 'session_time')
 
 
-class StickAndPuckSessionDeleteView(LoginRequiredMixin, DeleteView):
+class StickAndPuckSessionDeleteView(SessionRemovalMixin, DeleteView):
     '''Displays page where user can confirm deletion of skater from a particular stick and puck session.'''
     model = models.StickAndPuckSession
-    skater_model = models.StickAndPuckSkater
     success_url = reverse_lazy('stickandpuck:mysessions')
     template_name = 'stickandpucksessions_confirm_delete.html'
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        return queryset
-
-    def delete(self, *args, **kwargs):
-        # NOTE: Django 4.0 DeleteView handles POST via form_valid() and does not call delete(),
-        # so this cart cleanup does not run (see backlog).
-        # If a stick and puck session is removed before paying, remove it from the cart too
-        session_date = self.model.objects.filter(id=kwargs['pk']).values_list('session_date', flat=True)
-        start_time = self.model.objects.filter(id=kwargs['pk']).values_list('session_time', flat=True)
-        skater_id = self.model.objects.filter(id=kwargs['pk']).values_list('skater', flat=True)
-        skater = self.skater_model.objects.get(id=skater_id[0])
-        cart_item = Cart.objects.filter(event_date=session_date[0], event_start_time=start_time[0], skater_name=skater).delete()
-        messages.success(self.request, 'Skater has been removed from the Stick and Puck Session!')
-        return super().delete(*args, **kwargs)
+    http_method_names = ['get', 'post']
+    owner_field = 'guardian'
+    date_field = None
+    date_attr = 'session_date'
+    start_time_attr = 'session_time'
+    program_filter = {'id': 2}
+    cart_item_name = 'Stick and Puck'
+    goalie_aware = False
+    removed_message = 'Skater has been removed from the Stick and Puck Session!'
 
 
 # The following views are for staff only
 
-class StickAndPuckPrintListView(LoginRequiredMixin, ListView):
+class StickAndPuckPrintListView(LoginRequiredMixin, StaffRequiredMixin, ListView):
     '''Displays page with list of upcoming stick and puck dates for printing purposes.'''
     model = models.StickAndPuckDate
     sessions_model = models.StickAndPuckSession
@@ -257,7 +248,7 @@ class StickAndPuckPrintListView(LoginRequiredMixin, ListView):
         return context
 
 
-class StickAndPuckPrintView(LoginRequiredMixin, ListView):
+class StickAndPuckPrintView(LoginRequiredMixin, StaffRequiredMixin, ListView):
     '''Displays page to print Release of Liability with skaters names preprinted.'''
     model = models.StickAndPuckSession
     template_name = 'stickandpuckprint_view.html'

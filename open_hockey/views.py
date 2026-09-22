@@ -17,6 +17,7 @@ from accounts.models import Profile
 from . import forms
 from cart.models import Cart
 from programs.models import Program
+from programs.removal import SessionRemovalMixin
 
 
 class OpenHockeySessionsPage(LoginRequiredMixin, TemplateView):
@@ -167,26 +168,20 @@ class SkaterOpenHockeySessions(LoginRequiredMixin, TemplateView):
         context['sessions'] = sessions
         return context
 
-class DeleteOpenHockeySessions(LoginRequiredMixin, DeleteView):
+class DeleteOpenHockeySessions(SessionRemovalMixin, DeleteView):
     '''Allows user to remove themself from an open hockey session'''
 
     model = models.OpenHockeySessions
     success_url = reverse_lazy('open_hockey:skater-sessions')
     template_name = "openhockeysessions_confirm_delete.html"
-
-    def get_queryset(self):
-        '''Get the open hockey sessions that user is signed up for'''
-        queryset = super().get_queryset()
-        return queryset.filter(skater_id=self.request.user.id)
-
-    def delete(self, *args, **kwargs):
-        # NOTE: Django 4.0 DeleteView handles POST via form_valid() and no longer calls
-        # delete(), so this cart cleanup does not run (see backlog).
-        # If someone removes themselves from an open hockey session before paying, remove it from the cart too
-        session_date = self.model.objects.filter(id=kwargs['pk']).values_list('date', flat=True)
-        cart_item = Cart.objects.filter(item=Program.objects.all().get(id=1).program_name, event_date=session_date[0]).delete()
-        messages.success(self.request, 'You have been removed from the Open Hockey Session!')
-        return super().delete(*args, **kwargs)
+    http_method_names = ['get', 'post']
+    owner_field = 'skater'
+    date_field = None
+    date_attr = 'date'
+    start_time_attr = None
+    program_filter = {'id': 1}
+    cart_item_name = 'Open Hockey'
+    removed_message = 'You have been removed from the Open Hockey Session!'
 
 
 class OpenHockeyMemberView(LoginRequiredMixin, TemplateView):

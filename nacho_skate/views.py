@@ -7,10 +7,8 @@ from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.models import Group, User
-from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.contrib import messages
-from django.core.mail import send_mail
 from django.db import IntegrityError
 from django.core.exceptions import ObjectDoesNotExist
 
@@ -19,10 +17,9 @@ from .forms import CreateNachoSkateSessionForm
 from accounts.models import Profile, UserCredit
 from programs.models import Program
 from cart.models import Cart
+from programs.removal import SessionRemovalMixin
 
 from datetime import date
-
-User = get_user_model()
 
 
 class NachoSkateDateListView(LoginRequiredMixin, ListView):
@@ -189,57 +186,13 @@ class CreateNachoSkateSessionView(LoginRequiredMixin, CreateView):
         return False
 
 
-class DeleteNachoSkateSessionView(LoginRequiredMixin, DeleteView):
-    '''Allows user to remove themself from a skate session'''
+class DeleteNachoSkateSessionView(SessionRemovalMixin, DeleteView):
+    '''Allows user to remove themself from a skate session (refund / cart cleanup in the mixin).'''
     model = NachoSkateSession
-    skate_date_model = NachoSkateDate
-    credit_model = UserCredit
-    program_model = Program
     success_url = reverse_lazy('nacho_skate:index')
 
-    def delete(self, *args, **kwargs):
-        '''Refund credit (paid session) or clear the cart item (unpaid), then email the skater.
-
-        NOTE: Django 4.0 DeleteView handles POST via form_valid() and does not call delete(),
-        so none of this runs (see backlog). The paid flag and skater pk also come straight
-        from the URL rather than the session row.
-        '''
-
-        user = User.objects.get(pk=kwargs['skater_pk'])
-
-        if kwargs['paid'] == 'True':
-            # If the session is paid for, refund the skater/goalie price to the user's credit
-            session = self.model.objects.get(pk=kwargs['pk'])
-            if session.goalie:
-                price = self.program_model.objects.get(id=15).goalie_price
-            else:
-                price = self.program_model.objects.get(id=15).skater_price
-            
-            user_credit = self.credit_model.objects.get(slug=user)
-            old_balance = user_credit.balance
-            user_credit.balance += price
-            user_credit.paid = True
-            success_msg = f'{user.get_full_name()} has been removed from the session. The Users credit balance has been increased from ${old_balance} to ${user_credit.balance}.'
-            user_credit.save()
-        else:
-            # Clear session from the cart, user hasn't paid yet (not filtered by customer, see backlog)
-            skate_date = self.model.objects.filter(id=kwargs['pk']).values_list('skate_date', flat=True)
-            cart_date = self.skate_date_model.objects.filter(id=skate_date[0])
-            cart_item = Cart.objects.filter(item=Program.objects.all().get(id=15).program_name, event_date=cart_date[0].skate_date)
-            cart_item.delete()
-            success_msg = 'You have been removed from that skate session!'
-    
-        # Email the skater plus the admin accounts (ids 1, 2) and user 870
-        recipients = User.objects.filter(id__in=['1', '2', '870', user.id]).values_list('email', flat=True)
-        subject = 'Credit Issued for Nacho Skate Session'
-        from_email = 'no-reply@oicwebapp.com'
-        
-        try:
-            send_mail(subject, success_msg, from_email, recipients)
-            messages.add_message(self.request, messages.INFO, 'Email message has been sent to the skater!')
-            self.success_url = reverse_lazy('nacho_skate:index')
-        except Exception as e:
-            messages.add_message(self.request, messages.ERROR, f'Failed to send email: {str(e)}')
-
-        messages.add_message(self.request, messages.SUCCESS, success_msg)
-        return super().delete(*args, **kwargs)
+    program_filter = {'pk': 15}
+    manager_user_ids = (870,)    # organizer; the template shows him the remove buttons
+    notify_on_refund = True
+    admin_notify_ids = (1, 2, 870)
+    notify_subject = 'Credit Issued for Nacho Skate Session'

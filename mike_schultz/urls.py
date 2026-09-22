@@ -7,6 +7,6 @@ urlpatterns = [
     path('', views.MikeSchultzSkateDateListView.as_view(), name='mike-schultz'),
     path('register/<pk>/', views.CreateMikeSchultzSkateSessionView.as_view(), name='register'),
     path('register/', views.CreateMikeSchultzSkateSessionView.as_view(), name='register'),
-    path('session/remove/<pk>', views.DeleteMikeSchultzSkateSessionView.as_view(), name='session-remove'),
+    path('session/remove/<int:pk>/', views.DeleteMikeSchultzSkateSessionView.as_view(), name='session-remove'),
     path('session/list/', views.MikeSchultzSkateDateStaffListView.as_view(), name='mike-schultz-sessions'),
 ]

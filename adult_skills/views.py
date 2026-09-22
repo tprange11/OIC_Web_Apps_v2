@@ -4,15 +4,13 @@ from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.models import Group, User
-from django.contrib.auth import get_user_model
+from programs.removal import SessionRemovalMixin
+from programs.auth import StaffRequiredMixin
+from django.contrib.auth.models import Group
 from django.contrib import messages
-from django.core.mail import send_mail
 from django.db import IntegrityError
 from django.db.models import Count
 from django.core.exceptions import ObjectDoesNotExist
-
-User = get_user_model()
 
 from . import models, forms
 from accounts.models import Profile, UserCredit
@@ -190,64 +188,19 @@ class CreateAdultSkillsSkateSessionView(LoginRequiredMixin, CreateView):
         cart.save()
 
 
-class DeleteAdultSkillsSkateSessionView(LoginRequiredMixin, DeleteView):
-    '''Allows user (or staff) to remove a skater from a skate session, refunding credit if it was paid.'''
+class DeleteAdultSkillsSkateSessionView(SessionRemovalMixin, DeleteView):
+    '''Allows the skater or staff to remove a skater from a skate session. Refunds credit for
+    a paid session (emailing the admins and the skater) or clears the cart item for an unpaid one.'''
 
     model = models.AdultSkillsSkateSession
-    skate_date_model = models.AdultSkillsSkateDate
-    credit_model = UserCredit
-    program_model = Program
     success_url = reverse_lazy('adult_skills:adult-skills')
-
-    def delete(self, *args, **kwargs):
-        '''Refunds credit for a paid session, or clears the cart item for an unpaid one,
-        emails the admins and skater, then deletes the session.'''
-
-        user = User.objects.get(pk=kwargs['skater_pk'])
-        if user.is_staff: # Staff skate free, nothing to refund
-            success_msg = 'Skater has been removed from that skate session!'
-        elif kwargs['paid'] == 'True':
-            # If the session is paid for, issue credit to the user for the skater/goalie price
-            session = self.model.objects.get(pk=kwargs['pk'])
-            if session.goalie:
-                price = self.program_model.objects.get(id=5).goalie_price
-            else:
-                price = self.program_model.objects.get(id=5).skater_price
-            
-            user_credit = self.credit_model.objects.get(slug=user)
-            old_balance = user_credit.balance
-            user_credit.balance += price
-            user_credit.paid = True
-            success_msg = f'{user.get_full_name()} has been removed from the session. The Users credit balance has been increased from ${old_balance} to ${user_credit.balance}.'
-            user_credit.save()
-        else:
-            # Clear session from the cart, user hasn't paid yet.
-            skate_date = self.model.objects.filter(id=kwargs['pk']).values_list('skate_date', flat=True)
-            cart_date = self.skate_date_model.objects.filter(id=skate_date[0])
-            cart_item = Cart.objects.filter(item=Program.objects.all().get(id=5).program_name, event_date=cart_date[0].skate_date)
-            cart_item.delete()
-            success_msg = 'You have been removed from that skate session!'
-                
-        # Email the removal message to the site admins (ids 1 and 2) and the skater
-        recipients = User.objects.filter(id__in=['1', '2', user.id]).values_list('email', flat=True)
-        subject = 'Credit Issued for Adult Skills Session'
-        from_email = 'no-reply@oicwebapp.com'
-        
-        try:
-            send_mail(subject, success_msg, from_email, recipients)
-            messages.add_message(self.request, messages.INFO, 'Email message has been sent to the skater!')
-            self.success_url = reverse_lazy('adult_skills:adult-skills')
-        except Exception as e:
-            messages.add_message(self.request, messages.ERROR, f'Failed to send email: {str(e)}')
-
-        # Set success message and return
-        messages.add_message(self.request, messages.SUCCESS, success_msg)
-        return super().delete(*args, **kwargs)
+    program_filter = {'pk': 5}
+    cart_item_name = 'Adult Skills'
+    notify_on_refund = True
+    notify_subject = 'Credit Issued for Adult Skills Session'
 
 
-#################### The following view is for staff only ##########################
-
-class AdultSkillsSkateDateStaffListView(LoginRequiredMixin, ListView):
+class AdultSkillsSkateDateStaffListView(LoginRequiredMixin, StaffRequiredMixin, ListView):
     '''Displays page for staff that lists upcoming adult skills skate sessions.'''
 
     model = models.AdultSkillsSkateDate

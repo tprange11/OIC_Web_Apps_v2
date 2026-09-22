@@ -16,6 +16,8 @@ from . import models, forms
 from accounts.models import Profile, UserCredit
 from programs.models import Program
 from cart.models import Cart
+from programs.removal import SessionRemovalMixin
+from programs.auth import StaffRequiredMixin
 
 from datetime import date
 
@@ -179,30 +181,24 @@ class CreateSkateSessionView(LoginRequiredMixin, CreateView):
             return
 
 
-class DeleteSkateSessionView(LoginRequiredMixin, DeleteView):
-    '''Allows user to remove themself from a skate session'''
+class DeleteSkateSessionView(SessionRemovalMixin, DeleteView):
+    '''Allows user to remove themself from a skate session (refund / cart cleanup in the mixin).'''
     model = models.SkateSession
-    skate_date_model = models.SkateDate
     success_url = reverse_lazy('thane_storck:thane-skate')
 
-    def delete(self, *args, **kwargs):
-        '''Remove the matching cart item when an unpaid session is dropped.
+    program_filter = {'pk': 4}
+    cart_item_name = 'Thane Storck'   # hard-coded in CreateSkateSessionView.add_to_cart
+    manager_user_ids = (11,)          # the template shows user 11 the remove buttons
 
-        NOTE: Django 4.0 DeleteView handles POST via form_valid() and does not call delete(),
-        so this cleanup does not run (see backlog). No credit is refunded for paid sessions.
-        '''
-
-        # Clear session from the cart (not filtered by customer, see backlog)
-        skate_date = self.model.objects.filter(id=kwargs['pk']).values_list('skate_date', flat=True)
-        cart_date = self.skate_date_model.objects.filter(id=skate_date[0])
-        cart_item = Cart.objects.filter(item=Program.objects.all().get(id=4).program_name, event_date=cart_date[0].skate_date).delete()
-
-        messages.add_message(self.request, messages.SUCCESS, 'You have been removed from that skate session!')
-        return super().delete(*args, **kwargs)
+    def get_refund_amount(self, session):
+        # Goalies are never charged in this program (see CreateSkateSessionView), so nothing to refund
+        if session.goalie:
+            return 0
+        return super().get_refund_amount(session)
 
 # The following views are for staff only.
 
-class PrintSkateDateListView(LoginRequiredMixin, ListView):
+class PrintSkateDateListView(LoginRequiredMixin, StaffRequiredMixin, ListView):
     '''Displays page with list of upcoming Thane Storck skates with buttons for printing each skate.'''
 
     model = models.SkateDate
@@ -222,7 +218,7 @@ class PrintSkateDateListView(LoginRequiredMixin, ListView):
         return context
 
 
-class PrintSkateDateView(LoginRequiredMixin, ListView):
+class PrintSkateDateView(LoginRequiredMixin, StaffRequiredMixin, ListView):
     '''Displays Liability Waiver page with skater names for printing.'''
     model = models.SkateSession
     skate_date_model = models.SkateDate

@@ -3,12 +3,11 @@ from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
+from programs.removal import SessionRemovalMixin
 from django.contrib.auth.models import Group
 from django.contrib import messages
 from django.db import IntegrityError
 from django.core.exceptions import ObjectDoesNotExist
-from django.contrib.auth import get_user_model
-User = get_user_model()
 
 from .models import AmentSkateDate, AmentSkateSession
 from .forms import CreateAmentSkateSessionForm
@@ -186,37 +185,10 @@ class CreateAmentSkateSessionView(LoginRequiredMixin, CreateView):
         return False
 
 
-class DeleteAmentSkateSessionView(LoginRequiredMixin, DeleteView):
-    '''Allows user (or staff) to remove a skater from a skate session.'''
+class DeleteAmentSkateSessionView(SessionRemovalMixin, DeleteView):
+    '''Allows the skater, staff or the organizer to remove a skater from a skate session.
+    Refunds credit for a paid session or clears the cart item for an unpaid one.'''
     model = AmentSkateSession
-    skate_date_model = AmentSkateDate
-    credit_model = UserCredit
     success_url = reverse_lazy('ament:skate-dates')
-
-    def delete(self, *args, **kwargs):
-        '''Refunds credit for a paid session, or clears the cart item for an unpaid one,
-        before the session is deleted.'''
-
-        user = User.objects.get(pk=kwargs['skater_pk'])
-        if user.is_staff: # Staff doesn't pay to skate, so nothing to refund
-            success_msg = 'Skater has been removed from that skate session!'
-        elif kwargs['paid'] == 'True':
-            # If the session is paid for, issue credit to the user (always the skater price)
-            price = Program.objects.get(id=16).skater_price
-            user_credit = self.credit_model.objects.get(slug=user)
-            old_balance = user_credit.balance
-            user_credit.balance += price
-            user_credit.paid = True
-            success_msg = f'{user.get_full_name()} has been removed from the session. The Users credit balance has been increased from ${old_balance} to ${user_credit.balance}.'
-            user_credit.save()
-        else:
-            # Clear session from the cart, user hasn't paid yet.
-            skate_date = self.model.objects.filter(id=kwargs['pk']).values_list('skate_date', flat=True)
-            cart_date = self.skate_date_model.objects.filter(id=skate_date[0])
-            cart_item = Cart.objects.filter(item=Program.objects.all().get(id=16).program_name, event_date=cart_date[0].skate_date)
-            cart_item.delete()
-            success_msg = 'You have been removed from that skate session!'
-
-        # Set success message and return
-        messages.add_message(self.request, messages.SUCCESS, success_msg)
-        return super().delete(*args, **kwargs)
+    program_filter = {'pk': 16}
+    manager_user_ids = (21,)

@@ -4,6 +4,8 @@ from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
+from programs.removal import SessionRemovalMixin
+from programs.auth import StaffRequiredMixin
 from django.contrib.auth.models import Group
 from django.contrib import messages
 from django.db import IntegrityError
@@ -157,31 +159,16 @@ class CreateCHSAlumniSessionView(LoginRequiredMixin, CreateView):
         return False
 
 
-class DeleteCHSAlumniSessionView(LoginRequiredMixin, DeleteView):
-    '''Allows user to remove themself from a skate session if it is unpaid.'''
+class DeleteCHSAlumniSessionView(SessionRemovalMixin, DeleteView):
+    '''Allows the skater or staff to remove a skater from a skate session. Refunds credit for
+    a paid session or clears the cart item for an unpaid one.'''
     model = CHSAlumniSession
-    skate_date_model = CHSAlumniDate
     success_url = reverse_lazy('chs_alumni:chs-alumni')
-
-    def delete(self, *args, **kwargs):
-        '''Clears the user's matching cart item before the session is deleted.'''
-
-        # Clear session from the cart
-        skate_date = self.model.objects.filter(id=kwargs['pk']).values_list('date', flat=True)
-        cart_date = self.skate_date_model.objects.filter(id=skate_date[0])
-        Cart.objects.filter(
-            item=Program.objects.all().get(id=11).program_name, 
-            event_date=cart_date[0].skate_date, 
-            customer=self.request.user).delete()
-
-        # Set success message and return
-        messages.add_message(self.request, messages.SUCCESS, 'You have been removed from that skate session!')
-        return super().delete(*args, **kwargs)
+    date_field = 'date'
+    program_filter = {'pk': 11}
 
 
-################ The following views are for staff only ##########################################################
-
-class CHSAlumniSkateDateStaffListView(LoginRequiredMixin, ListView):
+class CHSAlumniSkateDateStaffListView(LoginRequiredMixin, StaffRequiredMixin, ListView):
     '''Displays page with list of upcoming CHS Alumni skate dates with buttons for viewing registered skaters.'''
 
     model = CHSAlumniDate
