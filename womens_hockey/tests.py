@@ -46,3 +46,21 @@ class WomensHockeySkateDateOrderingTests(TestCase):
         self.assertEqual(len(listed), 4)
         self.assertEqual(listed, sorted(listed))
         self.assertTrue(all(d >= date.today() for d in listed))
+
+
+from programs.tests.base import ChildSkaterAppMixin
+from .models import WomensHockeySkateSession
+
+
+class WomensHockeyTests(ChildSkaterAppMixin, TestCase):
+    app_label = 'womens_hockey'
+    url_ns = 'womens_hockey'
+    list_url_name = 'womens-hockey'
+    date_model = WomensHockeySkateDate
+    session_model = WomensHockeySkateSession
+    # Cart item name is hard-coded as 'Womens Hockey'.
+    program_kwargs = {'pk': 8, 'program_name': 'Womens Hockey'}
+    date_defaults = {'start_time': '8:00 PM', 'end_time': '9:30 PM'}
+    # The list view looks the group up by id 8.
+    group_name = 'Womens Hockey'
+    group_id = 8
